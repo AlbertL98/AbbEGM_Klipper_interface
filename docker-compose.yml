@@ -1,0 +1,16 @@
+version: "3.8"
+
+services:
+  klipper:
+    build: .
+    container_name: klipper
+    restart: unless-stopped
+    privileged: true
+    ports:
+      - "8181:80"
+      - "7125:7125"
+    volumes:
+      - ./config:/home/klippy/printer_data/config
+      - ./logs:/home/klippy/printer_data/logs
+      - ./gcodes:/home/klippy/printer_data/gcodes
+      - ./klippy_extras:/home/klippy/custom_extras
