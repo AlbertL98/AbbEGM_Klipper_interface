@@ -1,53 +1,15 @@
-2026-02-12 09:21:14,802 INFO Set uid to user 0 succeeded
-2026-02-12 09:21:14,808 INFO RPC interface 'supervisor' initialized
-2026-02-12 09:21:14,808 CRIT Server 'unix_http_server' running without any HTTP authentication checking
-2026-02-12 09:21:14,808 INFO supervisord started with pid 1
-2026-02-12 09:21:15,813 INFO spawned: 'klipper_mcu' with pid 16
-2026-02-12 09:21:15,820 INFO spawned: 'klipper' with pid 17
-2026-02-12 09:21:15,830 INFO spawned: 'moonraker' with pid 18
-2026-02-12 09:21:15,834 INFO spawned: 'nginx' with pid 19
-2026-02-12 09:21:15,846 WARN exited: klipper_mcu (exit status 255; not expected)
-2026-02-12 09:21:17,670 INFO spawned: 'klipper_mcu' with pid 76
-2026-02-12 09:21:17,673 WARN exited: klipper_mcu (exit status 255; not expected)
-2026-02-12 09:21:18,743 INFO success: nginx entered RUNNING state, process has stayed up for > than 2 seconds (startsecs)
-2026-02-12 09:21:19,675 INFO spawned: 'klipper_mcu' with pid 125
-2026-02-12 09:21:19,678 INFO success: klipper entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
-2026-02-12 09:21:19,683 WARN exited: klipper_mcu (exit status 255; not expected)
-2026-02-12 09:21:20,933 INFO success: moonraker entered RUNNING state, process has stayed up for > than 5 seconds (startsecs)
-2026-02-12 09:21:22,939 INFO spawned: 'klipper_mcu' with pid 126
-2026-02-12 09:21:22,944 WARN exited: klipper_mcu (exit status 255; not expected)
-2026-02-12 09:21:23,960 INFO gave up: klipper_mcu entered FATAL state, too many start retries too quickly
-2026-02-12 09:25:26,602 WARN received SIGTERM indicating exit request
-2026-02-12 09:25:26,602 INFO waiting for klipper, moonraker, nginx to die
-2026-02-12 09:25:26,608 INFO stopped: nginx (exit status 0)
-2026-02-12 09:25:30,666 INFO Set uid to user 0 succeeded
-2026-02-12 09:25:30,670 INFO RPC interface 'supervisor' initialized
-2026-02-12 09:25:30,671 CRIT Server 'unix_http_server' running without any HTTP authentication checking
-2026-02-12 09:25:30,671 INFO supervisord started with pid 1
-2026-02-12 09:25:31,678 INFO spawned: 'klipper_mcu' with pid 12
-2026-02-12 09:25:31,682 INFO spawned: 'klipper' with pid 13
-2026-02-12 09:25:31,687 INFO spawned: 'moonraker' with pid 14
-2026-02-12 09:25:31,692 INFO spawned: 'nginx' with pid 15
-2026-02-12 09:25:31,696 WARN exited: klipper_mcu (exit status 255; not expected)
-2026-02-12 09:25:33,568 INFO spawned: 'klipper_mcu' with pid 71
-2026-02-12 09:25:33,574 WARN exited: klipper_mcu (exit status 255; not expected)
-2026-02-12 09:25:34,076 INFO success: nginx entered RUNNING state, process has stayed up for > than 2 seconds (startsecs)
-2026-02-12 09:25:35,152 INFO success: klipper entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
-2026-02-12 09:25:36,575 INFO spawned: 'klipper_mcu' with pid 120
-2026-02-12 09:25:36,581 WARN exited: klipper_mcu (exit status 255; not expected)
-2026-02-12 09:25:37,598 INFO success: moonraker entered RUNNING state, process has stayed up for > than 5 seconds (startsecs)
-2026-02-12 09:25:39,605 INFO spawned: 'klipper_mcu' with pid 121
-2026-02-12 09:25:39,608 WARN exited: klipper_mcu (exit status 255; not expected)
-2026-02-12 09:25:40,624 INFO gave up: klipper_mcu entered FATAL state, too many start retries too quickly
-2026-02-12 09:30:25,318 INFO waiting for klipper to stop
-2026-02-12 09:30:25,321 WARN stopped: klipper (terminated by SIGTERM)
-2026-02-12 09:30:25,329 INFO spawned: 'klipper' with pid 211
-2026-02-12 09:30:28,576 INFO success: klipper entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
-2026-02-12 09:31:04,361 INFO waiting for klipper to stop
-2026-02-12 09:31:04,379 WARN stopped: klipper (terminated by SIGTERM)
-2026-02-12 09:31:04,389 INFO spawned: 'klipper' with pid 236
-2026-02-12 09:31:07,617 INFO success: klipper entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
-2026-02-12 09:32:37,302 INFO waiting for klipper to stop
-2026-02-12 09:32:37,310 WARN stopped: klipper (terminated by SIGTERM)
-2026-02-12 09:32:37,315 INFO spawned: 'klipper' with pid 298
-2026-02-12 09:32:40,814 INFO success: klipper entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-02-13 08:00:48,787 INFO Set uid to user 0 succeeded
+2026-02-13 08:00:48,803 INFO RPC interface 'supervisor' initialized
+2026-02-13 08:00:48,809 CRIT Server 'unix_http_server' running without any HTTP authentication checking
+2026-02-13 08:00:48,812 INFO supervisord started with pid 1
+2026-02-13 08:00:49,821 INFO spawned: 'klipper_mcu' with pid 16
+2026-02-13 08:00:49,829 INFO spawned: 'klipper' with pid 17
+2026-02-13 08:00:49,837 INFO spawned: 'moonraker' with pid 18
+2026-02-13 08:00:49,846 INFO spawned: 'nginx' with pid 19
+2026-02-13 08:00:50,826 INFO success: klipper_mcu entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-02-13 08:00:51,951 INFO success: nginx entered RUNNING state, process has stayed up for > than 2 seconds (startsecs)
+2026-02-13 08:00:53,116 INFO success: klipper entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-02-13 08:00:55,119 INFO success: moonraker entered RUNNING state, process has stayed up for > than 5 seconds (startsecs)
+2026-02-13 09:22:35,792 WARN received SIGTERM indicating exit request
+2026-02-13 09:22:35,805 INFO waiting for klipper_mcu, klipper, moonraker, nginx to die
+2026-02-13 09:22:35,871 INFO stopped: nginx (exit status 0)
