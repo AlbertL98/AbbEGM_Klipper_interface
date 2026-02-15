@@ -1,15 +1,98 @@
-2026-02-13 08:00:48,787 INFO Set uid to user 0 succeeded
-2026-02-13 08:00:48,803 INFO RPC interface 'supervisor' initialized
-2026-02-13 08:00:48,809 CRIT Server 'unix_http_server' running without any HTTP authentication checking
-2026-02-13 08:00:48,812 INFO supervisord started with pid 1
-2026-02-13 08:00:49,821 INFO spawned: 'klipper_mcu' with pid 16
-2026-02-13 08:00:49,829 INFO spawned: 'klipper' with pid 17
-2026-02-13 08:00:49,837 INFO spawned: 'moonraker' with pid 18
-2026-02-13 08:00:49,846 INFO spawned: 'nginx' with pid 19
-2026-02-13 08:00:50,826 INFO success: klipper_mcu entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
-2026-02-13 08:00:51,951 INFO success: nginx entered RUNNING state, process has stayed up for > than 2 seconds (startsecs)
-2026-02-13 08:00:53,116 INFO success: klipper entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
-2026-02-13 08:00:55,119 INFO success: moonraker entered RUNNING state, process has stayed up for > than 5 seconds (startsecs)
-2026-02-13 09:22:35,792 WARN received SIGTERM indicating exit request
-2026-02-13 09:22:35,805 INFO waiting for klipper_mcu, klipper, moonraker, nginx to die
-2026-02-13 09:22:35,871 INFO stopped: nginx (exit status 0)
+2026-02-15 08:35:35,143 INFO Set uid to user 0 succeeded
+2026-02-15 08:35:35,146 INFO RPC interface 'supervisor' initialized
+2026-02-15 08:35:35,147 CRIT Server 'unix_http_server' running without any HTTP authentication checking
+2026-02-15 08:35:35,153 INFO supervisord started with pid 1
+2026-02-15 08:35:36,161 INFO spawned: 'klipper_mcu' with pid 18
+2026-02-15 08:35:36,166 INFO spawned: 'klipper' with pid 19
+2026-02-15 08:35:36,170 INFO spawned: 'moonraker' with pid 20
+2026-02-15 08:35:36,174 INFO spawned: 'nginx' with pid 21
+2026-02-15 08:35:37,181 INFO success: klipper_mcu entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-02-15 08:35:38,401 INFO success: nginx entered RUNNING state, process has stayed up for > than 2 seconds (startsecs)
+2026-02-15 08:35:39,169 INFO success: klipper entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-02-15 08:35:41,247 INFO success: moonraker entered RUNNING state, process has stayed up for > than 5 seconds (startsecs)
+2026-02-15 08:35:56,482 INFO exited: klipper_mcu (exit status 0; expected)
+2026-02-15 08:35:56,482 INFO reaped unknown pid 136 (terminated by SIGTERM)
+2026-02-15 08:35:57,487 INFO spawned: 'klipper_mcu' with pid 139
+2026-02-15 08:35:58,489 INFO success: klipper_mcu entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-02-15 08:36:06,485 INFO exited: klipper_mcu (exit status 0; expected)
+2026-02-15 08:36:06,486 INFO reaped unknown pid 143 (terminated by SIGTERM)
+2026-02-15 08:36:07,491 INFO spawned: 'klipper_mcu' with pid 146
+2026-02-15 08:36:08,495 INFO success: klipper_mcu entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-02-15 08:36:16,487 INFO exited: klipper_mcu (exit status 0; expected)
+2026-02-15 08:36:16,487 INFO reaped unknown pid 150 (terminated by SIGTERM)
+2026-02-15 08:36:17,495 INFO spawned: 'klipper_mcu' with pid 153
+2026-02-15 08:36:18,497 INFO success: klipper_mcu entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-02-15 08:36:26,491 INFO exited: klipper_mcu (exit status 0; expected)
+2026-02-15 08:36:26,491 INFO reaped unknown pid 157 (terminated by SIGTERM)
+2026-02-15 08:36:26,508 INFO spawned: 'klipper_mcu' with pid 160
+2026-02-15 08:36:27,510 INFO success: klipper_mcu entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-02-15 08:36:36,767 INFO exited: klipper_mcu (exit status 0; expected)
+2026-02-15 08:36:36,768 INFO reaped unknown pid 164 (terminated by SIGTERM)
+2026-02-15 08:36:37,781 INFO spawned: 'klipper_mcu' with pid 167
+2026-02-15 08:36:38,783 INFO success: klipper_mcu entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-02-15 08:36:51,510 INFO exited: klipper_mcu (exit status 0; expected)
+2026-02-15 08:36:51,510 INFO reaped unknown pid 171 (terminated by SIGTERM)
+2026-02-15 08:36:52,398 INFO spawned: 'klipper_mcu' with pid 177
+2026-02-15 08:36:53,400 INFO success: klipper_mcu entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-02-15 08:37:02,301 INFO exited: klipper_mcu (exit status 0; expected)
+2026-02-15 08:37:02,302 INFO reaped unknown pid 184 (terminated by SIGTERM)
+2026-02-15 08:37:03,306 INFO spawned: 'klipper_mcu' with pid 188
+2026-02-15 08:37:04,308 INFO success: klipper_mcu entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-02-15 08:37:12,305 INFO exited: klipper_mcu (exit status 0; expected)
+2026-02-15 08:37:12,305 INFO reaped unknown pid 191 (terminated by SIGTERM)
+2026-02-15 08:37:13,310 INFO spawned: 'klipper_mcu' with pid 195
+2026-02-15 08:37:14,312 INFO success: klipper_mcu entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-02-15 08:37:27,311 INFO exited: klipper_mcu (exit status 0; expected)
+2026-02-15 08:37:27,312 INFO reaped unknown pid 198 (terminated by SIGTERM)
+2026-02-15 08:37:28,318 INFO spawned: 'klipper_mcu' with pid 204
+2026-02-15 08:37:29,320 INFO success: klipper_mcu entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-02-15 08:37:37,315 INFO exited: klipper_mcu (exit status 0; expected)
+2026-02-15 08:37:37,315 INFO reaped unknown pid 208 (terminated by SIGTERM)
+2026-02-15 08:37:38,337 INFO spawned: 'klipper_mcu' with pid 211
+2026-02-15 08:37:39,339 INFO success: klipper_mcu entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-02-15 08:37:47,326 INFO exited: klipper_mcu (exit status 0; expected)
+2026-02-15 08:37:47,327 INFO reaped unknown pid 215 (terminated by SIGTERM)
+2026-02-15 08:37:48,351 INFO spawned: 'klipper_mcu' with pid 218
+2026-02-15 08:37:49,354 INFO success: klipper_mcu entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-02-15 08:38:07,347 INFO exited: klipper_mcu (exit status 0; expected)
+2026-02-15 08:38:07,347 INFO reaped unknown pid 222 (terminated by SIGTERM)
+2026-02-15 08:38:08,355 INFO spawned: 'klipper_mcu' with pid 230
+2026-02-15 08:38:09,357 INFO success: klipper_mcu entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-02-15 08:38:17,348 INFO exited: klipper_mcu (exit status 0; expected)
+2026-02-15 08:38:17,349 INFO reaped unknown pid 234 (terminated by SIGTERM)
+2026-02-15 08:38:17,353 INFO spawned: 'klipper_mcu' with pid 237
+2026-02-15 08:38:18,355 INFO success: klipper_mcu entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-02-15 08:38:27,352 INFO exited: klipper_mcu (exit status 0; expected)
+2026-02-15 08:38:27,353 INFO reaped unknown pid 241 (terminated by SIGTERM)
+2026-02-15 08:38:28,363 INFO spawned: 'klipper_mcu' with pid 242
+2026-02-15 08:38:29,365 INFO success: klipper_mcu entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-02-15 08:41:38,264 INFO waiting for klipper to stop
+2026-02-15 08:41:38,277 WARN stopped: klipper (terminated by SIGTERM)
+2026-02-15 08:41:38,283 INFO spawned: 'klipper' with pid 277
+2026-02-15 08:41:41,781 INFO success: klipper entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-02-15 08:43:12,995 INFO waiting for klipper_mcu to stop
+2026-02-15 08:43:12,996 WARN stopped: klipper_mcu (exit status 143)
+2026-02-15 08:43:13,011 INFO spawned: 'klipper_mcu' with pid 312
+2026-02-15 08:43:14,013 INFO success: klipper_mcu entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-02-15 08:43:15,303 INFO waiting for klipper to stop
+2026-02-15 08:43:15,306 WARN stopped: klipper (terminated by SIGTERM)
+2026-02-15 08:43:15,310 INFO spawned: 'klipper' with pid 319
+2026-02-15 08:43:18,560 INFO success: klipper entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-02-15 09:54:47,237 WARN received SIGTERM indicating exit request
+2026-02-15 09:54:47,330 INFO waiting for klipper_mcu, klipper, moonraker, nginx to die
+2026-02-15 09:54:47,907 INFO stopped: nginx (exit status 0)
+2026-02-15 12:41:58,729 INFO Set uid to user 0 succeeded
+2026-02-15 12:41:59,042 INFO RPC interface 'supervisor' initialized
+2026-02-15 12:41:59,042 CRIT Server 'unix_http_server' running without any HTTP authentication checking
+2026-02-15 12:41:59,043 INFO supervisord started with pid 1
+2026-02-15 12:42:00,060 INFO spawned: 'klipper_mcu' with pid 14
+2026-02-15 12:42:00,069 INFO spawned: 'klipper' with pid 15
+2026-02-15 12:42:00,093 INFO spawned: 'moonraker' with pid 16
+2026-02-15 12:42:00,098 INFO spawned: 'nginx' with pid 17
+2026-02-15 12:42:01,058 INFO success: klipper_mcu entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2026-02-15 12:42:02,564 INFO success: nginx entered RUNNING state, process has stayed up for > than 2 seconds (startsecs)
+2026-02-15 12:42:03,566 INFO success: klipper entered RUNNING state, process has stayed up for > than 3 seconds (startsecs)
+2026-02-15 12:42:05,569 INFO success: moonraker entered RUNNING state, process has stayed up for > than 5 seconds (startsecs)
+2026-02-15 14:54:08,009 WARN received SIGTERM indicating exit request
+2026-02-15 14:54:08,017 INFO waiting for klipper_mcu, klipper, moonraker, nginx to die
+2026-02-15 14:54:08,046 INFO stopped: nginx (exit status 0)

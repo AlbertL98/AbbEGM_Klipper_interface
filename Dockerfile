@@ -35,6 +35,7 @@ RUN apt-get update && apt-get install -y \
     nano \
     supervisor \
     nginx \
+    socat \
     && rm -rf /var/lib/apt/lists/*
 
 # !! Nginx Autostart deaktivieren !!
@@ -56,13 +57,12 @@ RUN python3 -m venv klippy-env && \
     /home/klippy/klippy-env/bin/pip install --upgrade pip && \
     /home/klippy/klippy-env/bin/pip install -r /home/klippy/klipper/scripts/klippy-requirements.txt
 
-# --- LINUX HOST MCU KOMPILIEREN ---
-# Das ist der virtuelle MCU der auf dem Host läuft
+# --- SIMULATOR MCU KOMPILIEREN ---
 WORKDIR /home/klippy/klipper
 RUN make clean && \
     echo "CONFIG_LOW_LEVEL_OPTIONS=y" > .config && \
-    echo "CONFIG_MACH_LINUX=y" >> .config && \
-    echo "CONFIG_BOARD_DIRECTORY=\"linux\"" >> .config && \
+    echo "CONFIG_MACH_SIMU=y" >> .config && \
+    echo "CONFIG_BOARD_DIRECTORY=\"simulator\"" >> .config && \
     echo "CONFIG_CLOCK_FREQ=50000000" >> .config && \
     make olddefconfig && \
     make

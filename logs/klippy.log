@@ -1,24 +1,80 @@
 Starting Klippy...
 Args: ['/home/klippy/klipper/klippy/klippy.py', '/home/klippy/printer_data/config/printer.cfg', '-l', '/home/klippy/printer_data/logs/klippy.log', '-a', '/tmp/klippy_uds']
-Git version: 'v0.13.0-534-gce97c514b-dirty'
-Untracked files: klippy/extras/egm_bridge.py
+Git version: 'v0.13.0-540-g57c2e0c96-dirty'
+Untracked files: klippy/extras/dummy_thermistor.py, klippy/extras/egm_bridge.py
 Branch: master
 Remote: origin
 Tracked URL: https://github.com/Klipper3d/klipper.git
-CPU: 16 core AMD Ryzen 7 4800HS with Radeon Graphics
+CPU: 16 core 12th Gen Intel(R) Core(TM) i5-12600K
 Device: ?
 Linux: Linux version 6.6.87.2-microsoft-standard-WSL2 (root@439a258ad544) (gcc (GCC) 11.2.0, GNU ld (GNU Binutils) 2.37) #1 SMP PREEMPT_DYNAMIC Thu Jun  5 18:30:46 UTC 2025
 Python: '3.12.3 (main, Jan 22 2026, 20:57:42) [GCC 13.3.0]'
 Building C code module c_helper.so
-Start printer at Fri Feb 13 08:00:55 2026 (1770969655.5 1486.5)
+Start printer at Sun Feb 15 08:35:41 2026 (1771144542.0 937.0)
 ===== Config file =====
 [mcu]
 serial = /tmp/klipper_host_mcu
 
 [printer]
-kinematics = none
+kinematics = cartesian
 max_velocity = 300
 max_accel = 3000
+max_z_velocity = 50
+max_z_accel = 500
+
+[stepper_x]
+step_pin = PA0
+dir_pin = PA1
+enable_pin = !PA2
+microsteps = 16
+rotation_distance = 40
+endstop_pin = PA3
+position_endstop = 0
+position_max = 500
+homing_speed = 50
+
+[stepper_y]
+step_pin = PA4
+dir_pin = PA5
+enable_pin = !PA6
+microsteps = 16
+rotation_distance = 40
+endstop_pin = PA7
+position_endstop = 0
+position_max = 500
+homing_speed = 50
+
+[stepper_z]
+step_pin = PB0
+dir_pin = PB1
+enable_pin = !PB2
+microsteps = 16
+rotation_distance = 8
+endstop_pin = PB3
+position_endstop = 0
+position_max = 300
+homing_speed = 25
+
+[dummy_thermistor]
+
+[extruder]
+step_pin = PB4
+dir_pin = PB5
+enable_pin = !PB6
+microsteps = 16
+rotation_distance = 4.637
+nozzle_diameter = 0.400
+filament_diameter = 1.750
+max_extrude_only_velocity = 60
+max_extrude_only_accel = 800
+max_extrude_cross_section = 50
+heater_pin = PB7
+sensor_type = dummy_thermistor
+control = watermark
+min_temp = 0
+max_temp = 300
+pressure_advance = 0.0
+pressure_advance_smooth_time = 0.040
 
 [virtual_sdcard]
 path = /home/klippy/printer_data/gcodes
@@ -27,21 +83,1184 @@ path = /home/klippy/printer_data/gcodes
 
 [pause_resume]
 
+[force_move]
+enable_force_move = True
+
 [egm_bridge]
 debug_mode = true
 log_moves = false
 =======================
 [EGM] EGM Bridge initialisiert
+Extruder max_extrude_ratio=20.787584
 mcu 'mcu': Starting connect
-webhooks client 128117203219952: New connection
-webhooks client 128117203219952: Client info {'program': 'Moonraker', 'version': 'v0.10.0-8-g293a4cf'}
-Loaded MCU 'mcu' 137 commands (v0.13.0-534-gce97c514b / gcc: (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0 binutils: (GNU Binutils for Ubuntu) 2.42)
-MCU 'mcu' config: ADC_MAX=4095 CLOCK_FREQ=50000000 MCU=linux PCA9685_MAX=4096 PWM_MAX=32768 STATS_SUMSQ_BASE=256 STEPPER_STEP_BOTH_EDGE=1
-Sending MCU 'mcu' printer configuration...
-Configured MCU 'mcu' (1024 moves)
-[EGM] Ready - Toolhead verfügbar
-webhooks: registering remote method 'shutdown_machine' for connection id: 128117203219952
-webhooks: registering remote method 'reboot_machine' for connection id: 128117203219952
-webhooks: registering remote method 'pause_job_queue' for connection id: 128117203219952
-webhooks: registering remote method 'start_job_queue' for connection id: 128117203219952
-webhooks client 128117203219952: Disconnected
+webhooks client 130841910881040: New connection
+webhooks client 130841910881040: Client info {'program': 'Moonraker', 'version': 'v0.10.0-8-g293a4cf'}
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+webhooks client 130841910881040: Disconnected
+Restarting printer
+Start printer at Sun Feb 15 08:36:56 2026 (1771144616.8 1011.7)
+===== Config file =====
+[mcu]
+serial = /tmp/klipper_host_mcu
+
+[printer]
+kinematics = cartesian
+max_velocity = 300
+max_accel = 3000
+max_z_velocity = 50
+max_z_accel = 500
+
+[stepper_x]
+step_pin = PA0
+dir_pin = PA1
+enable_pin = !PA2
+microsteps = 16
+rotation_distance = 40
+endstop_pin = PA3
+position_endstop = 0
+position_max = 500
+homing_speed = 50
+
+[stepper_y]
+step_pin = PA4
+dir_pin = PA5
+enable_pin = !PA6
+microsteps = 16
+rotation_distance = 40
+endstop_pin = PA7
+position_endstop = 0
+position_max = 500
+homing_speed = 50
+
+[stepper_z]
+step_pin = PB0
+dir_pin = PB1
+enable_pin = !PB2
+microsteps = 16
+rotation_distance = 8
+endstop_pin = PB3
+position_endstop = 0
+position_max = 300
+homing_speed = 25
+
+[dummy_thermistor]
+
+[extruder]
+step_pin = PB4
+dir_pin = PB5
+enable_pin = !PB6
+microsteps = 16
+rotation_distance = 4.637
+nozzle_diameter = 0.400
+filament_diameter = 1.750
+max_extrude_only_velocity = 60
+max_extrude_only_accel = 800
+max_extrude_cross_section = 50
+heater_pin = PB7
+sensor_type = dummy_thermistor
+control = watermark
+min_temp = 0
+max_temp = 300
+pressure_advance = 0.0
+pressure_advance_smooth_time = 0.040
+
+[virtual_sdcard]
+path = /home/klippy/printer_data/gcodes
+
+[display_status]
+
+[pause_resume]
+
+[force_move]
+enable_force_move = True
+
+[egm_bridge]
+debug_mode = true
+log_moves = false
+=======================
+[EGM] EGM Bridge initialisiert
+Extruder max_extrude_ratio=20.787584
+mcu 'mcu': Starting connect
+webhooks client 130841911014560: New connection
+webhooks client 130841911014560: Client info {'program': 'Moonraker', 'version': 'v0.10.0-8-g293a4cf'}
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+MCU error during connect
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/mcu.py", line 808, in _attach
+    self._serial.connect_pipe(self._serialport)
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 173, in connect_pipe
+    self._error("Unable to connect")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Unable to connect
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/klippy.py", line 131, in _connect
+    self.send_event("klippy:mcu_identify")
+  File "/home/klippy/klipper/klippy/klippy.py", line 227, in send_event
+    return [cb(*params) for cb in self.event_handlers.get(event, [])]
+            ^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/mcu.py", line 816, in _mcu_identify
+    self._attach()
+  File "/home/klippy/klipper/klippy/mcu.py", line 811, in _attach
+    raise error(str(e))
+mcu.error: mcu 'mcu': Unable to connect
+mcu 'mcu': Unable to connect
+Once the underlying issue is corrected, use the
+"FIRMWARE_RESTART" command to reset the firmware, reload the
+config, and restart the host software.
+Error configuring printer
+
+Build file /home/klippy/klipper/klippy/../.config(1219): Sun Feb 15 08:30:14 2026
+========= Last MCU build config =========
+CONFIG_LOW_LEVEL_OPTIONS=y
+# CONFIG_MACH_AVR is not set
+# CONFIG_MACH_ATSAM is not set
+# CONFIG_MACH_ATSAMD is not set
+# CONFIG_MACH_LPC176X is not set
+# CONFIG_MACH_STM32 is not set
+# CONFIG_MACH_HC32F460 is not set
+# CONFIG_MACH_RPXXXX is not set
+# CONFIG_MACH_PRU is not set
+# CONFIG_MACH_AR100 is not set
+# CONFIG_MACH_LINUX is not set
+CONFIG_MACH_SIMU=y
+CONFIG_BOARD_DIRECTORY="simulator"
+CONFIG_CLOCK_FREQ=20000000
+CONFIG_SERIAL=y
+CONFIG_SIMULATOR_SELECT=y
+CONFIG_SERIAL_BAUD=250000
+CONFIG_USB_VENDOR_ID=0x1d50
+CONFIG_USB_DEVICE_ID=0x614e
+CONFIG_USB_SERIAL_NUMBER="12345"
+CONFIG_WANT_ADC=y
+CONFIG_WANT_SPI=y
+CONFIG_WANT_SOFTWARE_SPI=y
+CONFIG_WANT_HARD_PWM=y
+CONFIG_WANT_BUTTONS=y
+CONFIG_WANT_TMCUART=y
+CONFIG_WANT_NEOPIXEL=y
+CONFIG_WANT_PULSE_COUNTER=y
+CONFIG_WANT_ST7920=y
+CONFIG_WANT_HD44780=y
+CONFIG_WANT_ADXL345=y
+CONFIG_WANT_LIS2DW=y
+CONFIG_WANT_BMI160=y
+CONFIG_WANT_THERMOCOUPLE=y
+CONFIG_WANT_HX71X=y
+CONFIG_WANT_ADS1220=y
+CONFIG_WANT_SENSOR_ANGLE=y
+CONFIG_NEED_SENSOR_BULK=y
+CONFIG_WANT_TRIGGER_ANALOG=y
+CONFIG_NEED_SOS_FILTER=y
+CONFIG_CANBUS_FREQUENCY=1000000
+CONFIG_INLINE_STEPPER_HACK=y
+CONFIG_INITIAL_PINS=""
+CONFIG_HAVE_GPIO=y
+CONFIG_HAVE_GPIO_ADC=y
+CONFIG_HAVE_GPIO_SPI=y
+CONFIG_HAVE_GPIO_HARD_PWM=y
+=======================
+Build file /home/klippy/klipper/klippy/../out/klipper.dict(8036): Sun Feb 15 08:30:16 2026
+Last MCU build version: v0.13.0-540-g57c2e0c96
+Last MCU build tools: gcc: (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0 binutils: (GNU Binutils for Ubuntu) 2.42
+Last MCU build config: CLOCK_FREQ=20000000 RECEIVE_WINDOW=192 SERIAL_BAUD=250000 STATS_SUMSQ_BASE=256 STEPPER_STEP_BOTH_EDGE=1
+Build file /home/klippy/klipper/klippy/../out/klipper.elf(517048): Sun Feb 15 08:30:16 2026
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+Starting Klippy...
+Args: ['/home/klippy/klipper/klippy/klippy.py', '/home/klippy/printer_data/config/printer.cfg', '-l', '/home/klippy/printer_data/logs/klippy.log', '-a', '/tmp/klippy_uds']
+Git version: 'v0.13.0-540-g57c2e0c96-dirty'
+Untracked files: klippy/extras/dummy_thermistor.py, klippy/extras/egm_bridge.py
+Branch: master
+Remote: origin
+Tracked URL: https://github.com/Klipper3d/klipper.git
+CPU: 16 core 12th Gen Intel(R) Core(TM) i5-12600K
+Device: ?
+Linux: Linux version 6.6.87.2-microsoft-standard-WSL2 (root@439a258ad544) (gcc (GCC) 11.2.0, GNU ld (GNU Binutils) 2.37) #1 SMP PREEMPT_DYNAMIC Thu Jun  5 18:30:46 UTC 2025
+Python: '3.12.3 (main, Jan 22 2026, 20:57:42) [GCC 13.3.0]'
+Start printer at Sun Feb 15 08:41:38 2026 (1771144898.4 1293.4)
+===== Config file =====
+[mcu]
+serial = /tmp/klipper_host_mcu
+baud = 250000
+
+[printer]
+kinematics = cartesian
+max_velocity = 300
+max_accel = 3000
+max_z_velocity = 50
+max_z_accel = 500
+
+[stepper_x]
+step_pin = PA0
+dir_pin = PA1
+enable_pin = !PA2
+microsteps = 16
+rotation_distance = 40
+endstop_pin = PA3
+position_endstop = 0
+position_max = 500
+homing_speed = 50
+
+[stepper_y]
+step_pin = PA4
+dir_pin = PA5
+enable_pin = !PA6
+microsteps = 16
+rotation_distance = 40
+endstop_pin = PA7
+position_endstop = 0
+position_max = 500
+homing_speed = 50
+
+[stepper_z]
+step_pin = PB0
+dir_pin = PB1
+enable_pin = !PB2
+microsteps = 16
+rotation_distance = 8
+endstop_pin = PB3
+position_endstop = 0
+position_max = 300
+homing_speed = 25
+
+[dummy_thermistor]
+
+[extruder]
+step_pin = PB4
+dir_pin = PB5
+enable_pin = !PB6
+microsteps = 16
+rotation_distance = 4.637
+nozzle_diameter = 0.400
+filament_diameter = 1.750
+max_extrude_only_velocity = 60
+max_extrude_only_accel = 800
+max_extrude_cross_section = 50
+heater_pin = PB7
+sensor_type = dummy_thermistor
+control = watermark
+min_temp = 0
+max_temp = 300
+pressure_advance = 0.0
+pressure_advance_smooth_time = 0.040
+
+[virtual_sdcard]
+path = /home/klippy/printer_data/gcodes
+
+[display_status]
+
+[pause_resume]
+
+[force_move]
+enable_force_move = True
+
+[egm_bridge]
+debug_mode = true
+log_moves = false
+=======================
+[EGM] EGM Bridge initialisiert
+Extruder max_extrude_ratio=20.787584
+Config error
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/klippy.py", line 130, in _connect
+    self._read_config()
+  File "/home/klippy/klipper/klippy/klippy.py", line 127, in _read_config
+    pconfig.check_unused_options(config)
+  File "/home/klippy/klipper/klippy/configfile.py", line 489, in check_unused_options
+    self.validate.check_unused(config.fileconfig)
+  File "/home/klippy/klipper/klippy/configfile.py", line 440, in check_unused
+    raise error("Option '%s' is not valid in section '%s'"
+configparser.Error: Option 'baud' is not valid in section 'mcu'
+webhooks client 128708369289952: New connection
+webhooks client 128708369289952: Client info {'program': 'Moonraker', 'version': 'v0.10.0-8-g293a4cf'}
+Starting Klippy...
+Args: ['/home/klippy/klipper/klippy/klippy.py', '/home/klippy/printer_data/config/printer.cfg', '-l', '/home/klippy/printer_data/logs/klippy.log', '-a', '/tmp/klippy_uds']
+Git version: 'v0.13.0-540-g57c2e0c96-dirty'
+Untracked files: klippy/extras/dummy_thermistor.py, klippy/extras/egm_bridge.py
+Branch: master
+Remote: origin
+Tracked URL: https://github.com/Klipper3d/klipper.git
+CPU: 16 core 12th Gen Intel(R) Core(TM) i5-12600K
+Device: ?
+Linux: Linux version 6.6.87.2-microsoft-standard-WSL2 (root@439a258ad544) (gcc (GCC) 11.2.0, GNU ld (GNU Binutils) 2.37) #1 SMP PREEMPT_DYNAMIC Thu Jun  5 18:30:46 UTC 2025
+Python: '3.12.3 (main, Jan 22 2026, 20:57:42) [GCC 13.3.0]'
+Start printer at Sun Feb 15 08:43:15 2026 (1771144995.4 1390.4)
+===== Config file =====
+[mcu]
+serial = /dev/klipper_mcu
+
+[printer]
+kinematics = cartesian
+max_velocity = 300
+max_accel = 3000
+max_z_velocity = 50
+max_z_accel = 500
+
+[stepper_x]
+step_pin = PA0
+dir_pin = PA1
+enable_pin = !PA2
+microsteps = 16
+rotation_distance = 40
+endstop_pin = PA3
+position_endstop = 0
+position_max = 500
+homing_speed = 50
+
+[stepper_y]
+step_pin = PA4
+dir_pin = PA5
+enable_pin = !PA6
+microsteps = 16
+rotation_distance = 40
+endstop_pin = PA7
+position_endstop = 0
+position_max = 500
+homing_speed = 50
+
+[stepper_z]
+step_pin = PB0
+dir_pin = PB1
+enable_pin = !PB2
+microsteps = 16
+rotation_distance = 8
+endstop_pin = PB3
+position_endstop = 0
+position_max = 300
+homing_speed = 25
+
+[dummy_thermistor]
+
+[extruder]
+step_pin = PB4
+dir_pin = PB5
+enable_pin = !PB6
+microsteps = 16
+rotation_distance = 4.637
+nozzle_diameter = 0.400
+filament_diameter = 1.750
+max_extrude_only_velocity = 60
+max_extrude_only_accel = 800
+max_extrude_cross_section = 50
+heater_pin = PB7
+sensor_type = dummy_thermistor
+control = watermark
+min_temp = 0
+max_temp = 300
+pressure_advance = 0.0
+pressure_advance_smooth_time = 0.040
+
+[virtual_sdcard]
+path = /home/klippy/printer_data/gcodes
+
+[display_status]
+
+[pause_resume]
+
+[force_move]
+enable_force_move = True
+
+[egm_bridge]
+debug_mode = true
+log_moves = false
+=======================
+[EGM] EGM Bridge initialisiert
+Extruder max_extrude_ratio=20.787584
+mcu 'mcu': Starting serial connect
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+webhooks client 123639536011600: New connection
+webhooks client 123639536011600: Client info {'program': 'Moonraker', 'version': 'v0.10.0-8-g293a4cf'}
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+MCU error during connect
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/mcu.py", line 806, in _attach
+    self._serial.connect_uart(self._serialport, self._baud, rts)
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 191, in connect_uart
+    self._error("Unable to connect")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Unable to connect
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/klippy.py", line 131, in _connect
+    self.send_event("klippy:mcu_identify")
+  File "/home/klippy/klipper/klippy/klippy.py", line 227, in send_event
+    return [cb(*params) for cb in self.event_handlers.get(event, [])]
+            ^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/mcu.py", line 816, in _mcu_identify
+    self._attach()
+  File "/home/klippy/klipper/klippy/mcu.py", line 811, in _attach
+    raise error(str(e))
+mcu.error: mcu 'mcu': Unable to connect
+mcu 'mcu': Unable to connect
+Once the underlying issue is corrected, use the
+"FIRMWARE_RESTART" command to reset the firmware, reload the
+config, and restart the host software.
+Error configuring printer
+
+Build file /home/klippy/klipper/klippy/../.config(1219): Sun Feb 15 08:30:14 2026
+========= Last MCU build config =========
+CONFIG_LOW_LEVEL_OPTIONS=y
+# CONFIG_MACH_AVR is not set
+# CONFIG_MACH_ATSAM is not set
+# CONFIG_MACH_ATSAMD is not set
+# CONFIG_MACH_LPC176X is not set
+# CONFIG_MACH_STM32 is not set
+# CONFIG_MACH_HC32F460 is not set
+# CONFIG_MACH_RPXXXX is not set
+# CONFIG_MACH_PRU is not set
+# CONFIG_MACH_AR100 is not set
+# CONFIG_MACH_LINUX is not set
+CONFIG_MACH_SIMU=y
+CONFIG_BOARD_DIRECTORY="simulator"
+CONFIG_CLOCK_FREQ=20000000
+CONFIG_SERIAL=y
+CONFIG_SIMULATOR_SELECT=y
+CONFIG_SERIAL_BAUD=250000
+CONFIG_USB_VENDOR_ID=0x1d50
+CONFIG_USB_DEVICE_ID=0x614e
+CONFIG_USB_SERIAL_NUMBER="12345"
+CONFIG_WANT_ADC=y
+CONFIG_WANT_SPI=y
+CONFIG_WANT_SOFTWARE_SPI=y
+CONFIG_WANT_HARD_PWM=y
+CONFIG_WANT_BUTTONS=y
+CONFIG_WANT_TMCUART=y
+CONFIG_WANT_NEOPIXEL=y
+CONFIG_WANT_PULSE_COUNTER=y
+CONFIG_WANT_ST7920=y
+CONFIG_WANT_HD44780=y
+CONFIG_WANT_ADXL345=y
+CONFIG_WANT_LIS2DW=y
+CONFIG_WANT_BMI160=y
+CONFIG_WANT_THERMOCOUPLE=y
+CONFIG_WANT_HX71X=y
+CONFIG_WANT_ADS1220=y
+CONFIG_WANT_SENSOR_ANGLE=y
+CONFIG_NEED_SENSOR_BULK=y
+CONFIG_WANT_TRIGGER_ANALOG=y
+CONFIG_NEED_SOS_FILTER=y
+CONFIG_CANBUS_FREQUENCY=1000000
+CONFIG_INLINE_STEPPER_HACK=y
+CONFIG_INITIAL_PINS=""
+CONFIG_HAVE_GPIO=y
+CONFIG_HAVE_GPIO_ADC=y
+CONFIG_HAVE_GPIO_SPI=y
+CONFIG_HAVE_GPIO_HARD_PWM=y
+=======================
+Build file /home/klippy/klipper/klippy/../out/klipper.dict(8036): Sun Feb 15 08:30:16 2026
+Last MCU build version: v0.13.0-540-g57c2e0c96
+Last MCU build tools: gcc: (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0 binutils: (GNU Binutils for Ubuntu) 2.42
+Last MCU build config: CLOCK_FREQ=20000000 RECEIVE_WINDOW=192 SERIAL_BAUD=250000 STATS_SUMSQ_BASE=256 STEPPER_STEP_BOTH_EDGE=1
+Build file /home/klippy/klipper/klippy/../out/klipper.elf(517048): Sun Feb 15 08:30:16 2026
+webhooks client 123639536011600: Disconnected
+Starting Klippy...
+Args: ['/home/klippy/klipper/klippy/klippy.py', '/home/klippy/printer_data/config/printer.cfg', '-l', '/home/klippy/printer_data/logs/klippy.log', '-a', '/tmp/klippy_uds']
+Git version: 'v0.13.0-536-g8a210d23f-dirty'
+Untracked files: klippy/extras/dummy_thermistor.py, klippy/extras/egm_bridge.py
+Branch: master
+Remote: origin
+Tracked URL: https://github.com/Klipper3d/klipper.git
+CPU: 16 core AMD Ryzen 7 4800HS with Radeon Graphics
+Device: ?
+Linux: Linux version 6.6.87.2-microsoft-standard-WSL2 (root@439a258ad544) (gcc (GCC) 11.2.0, GNU ld (GNU Binutils) 2.37) #1 SMP PREEMPT_DYNAMIC Thu Jun  5 18:30:46 UTC 2025
+Python: '3.12.3 (main, Jan 22 2026, 20:57:42) [GCC 13.3.0]'
+Start printer at Sun Feb 15 12:42:00 2026 (1771159320.6 13.5)
+===== Config file =====
+[mcu]
+serial = /dev/klipper_mcu
+
+[printer]
+kinematics = cartesian
+max_velocity = 300
+max_accel = 3000
+max_z_velocity = 50
+max_z_accel = 500
+
+[stepper_x]
+step_pin = PA0
+dir_pin = PA1
+enable_pin = !PA2
+microsteps = 16
+rotation_distance = 40
+endstop_pin = PA3
+position_endstop = 0
+position_max = 500
+homing_speed = 50
+
+[stepper_y]
+step_pin = PA4
+dir_pin = PA5
+enable_pin = !PA6
+microsteps = 16
+rotation_distance = 40
+endstop_pin = PA7
+position_endstop = 0
+position_max = 500
+homing_speed = 50
+
+[stepper_z]
+step_pin = PB0
+dir_pin = PB1
+enable_pin = !PB2
+microsteps = 16
+rotation_distance = 8
+endstop_pin = PB3
+position_endstop = 0
+position_max = 300
+homing_speed = 25
+
+[dummy_thermistor]
+
+[extruder]
+step_pin = PB4
+dir_pin = PB5
+enable_pin = !PB6
+microsteps = 16
+rotation_distance = 4.637
+nozzle_diameter = 0.400
+filament_diameter = 1.750
+max_extrude_only_velocity = 60
+max_extrude_only_accel = 800
+max_extrude_cross_section = 50
+heater_pin = PB7
+sensor_type = dummy_thermistor
+control = watermark
+min_temp = 0
+max_temp = 300
+pressure_advance = 0.0
+pressure_advance_smooth_time = 0.040
+
+[virtual_sdcard]
+path = /home/klippy/printer_data/gcodes
+
+[display_status]
+
+[pause_resume]
+
+[force_move]
+enable_force_move = True
+
+[egm_bridge]
+debug_mode = true
+log_moves = false
+=======================
+[EGM] EGM Bridge initialisiert
+Extruder max_extrude_ratio=20.787584
+mcu 'mcu': Starting serial connect
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+webhooks client 135110289099568: New connection
+webhooks client 135110289099568: Client info {'program': 'Moonraker', 'version': 'v0.10.0-8-g293a4cf'}
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+mcu 'mcu': Unable to open serial port: [Errno 2] could not open port /dev/klipper_mcu: [Errno 2] No such file or directory: '/dev/klipper_mcu'
+MCU error during connect
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/mcu.py", line 806, in _attach
+    self._serial.connect_uart(self._serialport, self._baud, rts)
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 191, in connect_uart
+    self._error("Unable to connect")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Unable to connect
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/klippy.py", line 131, in _connect
+    self.send_event("klippy:mcu_identify")
+  File "/home/klippy/klipper/klippy/klippy.py", line 227, in send_event
+    return [cb(*params) for cb in self.event_handlers.get(event, [])]
+            ^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/mcu.py", line 816, in _mcu_identify
+    self._attach()
+  File "/home/klippy/klipper/klippy/mcu.py", line 811, in _attach
+    raise error(str(e))
+mcu.error: mcu 'mcu': Unable to connect
+mcu 'mcu': Unable to connect
+Once the underlying issue is corrected, use the
+"FIRMWARE_RESTART" command to reset the firmware, reload the
+config, and restart the host software.
+Error configuring printer
+
+Build file /home/klippy/klipper/klippy/../.config(1219): Fri Feb 13 11:39:07 2026
+========= Last MCU build config =========
+CONFIG_LOW_LEVEL_OPTIONS=y
+# CONFIG_MACH_AVR is not set
+# CONFIG_MACH_ATSAM is not set
+# CONFIG_MACH_ATSAMD is not set
+# CONFIG_MACH_LPC176X is not set
+# CONFIG_MACH_STM32 is not set
+# CONFIG_MACH_HC32F460 is not set
+# CONFIG_MACH_RPXXXX is not set
+# CONFIG_MACH_PRU is not set
+# CONFIG_MACH_AR100 is not set
+# CONFIG_MACH_LINUX is not set
+CONFIG_MACH_SIMU=y
+CONFIG_BOARD_DIRECTORY="simulator"
+CONFIG_CLOCK_FREQ=20000000
+CONFIG_SERIAL=y
+CONFIG_SIMULATOR_SELECT=y
+CONFIG_SERIAL_BAUD=250000
+CONFIG_USB_VENDOR_ID=0x1d50
+CONFIG_USB_DEVICE_ID=0x614e
+CONFIG_USB_SERIAL_NUMBER="12345"
+CONFIG_WANT_ADC=y
+CONFIG_WANT_SPI=y
+CONFIG_WANT_SOFTWARE_SPI=y
+CONFIG_WANT_HARD_PWM=y
+CONFIG_WANT_BUTTONS=y
+CONFIG_WANT_TMCUART=y
+CONFIG_WANT_NEOPIXEL=y
+CONFIG_WANT_PULSE_COUNTER=y
+CONFIG_WANT_ST7920=y
+CONFIG_WANT_HD44780=y
+CONFIG_WANT_ADXL345=y
+CONFIG_WANT_LIS2DW=y
+CONFIG_WANT_BMI160=y
+CONFIG_WANT_THERMOCOUPLE=y
+CONFIG_WANT_HX71X=y
+CONFIG_WANT_ADS1220=y
+CONFIG_WANT_SENSOR_ANGLE=y
+CONFIG_NEED_SENSOR_BULK=y
+CONFIG_WANT_TRIGGER_ANALOG=y
+CONFIG_NEED_SOS_FILTER=y
+CONFIG_CANBUS_FREQUENCY=1000000
+CONFIG_INLINE_STEPPER_HACK=y
+CONFIG_INITIAL_PINS=""
+CONFIG_HAVE_GPIO=y
+CONFIG_HAVE_GPIO_ADC=y
+CONFIG_HAVE_GPIO_SPI=y
+CONFIG_HAVE_GPIO_HARD_PWM=y
+=======================
+Build file /home/klippy/klipper/klippy/../out/klipper.dict(8036): Fri Feb 13 11:39:12 2026
+Last MCU build version: v0.13.0-536-g8a210d23f
+Last MCU build tools: gcc: (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0 binutils: (GNU Binutils for Ubuntu) 2.42
+Last MCU build config: CLOCK_FREQ=20000000 RECEIVE_WINDOW=192 SERIAL_BAUD=250000 STATS_SUMSQ_BASE=256 STEPPER_STEP_BOTH_EDGE=1
+Build file /home/klippy/klipper/klippy/../out/klipper.elf(517048): Fri Feb 13 11:39:13 2026
+webhooks client 135110289099568: Disconnected
