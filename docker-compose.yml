@@ -7,8 +7,9 @@ services:
     restart: unless-stopped
     privileged: true
     ports:
-      - "8181:80"
-      - "7125:7125"
+      - "8181:80"       # Mainsail/Fluidd Web-UI
+      - "7125:7125"     # Moonraker API
+      - "7200:7200"     # MoveExport TCP-Stream
     volumes:
       - ./config:/home/klippy/printer_data/config
       - ./logs:/home/klippy/printer_data/logs

@@ -4,247 +4,6 @@ platform: Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39
 data_path: /home/klippy/printer_data
 is_default_data_path: False
 config_file: /home/klippy/printer_data/config/moonraker.conf
-backup_config: None
-startup_warnings: []
-verbose: False
-debug: False
-asyncio_debug: False
-is_backup_config: False
-is_python_package: False
-instance_uuid: 098e83ad44ae48279268d59d8aac49c2
-unix_socket_path: /home/klippy/printer_data/comms/moonraker.sock
-structured_logging: False
-software_version: v0.10.0-8-g293a4cf
-git_branch: master
-git_remote: origin
-git_repo_url: https://github.com/Arksine/moonraker.git
-modified_files: []
-unofficial_components: []
-log_file: /home/klippy/printer_data/logs/moonraker.log
-python_version: 3.12.3 (main, Jan 22 2026, 20:57:42) [GCC 13.3.0]
-launch_args: /home/klippy/moonraker-env/bin/python /home/klippy/moonraker/moonraker/moonraker.py -d /home/klippy/printer_data
-msgspec_enabled: False
-uvloop_enabled: False
-[confighelper.py:read_file()] - Configuration File '/home/klippy/printer_data/config/moonraker.conf' parsed, total size: 240 B
-[server.py:add_log_rollover_item()] - 
-#################### Moonraker Configuration ####################
-
-[server]
-host = 0.0.0.0
-port = 7125
-klippy_uds_address = /tmp/klippy_uds
-
-[authorization]
-trusted_clients = 
-	0.0.0.0/0
-cors_domains = 
-	*
-
-[octoprint_compat]
-
-[history]
-
-[file_manager]
-enable_object_processing = True
-
-[machine]
-provider = none
-
-#################################################################
-All Configuration Files:
-/home/klippy/printer_data/config/moonraker.conf
-#################################################################
-[server.py:load_component()] - Component (secrets) loaded
-[server.py:load_component()] - Component (template) loaded
-[server.py:load_component()] - Component (klippy_connection) loaded
-[application.py:__init__()] - Detected Tornado Version 6.5.4
-[server.py:load_component()] - Component (application) loaded
-[server.py:load_component()] - Component (websockets) loaded
-[server.py:add_log_rollover_item()] - Loading Sqlite database provider. Sqlite Version: 3.45.1
-[server.py:add_log_rollover_item()] - Created default SQL table namespace_store
-[server.py:add_log_rollover_item()] - Unsafe Shutdown Count: 0
-[server.py:load_component()] - Component (database) loaded
-[server.py:load_component()] - Component (dbus_manager) loaded
-[file_manager.py:__init__()] - Using File System Observer: inotify
-[server.py:load_component()] - Component (file_manager) loaded
-[database.py:register_table()] - Creating table authorized_users...
-[authorization.py:__init__()] - Authorization Configuration Loaded
-Trusted Clients:
-0.0.0.0/0
-CORS Domains:
-.*
-[server.py:load_component()] - Component (authorization) loaded
-[server.py:load_component()] - Component (klippy_apis) loaded
-[machine.py:_check_inside_container()] - Container detected via sched: docker
-[server.py:add_log_rollover_item()] - 
-System Info:
-
-***python***
-  version: (3, 12, 3, 'final', 0)
-  version_string: 3.12.3 (main, Jan 22 2026, 20:57:42) [GCC 13.3.0]
-
-***cpu_info***
-  cpu_count: 16
-  bits: 64bit
-  processor: x86_64
-  cpu_desc: 12th Gen Intel(R) Core(TM) i5-12600K
-  serial_number: 
-  hardware_desc: 
-  model: 
-  total_memory: 8014016
-  memory_units: kB
-
-***sd_info***
-
-***distribution***
-  name: Ubuntu 24.04.3 LTS
-  id: ubuntu
-  version: 24.04
-  version_parts: {'major': '24', 'minor': '04', 'build_number': ''}
-  like: debian
-  codename: noble
-  release_info: {}
-  kernel_version: 6.6.87.2-microsoft-standard-WSL2
-
-***virtualization***
-  virt_type: container
-  virt_identifier: docker
-
-***network***
-
-***canbus***
-
-***Allowed Services***
-  klipper_mcu
-  webcamd
-  MoonCord
-  KlipperScreen
-  moonraker-telegram-bot
-  moonraker-obico
-  sonar
-  crowsnest
-  octoeverywhere
-  ratos-configurator
-[server.py:load_component()] - Component (shell_command) loaded
-[machine.py:__init__()] - Using System Provider: none
-[server.py:add_log_rollover_item()] - Module libcamera unavailable, import failed
-[server.py:load_component()] - Component (machine) loaded
-[server.py:load_component()] - Component (data_store) loaded
-[proc_stats.py:__init__()] - Unable to find 'vcgencmd', throttle checking disabled
-[proc_stats.py:_get_cpu_thermal_file()] - Monitoring temperature using default thermal zone
-[server.py:load_component()] - Component (proc_stats) loaded
-[server.py:load_component()] - Component (job_state) loaded
-[server.py:load_component()] - Component (job_queue) loaded
-[database.py:register_table()] - Creating table job_history...
-[database.py:register_table()] - Creating table job_totals...
-[history.py:migrate()] - Migrating history totals from moonraker namespace...
-[server.py:load_component()] - Component (history) loaded
-[server.py:load_component()] - Component (http_client) loaded
-[server.py:load_component()] - Component (announcements) loaded
-[server.py:load_component()] - Component (webcam) loaded
-[server.py:load_component()] - Component (extensions) loaded
-[server.py:load_component()] - Component (octoprint_compat) loaded
-[server.py:_initialize_component()] - Performing Component Post Init: [database]
-[server.py:_initialize_component()] - Performing Component Post Init: [dbus_manager]
-[dbus_manager.py:component_init()] - Unable to Connect to D-Bus
-[server.py:_initialize_component()] - Performing Component Post Init: [authorization]
-[server.py:_initialize_component()] - Performing Component Post Init: [machine]
-[machine.py:update_usb_ids()] - Fetching latest usb.ids file...
-[machine.py:validation_init()] - Installation version in database up to date
-[machine.py:_find_public_ip()] - Detected Local IP: 172.18.0.2
-[server.py:_initialize_component()] - Performing Component Post Init: [proc_stats]
-[server.py:_initialize_component()] - Performing Component Post Init: [history]
-[webcam.py:_set_default_host_ip()] - Default public webcam address set: http://172.18.0.2
-[server.py:_initialize_component()] - Performing Component Post Init: [announcements]
-[server.py:_initialize_component()] - Performing Component Post Init: [webcam]
-[webcam.py:_set_default_host_ip()] - Default public webcam address set: http://172.18.0.2
-[server.py:_initialize_component()] - Performing Component Post Init: [klippy_connection]
-[confighelper.py:create_backup()] - Backing up last working configuration to '/home/klippy/printer_data/config/.moonraker.conf.bkp'
-[extensions.py:start_unix_server()] - Creating Unix Domain Socket at '/home/klippy/printer_data/comms/moonraker.sock'
-[server.py:start_server()] - Starting Moonraker on (0.0.0.0, 7125), Hostname: 04d99c45c09f
-[application.py:listen()] - SSL Certificate/Key not configured, aborting HTTPS Server startup
-[shell_command.py:_check_proc_success()] - Command (/home/klippy/moonraker-env/bin/python /home/klippy/moonraker/moonraker/components/file_manager/metadata.py -c /tmp/metacfg-wjrk4l49.json) successfully finished
-[klippy_connection.py:_do_connect()] - Klippy Connection Established
-[machine.py:update_usb_ids()] - Writing usb.ids file...
-[server.py:add_log_rollover_item()] - Klipper Version: v0.13.0-540-g57c2e0c96-dirty
-[klippy_connection.py:_save_path_info()] - Updated Stored Klipper Source Path: /home/klippy/klipper
-[klippy_connection.py:_save_path_info()] - Updated Stored Klipper Python Path: /home/klippy/klippy-env/bin/python
-[authorization.py:_check_trusted_connection()] - Trusted Connection Detected, IP: 172.18.0.1
-[application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 0.80ms
-[websockets.py:open()] - Websocket Opened: ID: 129662468639488, Proxied: True, User Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0, Host Name: localhost
-[websockets.py:_handle_identify()] - Websocket 129662468639488 Client Identified - Name: mainsail, Version: 2.17.0, Type: web
-[application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 0.53ms
-[websockets.py:open()] - Websocket Opened: ID: 129662468642560, Proxied: True, User Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0, Host Name: localhost
-[websockets.py:_handle_identify()] - Websocket 129662468642560 Client Identified - Name: mainsail, Version: 2.17.0, Type: web
-[application.py:log_request()] - 404 GET /server/files/config/.theme/default.json?time=1771144583409 (172.18.0.1) [_TRUSTED_USER_] 5.82ms
-[application.py:log_request()] - 404 GET /server/files/config/.theme/maintenance.json?time=1771144583409 (172.18.0.1) [_TRUSTED_USER_] 2.68ms
-[application.py:log_request()] - 404 GET /server/files/config/.theme/maintenance.json?time=1771144583549 (172.18.0.1) [_TRUSTED_USER_] 1.35ms
-[application.py:log_request()] - 404 GET /server/files/config/.theme/default.json?time=1771144583549 (172.18.0.1) [_TRUSTED_USER_] 1.07ms
-[websockets.py:on_close()] - Websocket Closed: ID: 129662468639488 Close Code: 1001, Close Reason: None, Pong Time Elapsed: 9.09
-[klippy_connection.py:_on_connection_closed()] - Klippy Connection Removed
-[klippy_connection.py:_do_connect()] - Klippy Connection Established
-[klippy_connection.py:_request_initial_subscriptions()] - Webhooks Subscribed
-[klippy_connection.py:_request_initial_subscriptions()] - GCode Output Subscribed
-[klippy_connection.py:_check_ready()] - 
-mcu 'mcu': Unable to connect
-Once the underlying issue is corrected, use the
-"FIRMWARE_RESTART" command to reset the firmware, reload the
-config, and restart the host software.
-Error configuring printer
-
-[klippy_connection.py:_on_connection_closed()] - Klippy Connection Removed
-[klippy_connection.py:_do_connect()] - Klippy Connection Established
-[klippy_connection.py:_request_initial_subscriptions()] - Webhooks Subscribed
-[klippy_connection.py:_request_initial_subscriptions()] - GCode Output Subscribed
-[klippy_connection.py:_check_ready()] - 
-Option 'baud' is not valid in section 'mcu'
-
-Once the underlying issue is corrected, use the "RESTART"
-command to reload the config and restart the host software.
-Printer is halted
-
-[websockets.py:on_close()] - Websocket Closed: ID: 129662468642560 Close Code: 1001, Close Reason: None, Pong Time Elapsed: 3.63
-[application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 0.83ms
-[websockets.py:open()] - Websocket Opened: ID: 129662468642416, Proxied: True, User Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0, Host Name: localhost
-[websockets.py:_handle_identify()] - Websocket 129662468642416 Client Identified - Name: mainsail, Version: 2.17.0, Type: web
-[klippy_connection.py:_on_connection_closed()] - Klippy Connection Removed
-[klippy_connection.py:_do_connect()] - Klippy Connection Established
-[websockets.py:on_close()] - Websocket Closed: ID: 129662468642416 Close Code: 1001, Close Reason: None, Pong Time Elapsed: 6.55
-[application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 0.50ms
-[websockets.py:open()] - Websocket Opened: ID: 129662468642512, Proxied: True, User Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0, Host Name: localhost
-[websockets.py:_handle_identify()] - Websocket 129662468642512 Client Identified - Name: mainsail, Version: 2.17.0, Type: web
-[websockets.py:on_close()] - Websocket Closed: ID: 129662468642512 Close Code: 1001, Close Reason: None, Pong Time Elapsed: 1.30
-[application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 0.41ms
-[websockets.py:open()] - Websocket Opened: ID: 129662468644576, Proxied: True, User Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0, Host Name: localhost
-[websockets.py:_handle_identify()] - Websocket 129662468644576 Client Identified - Name: mainsail, Version: 2.17.0, Type: web
-[machine.py:_parse_network_interfaces()] - Error processing network update
-Traceback (most recent call last):
-  File "/home/klippy/moonraker/moonraker/components/machine.py", line 674, in _parse_network_interfaces
-    resp = await self.addr_cmd.run_with_response(log_complete=False)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/klippy/moonraker/moonraker/components/shell_command.py", line 278, in run_with_response
-    raise ShellCommandError(
-moonraker.components.shell_command.ShellCommandError: Error running shell command: 'ip -json -det address'
-[klippy_connection.py:_request_initial_subscriptions()] - Webhooks Subscribed
-[klippy_connection.py:_request_initial_subscriptions()] - GCode Output Subscribed
-[klippy_connection.py:_check_ready()] - 
-mcu 'mcu': Unable to connect
-Once the underlying issue is corrected, use the
-"FIRMWARE_RESTART" command to reset the firmware, reload the
-config, and restart the host software.
-Error configuring printer
-
-[authorization.py:_prune_conn_handler()] - Trusted Connection Expired, IP: 172.18.0.1
-[websockets.py:on_close()] - Websocket Closed: ID: 129662468644576 Close Code: 1001, Close Reason: None, Pong Time Elapsed: 7.26
-[server.py:_handle_term_signal()] - Exiting with signal SIGTERM
-[klippy_connection.py:_on_connection_closed()] - Klippy Connection Removed
-[server.py:main()] - Server Shutdown
-
-Application Info:
-platform: Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39
-data_path: /home/klippy/printer_data
-is_default_data_path: False
-config_file: /home/klippy/printer_data/config/moonraker.conf
 backup_config: /home/klippy/printer_data/config/.moonraker.conf.bkp
 startup_warnings: []
 verbose: False
@@ -252,7 +11,7 @@ debug: False
 asyncio_debug: False
 is_backup_config: False
 is_python_package: False
-instance_uuid: a1247c16b8f94fc4ad1598e39f8c0a00
+instance_uuid: 9070582f5ab44971ad8e49c7148f1b0a
 unix_socket_path: /home/klippy/printer_data/comms/moonraker.sock
 structured_logging: False
 software_version: v0.10.0-8-g293a4cf
@@ -302,7 +61,7 @@ All Configuration Files:
 [server.py:load_component()] - Component (application) loaded
 [server.py:load_component()] - Component (websockets) loaded
 [server.py:add_log_rollover_item()] - Loading Sqlite database provider. Sqlite Version: 3.45.1
-[server.py:add_log_rollover_item()] - Unsafe Shutdown Count: 1
+[server.py:add_log_rollover_item()] - Unsafe Shutdown Count: 0
 [server.py:load_component()] - Component (database) loaded
 [server.py:load_component()] - Component (dbus_manager) loaded
 [file_manager.py:__init__()] - Using File System Observer: inotify
@@ -331,7 +90,7 @@ System Info:
   serial_number: 
   hardware_desc: 
   model: 
-  total_memory: 7829692
+  total_memory: 7829696
   memory_units: kB
 
 ***sd_info***
@@ -398,17 +157,160 @@ System Info:
 [webcam.py:_set_default_host_ip()] - Default public webcam address set: http://172.18.0.2
 [server.py:_initialize_component()] - Performing Component Post Init: [klippy_connection]
 [extensions.py:start_unix_server()] - Creating Unix Domain Socket at '/home/klippy/printer_data/comms/moonraker.sock'
-[server.py:start_server()] - Starting Moonraker on (0.0.0.0, 7125), Hostname: e73e0f387f99
+[server.py:start_server()] - Starting Moonraker on (0.0.0.0, 7125), Hostname: 04addf492d0e
 [application.py:listen()] - SSL Certificate/Key not configured, aborting HTTPS Server startup
 [klippy_connection.py:_do_connect()] - Klippy Connection Established
 [server.py:add_log_rollover_item()] - Klipper Version: v0.13.0-536-g8a210d23f-dirty
 [klippy_connection.py:_request_initial_subscriptions()] - Webhooks Subscribed
 [klippy_connection.py:_request_initial_subscriptions()] - GCode Output Subscribed
+[job_state.py:_handle_started()] - Job state initialized: standby
+[klippy_connection.py:_check_ready()] - Klippy ready
+[data_store.py:_init_sensors()] - Configuring available sensors: ['extruder']
+[authorization.py:_check_trusted_connection()] - Trusted Connection Detected, IP: 172.18.0.1
+[application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 0.95ms
+[websockets.py:open()] - Websocket Opened: ID: 132358816594112, Proxied: True, User Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0, Host Name: localhost
+[websockets.py:_handle_identify()] - Websocket 132358816594112 Client Identified - Name: mainsail, Version: 2.17.0, Type: web
+[application.py:log_request()] - 404 GET /server/files/config/.theme/default.json?time=1771236797223 (172.18.0.1) [_TRUSTED_USER_] 14.05ms
+[application.py:log_request()] - 404 GET /server/files/config/.theme/maintenance.json?time=1771236797223 (172.18.0.1) [_TRUSTED_USER_] 15.61ms
+[authorization.py:_check_trusted_connection()] - Trusted Connection Detected, IP: 127.0.0.1
+[klippy_apis.py:start_print()] - Requesting Job Start, filename = extruder_test.gcode
+[job_state.py:_send_job_event()] - Job Started: extruder_test.gcode
+[klippy_apis.py:start_print()] - Requesting Job Start, filename = extruder_test.gcode
+[job_state.py:_send_job_event()] - Job Started: extruder_test.gcode
+[application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 0.70ms
+[websockets.py:open()] - Websocket Opened: ID: 132358816591232, Proxied: True, User Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0, Host Name: localhost
+[websockets.py:_handle_identify()] - Websocket 132358816591232 Client Identified - Name: mainsail, Version: 2.17.0, Type: web
+[websockets.py:on_close()] - Websocket Closed: ID: 132358816591232 Close Code: 1001, Close Reason: None, Pong Time Elapsed: 1.01
+[application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 0.55ms
+[websockets.py:open()] - Websocket Opened: ID: 132358816813456, Proxied: True, User Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0, Host Name: localhost
+[websockets.py:_handle_identify()] - Websocket 132358816813456 Client Identified - Name: mainsail, Version: 2.17.0, Type: web
+[websockets.py:on_close()] - Websocket Closed: ID: 132358816813456 Close Code: 1001, Close Reason: None, Pong Time Elapsed: 0.53
+[klippy_apis.py:start_print()] - Requesting Job Start, filename = extruder_test.gcode
+[job_state.py:_send_job_event()] - Job Started: extruder_test.gcode
+[klippy_apis.py:start_print()] - Requesting Job Start, filename = extruder_test.gcode
+[job_state.py:_send_job_event()] - Job Started: extruder_test.gcode
+[klippy_apis.py:start_print()] - Requesting Job Start, filename = extruder_batch_test.gcode
+[job_state.py:_send_job_event()] - Job Started: extruder_batch_test.gcode
+[websockets.py:on_close()] - Websocket Closed: ID: 132358816594112 Close Code: 1001, Close Reason: None, Pong Time Elapsed: 5.27
+[application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 0.69ms
+[websockets.py:open()] - Websocket Opened: ID: 132358816590848, Proxied: True, User Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0, Host Name: localhost
+[websockets.py:_handle_identify()] - Websocket 132358816590848 Client Identified - Name: mainsail, Version: 2.17.0, Type: web
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: server.files.metadata, Code: -32601, Message: Metadata not available for <toolhead_test.gcode>
+[klippy_apis.py:start_print()] - Requesting Job Start, filename = toolhead_test.gcode
+[job_state.py:_send_job_event()] - Job Started: toolhead_test.gcode
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: server.files.metadata, Code: -32601, Message: Metadata not available for <toolhead_test.gcode>
+[klippy_connection.py:_process_status_update()] - Klippy has shutdown
+[proc_stats.py:_handle_shutdown()] - 
+Moonraker System Usage Statistics:
+System Time: 1771237537.491666, Usage: 0.37%, Memory: 48936 kB
+System Time: 1771237538.493450, Usage: 0.54%, Memory: 48936 kB
+System Time: 1771237539.493626, Usage: 0.53%, Memory: 48936 kB
+System Time: 1771237540.494491, Usage: 0.44%, Memory: 48936 kB
+System Time: 1771237541.495132, Usage: 0.46%, Memory: 48936 kB
+System Time: 1771237542.496328, Usage: 0.45%, Memory: 48936 kB
+System Time: 1771237543.499326, Usage: 0.59%, Memory: 48936 kB
+System Time: 1771237544.500893, Usage: 0.56%, Memory: 48936 kB
+System Time: 1771237545.500034, Usage: 0.59%, Memory: 48936 kB
+System Time: 1771237546.501477, Usage: 0.44%, Memory: 48936 kB
+System Time: 1771237547.502073, Usage: 0.54%, Memory: 48936 kB
+System Time: 1771237548.502306, Usage: 0.63%, Memory: 48936 kB
+System Time: 1771237549.504544, Usage: 0.44%, Memory: 48936 kB
+System Time: 1771237550.504593, Usage: 0.53%, Memory: 48936 kB
+System Time: 1771237551.505394, Usage: 0.49%, Memory: 48936 kB
+System Time: 1771237552.507197, Usage: 0.39%, Memory: 48936 kB
+System Time: 1771237553.507871, Usage: 0.64%, Memory: 48936 kB
+System Time: 1771237554.508454, Usage: 0.44%, Memory: 48936 kB
+System Time: 1771237555.509185, Usage: 0.49%, Memory: 48936 kB
+System Time: 1771237556.511348, Usage: 0.39%, Memory: 48936 kB
+System Time: 1771237557.512260, Usage: 0.52%, Memory: 48936 kB
+System Time: 1771237558.513003, Usage: 0.67%, Memory: 48936 kB
+System Time: 1771237559.512779, Usage: 0.52%, Memory: 48936 kB
+System Time: 1771237560.513599, Usage: 0.39%, Memory: 48936 kB
+System Time: 1771237561.515471, Usage: 0.49%, Memory: 48936 kB
+System Time: 1771237562.515362, Usage: 0.5%, Memory: 48936 kB
+System Time: 1771237563.516310, Usage: 0.53%, Memory: 48936 kB
+System Time: 1771237564.517865, Usage: 0.47%, Memory: 48936 kB
+System Time: 1771237565.518472, Usage: 0.41%, Memory: 48936 kB
+System Time: 1771237566.518360, Usage: 0.57%, Memory: 48936 kB
+CPU Temperature: None
+[klippy_connection.py:_on_connection_closed()] - Klippy Connection Removed
+[klippy_connection.py:_do_connect()] - Klippy Connection Established
+[klippy_connection.py:_request_initial_subscriptions()] - Webhooks Subscribed
+[klippy_connection.py:_request_initial_subscriptions()] - GCode Output Subscribed
 [klippy_connection.py:_check_ready()] - 
-mcu 'mcu': Unable to connect
+Can not update MCU 'mcu' config as it is shutdown
 Once the underlying issue is corrected, use the
 "FIRMWARE_RESTART" command to reset the firmware, reload the
 config, and restart the host software.
 Error configuring printer
 
+[klippy_connection.py:close()] - Error closing Klippy Unix Socket
+Traceback (most recent call last):
+  File "/home/klippy/moonraker/moonraker/components/klippy_connection.py", line 805, in close
+    await self.writer.wait_closed()
+  File "/usr/lib/python3.12/asyncio/streams.py", line 364, in wait_closed
+    await self._protocol._get_close_waiter(self)
+  File "/usr/lib/python3.12/asyncio/selector_events.py", line 1013, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ConnectionResetError: [Errno 104] Connection reset by peer
+[klippy_connection.py:_on_connection_closed()] - Klippy Connection Removed
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.info, Code: 503, Message: Klippy Disconnected
+[klippy_connection.py:_do_connect()] - Klippy Connection Established
+[klippy_connection.py:_request_initial_subscriptions()] - Webhooks Subscribed
+[klippy_connection.py:_request_initial_subscriptions()] - GCode Output Subscribed
+[job_state.py:_handle_started()] - Job state initialized: standby
+[klippy_connection.py:_check_ready()] - Klippy ready
+[data_store.py:_init_sensors()] - Configuring available sensors: ['extruder']
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.gcode.script, Code: 400, Message: Must home axis first: 1.000 0.000 0.000 [0.000]
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.gcode.script, Code: 400, Message: Must home axis first: 1.000 0.000 0.000 [0.000]
+[klippy_connection.py:_process_status_update()] - Klippy has shutdown
+[proc_stats.py:_handle_shutdown()] - 
+Moonraker System Usage Statistics:
+System Time: 1771238772.574694, Usage: 0.44%, Memory: 49324 kB
+System Time: 1771238773.576451, Usage: 0.48%, Memory: 49324 kB
+System Time: 1771238774.581159, Usage: 1.06%, Memory: 49324 kB
+System Time: 1771238775.576611, Usage: 1.04%, Memory: 49324 kB
+System Time: 1771238776.578681, Usage: 1.12%, Memory: 49324 kB
+System Time: 1771238777.579587, Usage: 0.57%, Memory: 49324 kB
+System Time: 1771238778.582379, Usage: 0.46%, Memory: 49324 kB
+System Time: 1771238779.583468, Usage: 0.86%, Memory: 49324 kB
+System Time: 1771238780.584728, Usage: 0.46%, Memory: 49324 kB
+System Time: 1771238781.585022, Usage: 0.53%, Memory: 49324 kB
+System Time: 1771238782.585653, Usage: 0.46%, Memory: 49324 kB
+System Time: 1771238783.587163, Usage: 0.63%, Memory: 49324 kB
+System Time: 1771238784.587807, Usage: 0.6%, Memory: 49324 kB
+System Time: 1771238785.588126, Usage: 0.44%, Memory: 49324 kB
+System Time: 1771238786.588740, Usage: 0.49%, Memory: 49324 kB
+System Time: 1771238787.589662, Usage: 0.52%, Memory: 49324 kB
+System Time: 1771238788.591593, Usage: 0.38%, Memory: 49324 kB
+System Time: 1771238789.592005, Usage: 0.64%, Memory: 49324 kB
+System Time: 1771238790.594272, Usage: 0.46%, Memory: 49324 kB
+System Time: 1771238791.596485, Usage: 0.55%, Memory: 49324 kB
+System Time: 1771238792.596611, Usage: 0.84%, Memory: 49324 kB
+System Time: 1771238793.597554, Usage: 0.61%, Memory: 49324 kB
+System Time: 1771238794.597678, Usage: 0.48%, Memory: 49324 kB
+System Time: 1771238795.599564, Usage: 0.45%, Memory: 49324 kB
+System Time: 1771238796.599995, Usage: 0.6%, Memory: 49324 kB
+System Time: 1771238797.600957, Usage: 0.6%, Memory: 49324 kB
+System Time: 1771238798.602573, Usage: 0.49%, Memory: 49324 kB
+System Time: 1771238799.602336, Usage: 0.64%, Memory: 49324 kB
+System Time: 1771238800.603498, Usage: 0.38%, Memory: 49324 kB
+System Time: 1771238801.607160, Usage: 0.81%, Memory: 49324 kB
+CPU Temperature: None
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.gcode.script, Code: 400, Message: Homing failed due to printer shutdown
+[klippy_connection.py:_on_connection_closed()] - Klippy Connection Removed
+[klippy_connection.py:_do_connect()] - Klippy Connection Established
+[klippy_connection.py:_request_initial_subscriptions()] - Webhooks Subscribed
+[klippy_connection.py:_request_initial_subscriptions()] - GCode Output Subscribed
+[job_state.py:_handle_started()] - Job state initialized: standby
+[klippy_connection.py:_check_ready()] - Klippy ready
+[data_store.py:_init_sensors()] - Configuring available sensors: ['extruder']
+[klippy_apis.py:start_print()] - Requesting Job Start, filename = toolhead_test.gcode
+[job_state.py:_send_job_event()] - Job Started: toolhead_test.gcode
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: server.files.metadata, Code: -32601, Message: Metadata not available for <toolhead_test.gcode>
+[klippy_apis.py:start_print()] - Requesting Job Start, filename = toolhead_test.gcode
+[job_state.py:_send_job_event()] - Job Started: toolhead_test.gcode
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: server.files.metadata, Code: -32601, Message: Metadata not available for <toolhead_test.gcode>
+[websockets.py:on_close()] - Websocket Closed: ID: 132358816590848 Close Code: 1001, Close Reason: None, Pong Time Elapsed: 0.11
 [server.py:_handle_term_signal()] - Exiting with signal SIGTERM

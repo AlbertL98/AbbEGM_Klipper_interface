@@ -43,11 +43,15 @@ EOF
     chown klippy:klippy /home/klippy/printer_data/config/moonraker.conf
 fi
 
+# printer.cfg nur erstellen wenn keine vorhanden
+# WICHTIG: Wenn du eine eigene printer.cfg in ./config/ hast,
+# wird diese NICHT überschrieben!
 if [ ! -f /home/klippy/printer_data/config/printer.cfg ]; then
-    echo ">> Erstelle printer.cfg..."
+    echo ">> Erstelle printer.cfg (Simulations-Modus)..."
     cat > /home/klippy/printer_data/config/printer.cfg << 'EOF'
 [mcu]
-serial: /tmp/klipper_host_mcu
+serial: /dev/klipper_mcu
+restart_method: command
 
 [printer]
 kinematics: cartesian
@@ -57,44 +61,42 @@ max_z_velocity: 50
 max_z_accel: 500
 
 [stepper_x]
-step_pin: PA0
-dir_pin: PA1
-enable_pin: !PA2
+step_pin: gpio0
+dir_pin: gpio1
+enable_pin: !gpio2
 microsteps: 16
 rotation_distance: 40
-endstop_pin: PA3
+endstop_pin: gpio3
 position_endstop: 0
 position_max: 500
 homing_speed: 50
 
 [stepper_y]
-step_pin: PA4
-dir_pin: PA5
-enable_pin: !PA6
+step_pin: gpio4
+dir_pin: gpio5
+enable_pin: !gpio6
 microsteps: 16
 rotation_distance: 40
-endstop_pin: PA7
+endstop_pin: gpio7
 position_endstop: 0
 position_max: 500
 homing_speed: 50
 
 [stepper_z]
-step_pin: PB0
-dir_pin: PB1
-enable_pin: !PB2
+step_pin: gpio8
+dir_pin: gpio9
+enable_pin: !gpio10
 microsteps: 16
 rotation_distance: 8
-endstop_pin: PB3
+endstop_pin: gpio11
 position_endstop: 0
 position_max: 300
 homing_speed: 25
 
-[dummy_thermistor]
-
 [extruder]
-step_pin: PB4
-dir_pin: PB5
-enable_pin: !PB6
+step_pin: gpio12
+dir_pin: gpio13
+enable_pin: !gpio14
 microsteps: 16
 rotation_distance: 4.637
 nozzle_diameter: 0.400
@@ -102,11 +104,13 @@ filament_diameter: 1.750
 max_extrude_only_velocity: 60
 max_extrude_only_accel: 800
 max_extrude_cross_section: 50
-heater_pin: PB7
-sensor_type: dummy_thermistor
+heater_pin: gpio15
+sensor_type: EPCOS 100K B57560G104F
+sensor_pin: gpio16
 control: watermark
 min_temp: 0
 max_temp: 300
+min_extrude_temp: 0
 pressure_advance: 0.0
 pressure_advance_smooth_time: 0.040
 
@@ -119,9 +123,11 @@ path: /home/klippy/printer_data/gcodes
 [force_move]
 enable_force_move: True
 
-[egm_bridge]
-debug_mode: true
-log_moves: false
+[move_export]
+output_path: /home/klippy/printer_data/logs/move_segments.csv
+tcp_port: 7200
+tcp_enabled: true
+log_to_console: true
 EOF
     chown klippy:klippy /home/klippy/printer_data/config/printer.cfg
 fi
