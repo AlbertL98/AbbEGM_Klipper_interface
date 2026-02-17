@@ -43,15 +43,11 @@ EOF
     chown klippy:klippy /home/klippy/printer_data/config/moonraker.conf
 fi
 
-# printer.cfg nur erstellen wenn keine vorhanden
-# WICHTIG: Wenn du eine eigene printer.cfg in ./config/ hast,
-# wird diese NICHT überschrieben!
 if [ ! -f /home/klippy/printer_data/config/printer.cfg ]; then
     echo ">> Erstelle printer.cfg (Simulations-Modus)..."
     cat > /home/klippy/printer_data/config/printer.cfg << 'EOF'
 [mcu]
-serial: /dev/klipper_mcu
-restart_method: command
+serial: /tmp/klipper_host_mcu
 
 [printer]
 kinematics: cartesian
@@ -134,6 +130,19 @@ fi
 
 nginx -s stop 2>/dev/null || true
 sleep 1
+
+# --- Simulierte MCU starten (als klippy-User, vor Supervisor) ---
+echo ">> Starte simulierte Linux-MCU..."
+rm -f /tmp/klipper_host_mcu
+su -s /bin/bash klippy -c \
+    'socat PTY,link=/tmp/klipper_host_mcu,rawer EXEC:/usr/local/bin/klipper_mcu,pty,rawer &'
+sleep 2
+
+if [ -e /tmp/klipper_host_mcu ]; then
+    echo ">> MCU PTY bereit: /tmp/klipper_host_mcu"
+else
+    echo ">> WARNUNG: MCU PTY nicht gefunden!"
+fi
 
 echo ">> Starte Supervisor..."
 exec /usr/bin/supervisord -n -c /etc/supervisor/conf.d/supervisord.conf

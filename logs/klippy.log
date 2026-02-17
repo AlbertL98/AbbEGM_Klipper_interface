@@ -7698,3 +7698,1558 @@ Stats 9663.4: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000014 mcu_task_stdd
 Stats 9664.4: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000014 mcu_task_stddev=0.000020 bytes_write=29757 bytes_read=114082 bytes_retransmit=0 bytes_invalid=0 send_seq=2079 receive_seq=2079 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50003097 print_time=1288.421 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.00 cputime=13.833 memavail=6836948
 Stats 9665.4: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000013 mcu_task_stddev=0.000020 bytes_write=29763 bytes_read=114156 bytes_retransmit=0 bytes_invalid=0 send_seq=2080 receive_seq=2080 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50003096 print_time=1288.421 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.00 cputime=13.836 memavail=6836940
 webhooks client 123732339380528: Disconnected
+Starting Klippy...
+Args: ['/home/klippy/klipper/klippy/klippy.py', '/home/klippy/printer_data/config/printer.cfg', '-l', '/home/klippy/printer_data/logs/klippy.log', '-a', '/tmp/klippy_uds']
+Git version: 'v0.13.0-540-g57c2e0c96-dirty'
+Untracked files: klippy/extras/egm_bridge.py, klippy/extras/move_export.py
+Branch: master
+Remote: origin
+Tracked URL: https://github.com/Klipper3d/klipper.git
+CPU: 16 core 12th Gen Intel(R) Core(TM) i5-12600K
+Device: ?
+Linux: Linux version 6.6.87.2-microsoft-standard-WSL2 (root@439a258ad544) (gcc (GCC) 11.2.0, GNU ld (GNU Binutils) 2.37) #1 SMP PREEMPT_DYNAMIC Thu Jun  5 18:30:46 UTC 2025
+Python: '3.12.3 (main, Jan 22 2026, 20:57:42) [GCC 13.3.0]'
+Building C code module c_helper.so
+Start printer at Mon Feb 16 16:41:19 2026 (1771260079.1 659.3)
+===== Config file =====
+[mcu]
+serial = /tmp/klipper_host_mcu
+
+[printer]
+kinematics = cartesian
+max_velocity = 300
+max_accel = 3000
+max_z_velocity = 50
+max_z_accel = 500
+
+[stepper_x]
+step_pin = gpio0
+dir_pin = gpio1
+enable_pin = !gpio2
+microsteps = 16
+rotation_distance = 40
+endstop_pin = gpio3
+position_endstop = 0
+position_max = 500
+homing_speed = 50
+
+[stepper_y]
+step_pin = gpio4
+dir_pin = gpio5
+enable_pin = !gpio6
+microsteps = 16
+rotation_distance = 40
+endstop_pin = gpio7
+position_endstop = 0
+position_max = 500
+homing_speed = 50
+
+[stepper_z]
+step_pin = gpio8
+dir_pin = gpio9
+enable_pin = !gpio10
+microsteps = 16
+rotation_distance = 8
+endstop_pin = gpio11
+position_endstop = 0
+position_max = 300
+homing_speed = 25
+
+[extruder]
+step_pin = gpio12
+dir_pin = gpio13
+enable_pin = !gpio14
+microsteps = 16
+rotation_distance = 4.637
+nozzle_diameter = 0.400
+filament_diameter = 1.750
+max_extrude_only_velocity = 60
+max_extrude_only_accel = 800
+max_extrude_cross_section = 50
+heater_pin = gpio15
+sensor_type = EPCOS 100K B57560G104F
+sensor_pin = gpio16
+control = watermark
+min_temp = 0
+max_temp = 300
+min_extrude_temp = 0
+pressure_advance = 0.0
+pressure_advance_smooth_time = 0.040
+
+[virtual_sdcard]
+path = /home/klippy/printer_data/gcodes
+
+[display_status]
+
+[pause_resume]
+
+[force_move]
+enable_force_move = True
+
+[move_export]
+output_path = /home/klippy/printer_data/logs/move_segments.csv
+tcp_port = 7200
+tcp_enabled = true
+log_to_console = true
+=======================
+Extruder max_extrude_ratio=20.787584
+mcu 'mcu': Starting connect
+webhooks client 135631506677376: New connection
+webhooks client 135631506677376: Client info {'program': 'Moonraker', 'version': 'v0.10.0-8-g293a4cf'}
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+webhooks client 135631506677376: Disconnected
+Restarting printer
+Start printer at Mon Feb 16 16:42:45 2026 (1771260165.8 746.0)
+===== Config file =====
+[mcu]
+serial = /tmp/klipper_host_mcu
+
+[printer]
+kinematics = cartesian
+max_velocity = 300
+max_accel = 3000
+max_z_velocity = 50
+max_z_accel = 500
+
+[stepper_x]
+step_pin = gpio0
+dir_pin = gpio1
+enable_pin = !gpio2
+microsteps = 16
+rotation_distance = 40
+endstop_pin = gpio3
+position_endstop = 0
+position_max = 500
+homing_speed = 50
+
+[stepper_y]
+step_pin = gpio4
+dir_pin = gpio5
+enable_pin = !gpio6
+microsteps = 16
+rotation_distance = 40
+endstop_pin = gpio7
+position_endstop = 0
+position_max = 500
+homing_speed = 50
+
+[stepper_z]
+step_pin = gpio8
+dir_pin = gpio9
+enable_pin = !gpio10
+microsteps = 16
+rotation_distance = 8
+endstop_pin = gpio11
+position_endstop = 0
+position_max = 300
+homing_speed = 25
+
+[extruder]
+step_pin = gpio12
+dir_pin = gpio13
+enable_pin = !gpio14
+microsteps = 16
+rotation_distance = 4.637
+nozzle_diameter = 0.400
+filament_diameter = 1.750
+max_extrude_only_velocity = 60
+max_extrude_only_accel = 800
+max_extrude_cross_section = 50
+heater_pin = gpio15
+sensor_type = EPCOS 100K B57560G104F
+sensor_pin = gpio16
+control = watermark
+min_temp = 0
+max_temp = 300
+min_extrude_temp = 0
+pressure_advance = 0.0
+pressure_advance_smooth_time = 0.040
+
+[virtual_sdcard]
+path = /home/klippy/printer_data/gcodes
+
+[display_status]
+
+[pause_resume]
+
+[force_move]
+enable_force_move = True
+
+[move_export]
+output_path = /home/klippy/printer_data/logs/move_segments.csv
+tcp_port = 7200
+tcp_enabled = true
+log_to_console = true
+=======================
+Extruder max_extrude_ratio=20.787584
+mcu 'mcu': Starting connect
+webhooks client 135631498841504: New connection
+webhooks client 135631498841504: Client info {'program': 'Moonraker', 'version': 'v0.10.0-8-g293a4cf'}
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+Unable to issue reset command on MCU 'mcu'
+webhooks client 135631498841504: Disconnected
+Restarting printer
+Start printer at Mon Feb 16 16:42:53 2026 (1771260173.2 753.4)
+===== Config file =====
+[mcu]
+serial = /tmp/klipper_host_mcu
+
+[printer]
+kinematics = cartesian
+max_velocity = 300
+max_accel = 3000
+max_z_velocity = 50
+max_z_accel = 500
+
+[stepper_x]
+step_pin = gpio0
+dir_pin = gpio1
+enable_pin = !gpio2
+microsteps = 16
+rotation_distance = 40
+endstop_pin = gpio3
+position_endstop = 0
+position_max = 500
+homing_speed = 50
+
+[stepper_y]
+step_pin = gpio4
+dir_pin = gpio5
+enable_pin = !gpio6
+microsteps = 16
+rotation_distance = 40
+endstop_pin = gpio7
+position_endstop = 0
+position_max = 500
+homing_speed = 50
+
+[stepper_z]
+step_pin = gpio8
+dir_pin = gpio9
+enable_pin = !gpio10
+microsteps = 16
+rotation_distance = 8
+endstop_pin = gpio11
+position_endstop = 0
+position_max = 300
+homing_speed = 25
+
+[extruder]
+step_pin = gpio12
+dir_pin = gpio13
+enable_pin = !gpio14
+microsteps = 16
+rotation_distance = 4.637
+nozzle_diameter = 0.400
+filament_diameter = 1.750
+max_extrude_only_velocity = 60
+max_extrude_only_accel = 800
+max_extrude_cross_section = 50
+heater_pin = gpio15
+sensor_type = EPCOS 100K B57560G104F
+sensor_pin = gpio16
+control = watermark
+min_temp = 0
+max_temp = 300
+min_extrude_temp = 0
+pressure_advance = 0.0
+pressure_advance_smooth_time = 0.040
+
+[virtual_sdcard]
+path = /home/klippy/printer_data/gcodes
+
+[display_status]
+
+[pause_resume]
+
+[force_move]
+enable_force_move = True
+
+[move_export]
+output_path = /home/klippy/printer_data/logs/move_segments.csv
+tcp_port = 7200
+tcp_enabled = true
+log_to_console = true
+=======================
+Extruder max_extrude_ratio=20.787584
+mcu 'mcu': Starting connect
+webhooks client 135631499127856: New connection
+webhooks client 135631499127856: Client info {'program': 'Moonraker', 'version': 'v0.10.0-8-g293a4cf'}
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+mcu 'mcu': Timeout on connect
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+b'Got EOF when reading from device'
+mcu 'mcu': Timeout on connect
+MCU error during connect
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/mcu.py", line 808, in _attach
+    self._serial.connect_pipe(self._serialport)
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 173, in connect_pipe
+    self._error("Unable to connect")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Unable to connect
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/klippy.py", line 131, in _connect
+    self.send_event("klippy:mcu_identify")
+  File "/home/klippy/klipper/klippy/klippy.py", line 227, in send_event
+    return [cb(*params) for cb in self.event_handlers.get(event, [])]
+            ^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/mcu.py", line 816, in _mcu_identify
+    self._attach()
+  File "/home/klippy/klipper/klippy/mcu.py", line 811, in _attach
+    raise error(str(e))
+mcu.error: mcu 'mcu': Unable to connect
+mcu 'mcu': Unable to connect
+Once the underlying issue is corrected, use the
+"FIRMWARE_RESTART" command to reset the firmware, reload the
+config, and restart the host software.
+Error configuring printer
+
+Build file /home/klippy/klipper/klippy/../.config(1219): Sun Feb 15 08:30:14 2026
+========= Last MCU build config =========
+CONFIG_LOW_LEVEL_OPTIONS=y
+# CONFIG_MACH_AVR is not set
+# CONFIG_MACH_ATSAM is not set
+# CONFIG_MACH_ATSAMD is not set
+# CONFIG_MACH_LPC176X is not set
+# CONFIG_MACH_STM32 is not set
+# CONFIG_MACH_HC32F460 is not set
+# CONFIG_MACH_RPXXXX is not set
+# CONFIG_MACH_PRU is not set
+# CONFIG_MACH_AR100 is not set
+# CONFIG_MACH_LINUX is not set
+CONFIG_MACH_SIMU=y
+CONFIG_BOARD_DIRECTORY="simulator"
+CONFIG_CLOCK_FREQ=20000000
+CONFIG_SERIAL=y
+CONFIG_SIMULATOR_SELECT=y
+CONFIG_SERIAL_BAUD=250000
+CONFIG_USB_VENDOR_ID=0x1d50
+CONFIG_USB_DEVICE_ID=0x614e
+CONFIG_USB_SERIAL_NUMBER="12345"
+CONFIG_WANT_ADC=y
+CONFIG_WANT_SPI=y
+CONFIG_WANT_SOFTWARE_SPI=y
+CONFIG_WANT_HARD_PWM=y
+CONFIG_WANT_BUTTONS=y
+CONFIG_WANT_TMCUART=y
+CONFIG_WANT_NEOPIXEL=y
+CONFIG_WANT_PULSE_COUNTER=y
+CONFIG_WANT_ST7920=y
+CONFIG_WANT_HD44780=y
+CONFIG_WANT_ADXL345=y
+CONFIG_WANT_LIS2DW=y
+CONFIG_WANT_BMI160=y
+CONFIG_WANT_THERMOCOUPLE=y
+CONFIG_WANT_HX71X=y
+CONFIG_WANT_ADS1220=y
+CONFIG_WANT_SENSOR_ANGLE=y
+CONFIG_NEED_SENSOR_BULK=y
+CONFIG_WANT_TRIGGER_ANALOG=y
+CONFIG_NEED_SOS_FILTER=y
+CONFIG_CANBUS_FREQUENCY=1000000
+CONFIG_INLINE_STEPPER_HACK=y
+CONFIG_INITIAL_PINS=""
+CONFIG_HAVE_GPIO=y
+CONFIG_HAVE_GPIO_ADC=y
+CONFIG_HAVE_GPIO_SPI=y
+CONFIG_HAVE_GPIO_HARD_PWM=y
+=======================
+Build file /home/klippy/klipper/klippy/../out/klipper.dict(8036): Sun Feb 15 08:30:16 2026
+Last MCU build version: v0.13.0-540-g57c2e0c96
+Last MCU build tools: gcc: (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0 binutils: (GNU Binutils for Ubuntu) 2.42
+Last MCU build config: CLOCK_FREQ=20000000 RECEIVE_WINDOW=192 SERIAL_BAUD=250000 STATS_SUMSQ_BASE=256 STEPPER_STEP_BOTH_EDGE=1
+Build file /home/klippy/klipper/klippy/../out/klipper.elf(517048): Sun Feb 15 08:30:16 2026
+mcu 'mcu': Wait for identify_response
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 75, in _get_identify_data
+    params = self.send_with_response(msg, 'identify_response')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 271, in send_with_response
+    return src.get_response([cmd], self.default_cmd_queue)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 331, in get_response
+    self.serial.raw_send_wait_ack(cmds[-1], minclock, reqclock,
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 263, in raw_send_wait_ack
+    self._error("Serial connection closed")
+  File "/home/klippy/klipper/klippy/serialhdl.py", line 68, in _error
+    raise error(self.warn_prefix + (msg % params))
+serialhdl.error: mcu 'mcu': Serial connection closed
+webhooks client 135631499127856: Disconnected
+Starting Klippy...
+Args: ['/home/klippy/klipper/klippy/klippy.py', '/home/klippy/printer_data/config/printer.cfg', '-l', '/home/klippy/printer_data/logs/klippy.log', '-a', '/tmp/klippy_uds']
+Git version: 'v0.13.0-540-g57c2e0c96-dirty'
+Untracked files: klippy/extras/egm_bridge.py, klippy/extras/move_export.py
+Branch: master
+Remote: origin
+Tracked URL: https://github.com/Klipper3d/klipper.git
+CPU: 16 core 12th Gen Intel(R) Core(TM) i5-12600K
+Device: ?
+Linux: Linux version 6.6.87.2-microsoft-standard-WSL2 (root@439a258ad544) (gcc (GCC) 11.2.0, GNU ld (GNU Binutils) 2.37) #1 SMP PREEMPT_DYNAMIC Thu Jun  5 18:30:46 UTC 2025
+Python: '3.12.3 (main, Jan 22 2026, 20:57:42) [GCC 13.3.0]'
+Building C code module c_helper.so
+Start printer at Mon Feb 16 16:47:38 2026 (1771260458.1 1038.3)
+===== Config file =====
+[mcu]
+serial = /tmp/klipper_host_mcu
+
+[printer]
+kinematics = cartesian
+max_velocity = 300
+max_accel = 3000
+max_z_velocity = 50
+max_z_accel = 500
+
+[stepper_x]
+step_pin = PA0
+dir_pin = PA1
+enable_pin = !PA2
+microsteps = 16
+rotation_distance = 40
+endstop_pin = PA3
+position_endstop = 0
+position_max = 500
+homing_speed = 50
+
+[stepper_y]
+step_pin = PA4
+dir_pin = PA5
+enable_pin = !PA6
+microsteps = 16
+rotation_distance = 40
+endstop_pin = PA7
+position_endstop = 0
+position_max = 500
+homing_speed = 50
+
+[stepper_z]
+step_pin = PB0
+dir_pin = PB1
+enable_pin = !PB2
+microsteps = 16
+rotation_distance = 8
+endstop_pin = PB3
+position_endstop = 0
+position_max = 300
+homing_speed = 25
+
+[dummy_thermistor]
+
+[extruder]
+step_pin = PB4
+dir_pin = PB5
+enable_pin = !PB6
+microsteps = 16
+rotation_distance = 4.637
+nozzle_diameter = 0.400
+filament_diameter = 1.750
+max_extrude_only_velocity = 60
+max_extrude_only_accel = 800
+max_extrude_cross_section = 50
+heater_pin = PB7
+sensor_type = dummy_thermistor
+control = watermark
+min_temp = 0
+max_temp = 300
+pressure_advance = 0.0
+pressure_advance_smooth_time = 0.040
+
+[virtual_sdcard]
+path = /home/klippy/printer_data/gcodes
+
+[display_status]
+
+[pause_resume]
+
+[force_move]
+enable_force_move = True
+
+[egm_bridge]
+debug_mode = true
+log_moves = false
+=======================
+[EGM] EGM Bridge initialisiert
+Config error
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/klippy.py", line 130, in _connect
+    self._read_config()
+  File "/home/klippy/klipper/klippy/klippy.py", line 125, in _read_config
+    m.add_printer_objects(config)
+  File "/home/klippy/klipper/klippy/toolhead.py", line 609, in add_printer_objects
+    kinematics.extruder.add_printer_objects(config)
+  File "/home/klippy/klipper/klippy/kinematics/extruder.py", line 318, in add_printer_objects
+    pe = PrinterExtruder(config.getsection(section), i)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/kinematics/extruder.py", line 148, in __init__
+    self.heater = pheaters.setup_heater(config, gcode_id)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/extras/heaters.py", line 278, in setup_heater
+    sensor = self.setup_sensor(config)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/extras/heaters.py", line 296, in setup_sensor
+    raise self.printer.config_error(
+configparser.Error: Unknown temperature sensor 'dummy_thermistor'
+webhooks client 129868497696576: New connection
+webhooks client 129868497696576: Client info {'program': 'Moonraker', 'version': 'v0.10.0-8-g293a4cf'}
+webhooks client 129868497696576: Disconnected
+Starting Klippy...
+Args: ['/home/klippy/klipper/klippy/klippy.py', '/home/klippy/printer_data/config/printer.cfg', '-l', '/home/klippy/printer_data/logs/klippy.log', '-a', '/tmp/klippy_uds']
+Git version: 'v0.13.0-540-g57c2e0c96-dirty'
+Untracked files: klippy/extras/egm_bridge.py, klippy/extras/move_export.py
+Modified files: src/linux/analog.c, src/linux/gpio.c, src/linux/hard_pwm.c, src/linux/i2c.c, src/linux/pca9685.c, src/linux/sensor_ds18b20.c, src/linux/spidev.c
+Branch: master
+Remote: origin
+Tracked URL: https://github.com/Klipper3d/klipper.git
+CPU: 16 core 12th Gen Intel(R) Core(TM) i5-12600K
+Device: ?
+Linux: Linux version 6.6.87.2-microsoft-standard-WSL2 (root@439a258ad544) (gcc (GCC) 11.2.0, GNU ld (GNU Binutils) 2.37) #1 SMP PREEMPT_DYNAMIC Thu Jun  5 18:30:46 UTC 2025
+Python: '3.12.3 (main, Jan 22 2026, 20:57:42) [GCC 13.3.0]'
+Building C code module c_helper.so
+Start printer at Mon Feb 16 17:12:02 2026 (1771261922.9 2503.1)
+===== Config file =====
+[mcu]
+serial = /tmp/klipper_host_mcu
+
+[printer]
+kinematics = cartesian
+max_velocity = 300
+max_accel = 3000
+max_z_velocity = 50
+max_z_accel = 500
+
+[stepper_x]
+step_pin = PA0
+dir_pin = PA1
+enable_pin = !PA2
+microsteps = 16
+rotation_distance = 40
+endstop_pin = PA3
+position_endstop = 0
+position_max = 500
+homing_speed = 50
+
+[stepper_y]
+step_pin = PA4
+dir_pin = PA5
+enable_pin = !PA6
+microsteps = 16
+rotation_distance = 40
+endstop_pin = PA7
+position_endstop = 0
+position_max = 500
+homing_speed = 50
+
+[stepper_z]
+step_pin = PB0
+dir_pin = PB1
+enable_pin = !PB2
+microsteps = 16
+rotation_distance = 8
+endstop_pin = PB3
+position_endstop = 0
+position_max = 300
+homing_speed = 25
+
+[dummy_thermistor]
+
+[extruder]
+step_pin = PB4
+dir_pin = PB5
+enable_pin = !PB6
+microsteps = 16
+rotation_distance = 4.637
+nozzle_diameter = 0.400
+filament_diameter = 1.750
+max_extrude_only_velocity = 60
+max_extrude_only_accel = 800
+max_extrude_cross_section = 50
+heater_pin = PB7
+sensor_type = dummy_thermistor
+control = watermark
+min_temp = 0
+max_temp = 300
+pressure_advance = 0.0
+pressure_advance_smooth_time = 0.040
+
+[virtual_sdcard]
+path = /home/klippy/printer_data/gcodes
+
+[display_status]
+
+[pause_resume]
+
+[force_move]
+enable_force_move = True
+
+[egm_bridge]
+debug_mode = true
+log_moves = false
+=======================
+[EGM] EGM Bridge initialisiert
+Config error
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/klippy.py", line 130, in _connect
+    self._read_config()
+  File "/home/klippy/klipper/klippy/klippy.py", line 125, in _read_config
+    m.add_printer_objects(config)
+  File "/home/klippy/klipper/klippy/toolhead.py", line 609, in add_printer_objects
+    kinematics.extruder.add_printer_objects(config)
+  File "/home/klippy/klipper/klippy/kinematics/extruder.py", line 318, in add_printer_objects
+    pe = PrinterExtruder(config.getsection(section), i)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/kinematics/extruder.py", line 148, in __init__
+    self.heater = pheaters.setup_heater(config, gcode_id)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/extras/heaters.py", line 278, in setup_heater
+    sensor = self.setup_sensor(config)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/extras/heaters.py", line 296, in setup_sensor
+    raise self.printer.config_error(
+configparser.Error: Unknown temperature sensor 'dummy_thermistor'
+webhooks client 134103456143104: New connection
+webhooks client 134103456143104: Client info {'program': 'Moonraker', 'version': 'v0.10.0-8-g293a4cf'}
+webhooks client 134103456143104: Disconnected
+Restarting printer
+Start printer at Mon Feb 16 17:15:00 2026 (1771262100.4 2680.6)
+Unable to open config file /home/klippy/printer_data/config/printer.cfg
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/configfile.py", line 144, in read_config_file
+    f = open(filename, 'r')
+        ^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/home/klippy/printer_data/config/printer.cfg'
+Config error
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/configfile.py", line 144, in read_config_file
+    f = open(filename, 'r')
+        ^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/home/klippy/printer_data/config/printer.cfg'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/klippy.py", line 130, in _connect
+    self._read_config()
+  File "/home/klippy/klipper/klippy/klippy.py", line 116, in _read_config
+    config = pconfig.read_main_config()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/configfile.py", line 475, in read_main_config
+    fileconfig, autosave_fileconfig = self.autosave.load_main_config()
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/configfile.py", line 298, in load_main_config
+    data = cfgrdr.read_config_file(filename)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/configfile.py", line 150, in read_config_file
+    raise error(msg)
+configparser.Error: Unable to open config file /home/klippy/printer_data/config/printer.cfg
+webhooks client 134103448237696: New connection
+webhooks client 134103448237696: Client info {'program': 'Moonraker', 'version': 'v0.10.0-8-g293a4cf'}
+webhooks client 134103448237696: Disconnected
+Restarting printer
+Start printer at Mon Feb 16 17:15:06 2026 (1771262106.6 2686.9)
+Unable to open config file /home/klippy/printer_data/config/printer.cfg
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/configfile.py", line 144, in read_config_file
+    f = open(filename, 'r')
+        ^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/home/klippy/printer_data/config/printer.cfg'
+Config error
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/configfile.py", line 144, in read_config_file
+    f = open(filename, 'r')
+        ^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/home/klippy/printer_data/config/printer.cfg'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/klippy/klipper/klippy/klippy.py", line 130, in _connect
+    self._read_config()
+  File "/home/klippy/klipper/klippy/klippy.py", line 116, in _read_config
+    config = pconfig.read_main_config()
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/configfile.py", line 475, in read_main_config
+    fileconfig, autosave_fileconfig = self.autosave.load_main_config()
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/configfile.py", line 298, in load_main_config
+    data = cfgrdr.read_config_file(filename)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/klippy/klipper/klippy/configfile.py", line 150, in read_config_file
+    raise error(msg)
+configparser.Error: Unable to open config file /home/klippy/printer_data/config/printer.cfg
+webhooks client 134103448237552: New connection
+webhooks client 134103448237552: Client info {'program': 'Moonraker', 'version': 'v0.10.0-8-g293a4cf'}
+Starting Klippy...
+Args: ['/home/klippy/klipper/klippy/klippy.py', '/home/klippy/printer_data/config/printer.cfg', '-l', '/home/klippy/printer_data/logs/klippy.log', '-a', '/tmp/klippy_uds']
+Git version: 'v0.13.0-540-g57c2e0c96-dirty'
+Untracked files: klippy/extras/egm_bridge.py, klippy/extras/move_export.py
+Modified files: src/linux/analog.c, src/linux/gpio.c, src/linux/hard_pwm.c, src/linux/i2c.c, src/linux/pca9685.c, src/linux/sensor_ds18b20.c, src/linux/spidev.c
+Branch: master
+Remote: origin
+Tracked URL: https://github.com/Klipper3d/klipper.git
+CPU: 16 core 12th Gen Intel(R) Core(TM) i5-12600K
+Device: ?
+Linux: Linux version 6.6.87.2-microsoft-standard-WSL2 (root@439a258ad544) (gcc (GCC) 11.2.0, GNU ld (GNU Binutils) 2.37) #1 SMP PREEMPT_DYNAMIC Thu Jun  5 18:30:46 UTC 2025
+Python: '3.12.3 (main, Jan 22 2026, 20:57:42) [GCC 13.3.0]'
+Start printer at Mon Feb 16 17:16:33 2026 (1771262193.8 2774.0)
+===== Config file =====
+[mcu]
+serial = /tmp/klipper_host_mcu
+
+[printer]
+kinematics = cartesian
+max_velocity = 300
+max_accel = 3000
+max_z_velocity = 50
+max_z_accel = 500
+
+[stepper_x]
+step_pin = gpio0
+dir_pin = gpio1
+enable_pin = !gpio2
+microsteps = 16
+rotation_distance = 40
+endstop_pin = gpio3
+position_endstop = 0
+position_max = 500
+homing_speed = 50
+
+[stepper_y]
+step_pin = gpio4
+dir_pin = gpio5
+enable_pin = !gpio6
+microsteps = 16
+rotation_distance = 40
+endstop_pin = gpio7
+position_endstop = 0
+position_max = 500
+homing_speed = 50
+
+[stepper_z]
+step_pin = gpio8
+dir_pin = gpio9
+enable_pin = !gpio10
+microsteps = 16
+rotation_distance = 8
+endstop_pin = gpio11
+position_endstop = 0
+position_max = 300
+homing_speed = 25
+
+[extruder]
+step_pin = gpio12
+dir_pin = gpio13
+enable_pin = !gpio14
+microsteps = 16
+rotation_distance = 4.637
+nozzle_diameter = 0.400
+filament_diameter = 1.750
+max_extrude_only_velocity = 60
+max_extrude_only_accel = 800
+max_extrude_cross_section = 50
+heater_pin = gpio15
+sensor_type = EPCOS 100K B57560G104F
+sensor_pin = gpio16
+control = watermark
+min_temp = 0
+max_temp = 300
+min_extrude_temp = 0
+pressure_advance = 0.0
+pressure_advance_smooth_time = 0.040
+
+[virtual_sdcard]
+path = /home/klippy/printer_data/gcodes
+
+[display_status]
+
+[pause_resume]
+
+[force_move]
+enable_force_move = True
+
+[move_export]
+output_path = /home/klippy/printer_data/logs/move_segments.csv
+tcp_port = 7200
+tcp_enabled = true
+log_to_console = true
+=======================
+Extruder max_extrude_ratio=20.787584
+mcu 'mcu': Starting connect
+webhooks client 135863168464176: New connection
+Loaded MCU 'mcu' 134 commands (v0.13.0-540-g57c2e0c96-dirty-20260216_170417-buildkitsandbox / gcc: (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0 binutils: (GNU Binutils for Ubuntu) 2.42)
+MCU 'mcu' config: ADC_MAX=4095 CLOCK_FREQ=50000000 MCU=linux PCA9685_MAX=4096 PWM_MAX=32768 STATS_SUMSQ_BASE=256 STEPPER_STEP_BOTH_EDGE=1
+Sending MCU 'mcu' printer configuration...
+Configured MCU 'mcu' (788 moves)
+MoveExport: CSV geöffnet: /home/klippy/printer_data/logs/move_segments.csv
+MoveExport: TCP Server auf Port 7200
+Starting heater checks for extruder
+Stats 2774.5: gcodein=0 mcu: mcu_awake=0.000 mcu_task_avg=0.000000 mcu_task_stddev=0.000000 bytes_write=983 bytes_read=4743 bytes_retransmit=0 bytes_invalid=0 send_seq=117 receive_seq=117 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50005209 print_time=89.958 buffer_time=0.245 print_stall=0 extruder: target=0 temp=0.0 pwm=0.000 sysload=0.00 cputime=0.164 memavail=7009056
+webhooks client 135863168464176: Client info {'program': 'Moonraker', 'version': 'v0.10.0-8-g293a4cf'}
+webhooks: registering remote method 'shutdown_machine' for connection id: 135863168464176
+webhooks: registering remote method 'reboot_machine' for connection id: 135863168464176
+webhooks: registering remote method 'pause_job_queue' for connection id: 135863168464176
+webhooks: registering remote method 'start_job_queue' for connection id: 135863168464176
+Stats 2775.5: gcodein=0 mcu: mcu_awake=0.003 mcu_task_avg=0.000019 mcu_task_stddev=0.000131 bytes_write=989 bytes_read=4774 bytes_retransmit=0 bytes_invalid=0 send_seq=118 receive_seq=118 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50004148 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=0.0 pwm=0.000 sysload=0.00 cputime=0.168 memavail=7009056
+Stats 2776.5: gcodein=0 mcu: mcu_awake=0.003 mcu_task_avg=0.000019 mcu_task_stddev=0.000131 bytes_write=995 bytes_read=4820 bytes_retransmit=0 bytes_invalid=0 send_seq=119 receive_seq=119 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50004149 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.00 cputime=0.170 memavail=7008552
+Stats 2777.5: gcodein=0 mcu: mcu_awake=0.003 mcu_task_avg=0.000019 mcu_task_stddev=0.000131 bytes_write=1001 bytes_read=4896 bytes_retransmit=0 bytes_invalid=0 send_seq=120 receive_seq=120 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50003574 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.00 cputime=0.173 memavail=7008300
+Stats 2778.5: gcodein=0 mcu: mcu_awake=0.003 mcu_task_avg=0.000019 mcu_task_stddev=0.000131 bytes_write=1007 bytes_read=4957 bytes_retransmit=0 bytes_invalid=0 send_seq=121 receive_seq=121 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50003352 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.00 cputime=0.175 memavail=7008300
+Stats 2779.5: gcodein=0 mcu: mcu_awake=0.003 mcu_task_avg=0.000019 mcu_task_stddev=0.000131 bytes_write=1013 bytes_read=5018 bytes_retransmit=0 bytes_invalid=0 send_seq=122 receive_seq=122 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50003085 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.00 cputime=0.177 memavail=7009032
+Stats 2780.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000015 bytes_write=1019 bytes_read=5107 bytes_retransmit=0 bytes_invalid=0 send_seq=123 receive_seq=123 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002975 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.00 cputime=0.180 memavail=7009032
+Stats 2781.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000015 bytes_write=1025 bytes_read=5168 bytes_retransmit=0 bytes_invalid=0 send_seq=124 receive_seq=124 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002872 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.00 cputime=0.182 memavail=7008780
+Stats 2782.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000015 bytes_write=1031 bytes_read=5229 bytes_retransmit=0 bytes_invalid=0 send_seq=125 receive_seq=125 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002797 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.00 cputime=0.184 memavail=7008780
+Stats 2783.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000015 bytes_write=1037 bytes_read=5305 bytes_retransmit=0 bytes_invalid=0 send_seq=126 receive_seq=126 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002739 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.00 cputime=0.186 memavail=7008780
+Stats 2784.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000015 bytes_write=1043 bytes_read=5366 bytes_retransmit=0 bytes_invalid=0 send_seq=127 receive_seq=127 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002680 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.00 cputime=0.188 memavail=7008528
+Stats 2785.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000015 bytes_write=1049 bytes_read=5427 bytes_retransmit=0 bytes_invalid=0 send_seq=128 receive_seq=128 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002651 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.00 cputime=0.190 memavail=7008528
+Stats 2786.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000011 mcu_task_stddev=0.000019 bytes_write=1055 bytes_read=5516 bytes_retransmit=0 bytes_invalid=0 send_seq=129 receive_seq=129 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002635 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.00 cputime=0.192 memavail=7008528
+Stats 2787.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000011 mcu_task_stddev=0.000019 bytes_write=1061 bytes_read=5577 bytes_retransmit=0 bytes_invalid=0 send_seq=130 receive_seq=130 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002619 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.00 cputime=0.194 memavail=7008528
+Stats 2788.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000011 mcu_task_stddev=0.000019 bytes_write=1067 bytes_read=5638 bytes_retransmit=0 bytes_invalid=0 send_seq=131 receive_seq=131 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002600 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.00 cputime=0.197 memavail=7008560
+Stats 2789.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000011 mcu_task_stddev=0.000019 bytes_write=1073 bytes_read=5714 bytes_retransmit=0 bytes_invalid=0 send_seq=132 receive_seq=132 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002601 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.00 cputime=0.199 memavail=7007596
+Stats 2790.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000011 mcu_task_stddev=0.000019 bytes_write=1079 bytes_read=5775 bytes_retransmit=0 bytes_invalid=0 send_seq=133 receive_seq=133 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002600 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.00 cputime=0.201 memavail=7007596
+Stats 2791.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000012 bytes_write=1085 bytes_read=5849 bytes_retransmit=0 bytes_invalid=0 send_seq=134 receive_seq=134 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002584 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.00 cputime=0.203 memavail=7007020
+Stats 2792.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000012 bytes_write=1091 bytes_read=5925 bytes_retransmit=0 bytes_invalid=0 send_seq=135 receive_seq=135 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002551 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.00 cputime=0.205 memavail=7007020
+Stats 2793.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000012 bytes_write=1097 bytes_read=5986 bytes_retransmit=0 bytes_invalid=0 send_seq=136 receive_seq=136 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002546 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.00 cputime=0.208 memavail=7007036
+Stats 2794.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000012 bytes_write=1103 bytes_read=6047 bytes_retransmit=0 bytes_invalid=0 send_seq=137 receive_seq=137 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002532 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.00 cputime=0.210 memavail=7006784
+Stats 2795.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000012 bytes_write=1109 bytes_read=6123 bytes_retransmit=0 bytes_invalid=0 send_seq=138 receive_seq=138 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002507 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.00 cputime=0.212 memavail=7006784
+Stats 2796.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000014 bytes_write=1115 bytes_read=6197 bytes_retransmit=0 bytes_invalid=0 send_seq=139 receive_seq=139 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002489 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.00 cputime=0.214 memavail=7006784
+Stats 2797.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000014 bytes_write=1121 bytes_read=6258 bytes_retransmit=0 bytes_invalid=0 send_seq=140 receive_seq=140 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002470 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.00 cputime=0.217 memavail=7006784
+Stats 2798.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000014 bytes_write=1127 bytes_read=6334 bytes_retransmit=0 bytes_invalid=0 send_seq=141 receive_seq=141 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002470 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.00 cputime=0.219 memavail=7006784
+Stats 2799.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000014 bytes_write=1133 bytes_read=6395 bytes_retransmit=0 bytes_invalid=0 send_seq=142 receive_seq=142 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002449 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.00 cputime=0.221 memavail=7006532
+Stats 2800.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000014 bytes_write=1139 bytes_read=6456 bytes_retransmit=0 bytes_invalid=0 send_seq=143 receive_seq=143 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002431 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.00 cputime=0.224 memavail=7006532
+Stats 2801.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000013 bytes_write=1145 bytes_read=6545 bytes_retransmit=0 bytes_invalid=0 send_seq=144 receive_seq=144 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002421 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.00 cputime=0.227 memavail=7006532
+Stats 2802.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000013 bytes_write=1151 bytes_read=6606 bytes_retransmit=0 bytes_invalid=0 send_seq=145 receive_seq=145 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002406 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.08 cputime=0.229 memavail=7006452
+Stats 2803.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000013 bytes_write=1157 bytes_read=6667 bytes_retransmit=0 bytes_invalid=0 send_seq=146 receive_seq=146 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002394 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.08 cputime=0.230 memavail=7006296
+Stats 2804.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000013 bytes_write=1163 bytes_read=6743 bytes_retransmit=0 bytes_invalid=0 send_seq=147 receive_seq=147 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002382 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.08 cputime=0.232 memavail=7005796
+Stats 2805.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000013 bytes_write=1169 bytes_read=6804 bytes_retransmit=0 bytes_invalid=0 send_seq=148 receive_seq=148 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002366 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.08 cputime=0.234 memavail=7006080
+Stats 2806.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000016 bytes_write=1175 bytes_read=6893 bytes_retransmit=0 bytes_invalid=0 send_seq=149 receive_seq=149 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002363 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.08 cputime=0.237 memavail=7006080
+Stats 2807.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000016 bytes_write=1181 bytes_read=6954 bytes_retransmit=0 bytes_invalid=0 send_seq=150 receive_seq=150 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002362 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.07 cputime=0.239 memavail=7006836
+Stats 2808.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000016 bytes_write=1187 bytes_read=7015 bytes_retransmit=0 bytes_invalid=0 send_seq=151 receive_seq=151 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002362 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.07 cputime=0.241 memavail=7006836
+Stats 2809.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000016 bytes_write=1193 bytes_read=7091 bytes_retransmit=0 bytes_invalid=0 send_seq=152 receive_seq=152 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002351 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.07 cputime=0.244 memavail=7006836
+Stats 2810.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000016 bytes_write=1199 bytes_read=7152 bytes_retransmit=0 bytes_invalid=0 send_seq=153 receive_seq=153 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002344 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.07 cputime=0.246 memavail=7006836
+Stats 2811.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000011 mcu_task_stddev=0.000023 bytes_write=1205 bytes_read=7226 bytes_retransmit=0 bytes_invalid=0 send_seq=154 receive_seq=154 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002341 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.07 cputime=0.249 memavail=7006836
+Stats 2812.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000011 mcu_task_stddev=0.000023 bytes_write=1211 bytes_read=7302 bytes_retransmit=0 bytes_invalid=0 send_seq=155 receive_seq=155 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002338 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.07 cputime=0.251 memavail=7006836
+Stats 2813.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000011 mcu_task_stddev=0.000023 bytes_write=1217 bytes_read=7363 bytes_retransmit=0 bytes_invalid=0 send_seq=156 receive_seq=156 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002340 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.07 cputime=0.253 memavail=7006836
+Stats 2814.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000011 mcu_task_stddev=0.000023 bytes_write=1223 bytes_read=7424 bytes_retransmit=0 bytes_invalid=0 send_seq=157 receive_seq=157 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002343 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.07 cputime=0.255 memavail=7006360
+Stats 2815.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000011 mcu_task_stddev=0.000023 bytes_write=1229 bytes_read=7500 bytes_retransmit=0 bytes_invalid=0 send_seq=158 receive_seq=158 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002340 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.07 cputime=0.257 memavail=7006360
+Stats 2816.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000010 mcu_task_stddev=0.000019 bytes_write=1235 bytes_read=7574 bytes_retransmit=0 bytes_invalid=0 send_seq=159 receive_seq=159 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002337 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.07 cputime=0.259 memavail=7006360
+Stats 2817.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000010 mcu_task_stddev=0.000019 bytes_write=1241 bytes_read=7635 bytes_retransmit=0 bytes_invalid=0 send_seq=160 receive_seq=160 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002337 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.06 cputime=0.261 memavail=7006360
+Stats 2818.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000010 mcu_task_stddev=0.000019 bytes_write=1247 bytes_read=7711 bytes_retransmit=0 bytes_invalid=0 send_seq=161 receive_seq=161 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002336 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.06 cputime=0.263 memavail=7006360
+Stats 2819.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000010 mcu_task_stddev=0.000019 bytes_write=1253 bytes_read=7772 bytes_retransmit=0 bytes_invalid=0 send_seq=162 receive_seq=162 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002336 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.06 cputime=0.264 memavail=7006152
+Stats 2820.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000010 mcu_task_stddev=0.000019 bytes_write=1259 bytes_read=7833 bytes_retransmit=0 bytes_invalid=0 send_seq=163 receive_seq=163 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002341 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.06 cputime=0.266 memavail=7005420
+Stats 2821.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000015 bytes_write=1265 bytes_read=7922 bytes_retransmit=0 bytes_invalid=0 send_seq=164 receive_seq=164 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002341 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.06 cputime=0.268 memavail=7007816
+Stats 2822.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000015 bytes_write=1271 bytes_read=7983 bytes_retransmit=0 bytes_invalid=0 send_seq=165 receive_seq=165 retransmit_seq=0 srtt=0.000 rttvar=0.001 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002341 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.14 cputime=0.270 memavail=6962208
+Stats 2823.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000015 bytes_write=1277 bytes_read=8044 bytes_retransmit=0 bytes_invalid=0 send_seq=166 receive_seq=166 retransmit_seq=0 srtt=0.000 rttvar=0.001 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002340 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.14 cputime=0.272 memavail=7036120
+Stats 2824.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000015 bytes_write=1283 bytes_read=8120 bytes_retransmit=0 bytes_invalid=0 send_seq=167 receive_seq=167 retransmit_seq=0 srtt=0.000 rttvar=0.001 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002339 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.14 cputime=0.274 memavail=7032848
+Stats 2825.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000015 bytes_write=1289 bytes_read=8181 bytes_retransmit=0 bytes_invalid=0 send_seq=168 receive_seq=168 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002349 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.14 cputime=0.276 memavail=7030252
+Stats 2826.5: gcodein=0 mcu: mcu_awake=0.000 mcu_task_avg=0.000007 mcu_task_stddev=0.000009 bytes_write=1295 bytes_read=8255 bytes_retransmit=0 bytes_invalid=0 send_seq=169 receive_seq=169 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002347 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.14 cputime=0.278 memavail=7030944
+Stats 2827.5: gcodein=0 mcu: mcu_awake=0.000 mcu_task_avg=0.000007 mcu_task_stddev=0.000009 bytes_write=1301 bytes_read=8331 bytes_retransmit=0 bytes_invalid=0 send_seq=170 receive_seq=170 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002344 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.21 cputime=0.280 memavail=7028160
+Stats 2828.5: gcodein=0 mcu: mcu_awake=0.000 mcu_task_avg=0.000007 mcu_task_stddev=0.000009 bytes_write=1307 bytes_read=8392 bytes_retransmit=0 bytes_invalid=0 send_seq=171 receive_seq=171 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002345 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.21 cputime=0.282 memavail=7026652
+Stats 2829.5: gcodein=0 mcu: mcu_awake=0.000 mcu_task_avg=0.000007 mcu_task_stddev=0.000009 bytes_write=1313 bytes_read=8453 bytes_retransmit=0 bytes_invalid=0 send_seq=172 receive_seq=172 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002344 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.21 cputime=0.284 memavail=7027792
+Stats 2830.5: gcodein=0 mcu: mcu_awake=0.000 mcu_task_avg=0.000007 mcu_task_stddev=0.000009 bytes_write=1319 bytes_read=8529 bytes_retransmit=0 bytes_invalid=0 send_seq=173 receive_seq=173 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002346 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.21 cputime=0.286 memavail=7026656
+Stats 2831.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000013 bytes_write=1325 bytes_read=8603 bytes_retransmit=0 bytes_invalid=0 send_seq=174 receive_seq=174 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002349 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.21 cputime=0.288 memavail=7026820
+Stats 2832.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000013 bytes_write=1331 bytes_read=8664 bytes_retransmit=0 bytes_invalid=0 send_seq=175 receive_seq=175 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002355 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.27 cputime=0.290 memavail=7026804
+Stats 2833.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000013 bytes_write=1343 bytes_read=8756 bytes_retransmit=0 bytes_invalid=0 send_seq=177 receive_seq=177 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002360 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.27 cputime=0.293 memavail=7027888
+Stats 2834.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000013 bytes_write=1349 bytes_read=8817 bytes_retransmit=0 bytes_invalid=0 send_seq=178 receive_seq=178 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002362 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.27 cputime=0.295 memavail=7028144
+Stats 2835.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000013 bytes_write=1355 bytes_read=8878 bytes_retransmit=0 bytes_invalid=0 send_seq=179 receive_seq=179 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002363 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.27 cputime=0.297 memavail=7027664
+Stats 2836.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000010 mcu_task_stddev=0.000017 bytes_write=1361 bytes_read=8967 bytes_retransmit=0 bytes_invalid=0 send_seq=180 receive_seq=180 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002368 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.27 cputime=0.300 memavail=7026308
+Stats 2837.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000010 mcu_task_stddev=0.000017 bytes_write=1367 bytes_read=9028 bytes_retransmit=0 bytes_invalid=0 send_seq=181 receive_seq=181 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002369 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.41 cputime=0.302 memavail=7025940
+Stats 2838.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000010 mcu_task_stddev=0.000017 bytes_write=1373 bytes_read=9089 bytes_retransmit=0 bytes_invalid=0 send_seq=182 receive_seq=182 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002371 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.41 cputime=0.304 memavail=7028224
+Stats 2839.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000010 mcu_task_stddev=0.000017 bytes_write=1379 bytes_read=9165 bytes_retransmit=0 bytes_invalid=0 send_seq=183 receive_seq=183 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002371 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.41 cputime=0.306 memavail=7028772
+Stats 2840.5: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000010 mcu_task_stddev=0.000017 bytes_write=1385 bytes_read=9226 bytes_retransmit=0 bytes_invalid=0 send_seq=184 receive_seq=184 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002369 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.41 cputime=0.308 memavail=7028180
+Stats 2841.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000012 bytes_write=1391 bytes_read=9300 bytes_retransmit=0 bytes_invalid=0 send_seq=185 receive_seq=185 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002371 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.41 cputime=0.310 memavail=7023572
+Stats 2842.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000012 bytes_write=1397 bytes_read=9376 bytes_retransmit=0 bytes_invalid=0 send_seq=186 receive_seq=186 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002373 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.46 cputime=0.313 memavail=7025676
+Stats 2843.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000012 bytes_write=1403 bytes_read=9437 bytes_retransmit=0 bytes_invalid=0 send_seq=187 receive_seq=187 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002372 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.46 cputime=0.315 memavail=7026868
+Stats 2844.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000012 bytes_write=1409 bytes_read=9498 bytes_retransmit=0 bytes_invalid=0 send_seq=188 receive_seq=188 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002371 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.46 cputime=0.317 memavail=7027896
+Stats 2845.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000012 bytes_write=1415 bytes_read=9574 bytes_retransmit=0 bytes_invalid=0 send_seq=189 receive_seq=189 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002372 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.46 cputime=0.319 memavail=7028600
+Stats 2846.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000011 mcu_task_stddev=0.000019 bytes_write=1421 bytes_read=9648 bytes_retransmit=0 bytes_invalid=0 send_seq=190 receive_seq=190 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002372 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.46 cputime=0.321 memavail=7025828
+Stats 2847.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000011 mcu_task_stddev=0.000019 bytes_write=1427 bytes_read=9709 bytes_retransmit=0 bytes_invalid=0 send_seq=191 receive_seq=191 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002370 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.50 cputime=0.323 memavail=7026936
+Stats 2848.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000011 mcu_task_stddev=0.000019 bytes_write=1433 bytes_read=9785 bytes_retransmit=0 bytes_invalid=0 send_seq=192 receive_seq=192 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002371 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.50 cputime=0.325 memavail=7027828
+Stats 2849.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000011 mcu_task_stddev=0.000019 bytes_write=1439 bytes_read=9846 bytes_retransmit=0 bytes_invalid=0 send_seq=193 receive_seq=193 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002371 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.50 cputime=0.327 memavail=7027868
+Stats 2850.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000011 mcu_task_stddev=0.000019 bytes_write=1445 bytes_read=9907 bytes_retransmit=0 bytes_invalid=0 send_seq=194 receive_seq=194 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002372 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.50 cputime=0.329 memavail=7026100
+Stats 2851.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000015 bytes_write=1451 bytes_read=9996 bytes_retransmit=0 bytes_invalid=0 send_seq=195 receive_seq=195 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002373 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.50 cputime=0.331 memavail=7026808
+Stats 2852.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000015 bytes_write=1457 bytes_read=10057 bytes_retransmit=0 bytes_invalid=0 send_seq=196 receive_seq=196 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002373 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.54 cputime=0.333 memavail=7025628
+Stats 2853.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000015 bytes_write=1463 bytes_read=10118 bytes_retransmit=0 bytes_invalid=0 send_seq=197 receive_seq=197 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002374 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.54 cputime=0.335 memavail=7027044
+Stats 2854.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000015 bytes_write=1469 bytes_read=10194 bytes_retransmit=0 bytes_invalid=0 send_seq=198 receive_seq=198 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002373 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.54 cputime=0.337 memavail=7025188
+Stats 2855.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000015 bytes_write=1475 bytes_read=10253 bytes_retransmit=0 bytes_invalid=0 send_seq=199 receive_seq=199 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002374 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.54 cputime=0.338 memavail=7024348
+Stats 2856.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000017 bytes_write=1481 bytes_read=10322 bytes_retransmit=0 bytes_invalid=0 send_seq=200 receive_seq=200 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002375 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.54 cputime=0.340 memavail=7025676
+Stats 2857.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000017 bytes_write=1487 bytes_read=10393 bytes_retransmit=0 bytes_invalid=0 send_seq=201 receive_seq=201 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002378 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.58 cputime=0.343 memavail=7024552
+Stats 2858.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000017 bytes_write=1493 bytes_read=10450 bytes_retransmit=0 bytes_invalid=0 send_seq=202 receive_seq=202 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002380 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.58 cputime=0.345 memavail=7025840
+Stats 2859.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000017 bytes_write=1499 bytes_read=10507 bytes_retransmit=0 bytes_invalid=0 send_seq=203 receive_seq=203 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002382 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.58 cputime=0.347 memavail=7025492
+Stats 2860.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000017 bytes_write=1505 bytes_read=10579 bytes_retransmit=0 bytes_invalid=0 send_seq=204 receive_seq=204 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002384 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.58 cputime=0.350 memavail=7024564
+Stats 2861.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000013 bytes_write=1511 bytes_read=10653 bytes_retransmit=0 bytes_invalid=0 send_seq=205 receive_seq=205 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002383 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.58 cputime=0.352 memavail=7026092
+Stats 2862.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000013 bytes_write=1517 bytes_read=10714 bytes_retransmit=0 bytes_invalid=0 send_seq=206 receive_seq=206 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002384 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.61 cputime=0.354 memavail=7024860
+Stats 2863.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000013 bytes_write=1523 bytes_read=10790 bytes_retransmit=0 bytes_invalid=0 send_seq=207 receive_seq=207 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002384 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.61 cputime=0.356 memavail=7026488
+Stats 2864.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000013 bytes_write=1529 bytes_read=10851 bytes_retransmit=0 bytes_invalid=0 send_seq=208 receive_seq=208 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002384 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.61 cputime=0.359 memavail=7025380
+Stats 2865.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000013 bytes_write=1535 bytes_read=10912 bytes_retransmit=0 bytes_invalid=0 send_seq=209 receive_seq=209 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002387 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.61 cputime=0.361 memavail=7021720
+Stats 2866.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000012 bytes_write=1541 bytes_read=11001 bytes_retransmit=0 bytes_invalid=0 send_seq=210 receive_seq=210 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002388 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.61 cputime=0.363 memavail=7023200
+Stats 2867.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000012 bytes_write=1547 bytes_read=11062 bytes_retransmit=0 bytes_invalid=0 send_seq=211 receive_seq=211 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002389 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.64 cputime=0.365 memavail=7023012
+Stats 2868.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000012 bytes_write=1553 bytes_read=11123 bytes_retransmit=0 bytes_invalid=0 send_seq=212 receive_seq=212 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002389 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.64 cputime=0.367 memavail=7021372
+Stats 2869.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000012 bytes_write=1559 bytes_read=11199 bytes_retransmit=0 bytes_invalid=0 send_seq=213 receive_seq=213 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002396 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.64 cputime=0.369 memavail=7021672
+Stats 2870.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000012 bytes_write=1565 bytes_read=11260 bytes_retransmit=0 bytes_invalid=0 send_seq=214 receive_seq=214 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002397 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.64 cputime=0.372 memavail=7026232
+Stats 2871.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000013 bytes_write=1571 bytes_read=11334 bytes_retransmit=0 bytes_invalid=0 send_seq=215 receive_seq=215 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002399 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.64 cputime=0.375 memavail=7026304
+Stats 2872.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000013 bytes_write=1577 bytes_read=11410 bytes_retransmit=0 bytes_invalid=0 send_seq=216 receive_seq=216 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002400 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.59 cputime=0.377 memavail=7026304
+Stats 2873.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000013 bytes_write=1583 bytes_read=11471 bytes_retransmit=0 bytes_invalid=0 send_seq=217 receive_seq=217 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002399 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.59 cputime=0.379 memavail=7026304
+Stats 2874.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000013 bytes_write=1589 bytes_read=11532 bytes_retransmit=0 bytes_invalid=0 send_seq=218 receive_seq=218 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002400 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.59 cputime=0.381 memavail=7026304
+Stats 2875.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000013 bytes_write=1595 bytes_read=11608 bytes_retransmit=0 bytes_invalid=0 send_seq=219 receive_seq=219 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002403 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.59 cputime=0.383 memavail=7026080
+Stats 2876.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000010 mcu_task_stddev=0.000017 bytes_write=1601 bytes_read=11682 bytes_retransmit=0 bytes_invalid=0 send_seq=220 receive_seq=220 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002401 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.59 cputime=0.385 memavail=7025140
+Stats 2877.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000010 mcu_task_stddev=0.000017 bytes_write=1607 bytes_read=11743 bytes_retransmit=0 bytes_invalid=0 send_seq=221 receive_seq=221 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002401 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.54 cputime=0.387 memavail=7025140
+Stats 2878.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000010 mcu_task_stddev=0.000017 bytes_write=1613 bytes_read=11819 bytes_retransmit=0 bytes_invalid=0 send_seq=222 receive_seq=222 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002405 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.54 cputime=0.389 memavail=7025140
+Stats 2879.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000010 mcu_task_stddev=0.000017 bytes_write=1619 bytes_read=11880 bytes_retransmit=0 bytes_invalid=0 send_seq=223 receive_seq=223 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002409 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.54 cputime=0.391 memavail=7025140
+Stats 2880.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000010 mcu_task_stddev=0.000017 bytes_write=1625 bytes_read=11941 bytes_retransmit=0 bytes_invalid=0 send_seq=224 receive_seq=224 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002407 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.54 cputime=0.393 memavail=7025140
+Stats 2881.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000012 mcu_task_stddev=0.000020 bytes_write=1631 bytes_read=12030 bytes_retransmit=0 bytes_invalid=0 send_seq=225 receive_seq=225 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002405 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.54 cputime=0.395 memavail=7025140
+Stats 2882.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000012 mcu_task_stddev=0.000020 bytes_write=1637 bytes_read=12091 bytes_retransmit=0 bytes_invalid=0 send_seq=226 receive_seq=226 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002401 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.50 cputime=0.396 memavail=7025212
+Stats 2883.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000012 mcu_task_stddev=0.000020 bytes_write=1643 bytes_read=12152 bytes_retransmit=0 bytes_invalid=0 send_seq=227 receive_seq=227 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002400 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.50 cputime=0.398 memavail=7025212
+Stats 2884.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000012 mcu_task_stddev=0.000020 bytes_write=1649 bytes_read=12228 bytes_retransmit=0 bytes_invalid=0 send_seq=228 receive_seq=228 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002398 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.50 cputime=0.400 memavail=7025212
+Stats 2885.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000012 mcu_task_stddev=0.000020 bytes_write=1655 bytes_read=12289 bytes_retransmit=0 bytes_invalid=0 send_seq=229 receive_seq=229 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002398 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.50 cputime=0.402 memavail=7025212
+Stats 2886.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000014 bytes_write=1661 bytes_read=12363 bytes_retransmit=0 bytes_invalid=0 send_seq=230 receive_seq=230 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002399 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.50 cputime=0.404 memavail=7024824
+Stats 2887.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000014 bytes_write=1667 bytes_read=12439 bytes_retransmit=0 bytes_invalid=0 send_seq=231 receive_seq=231 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002398 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.46 cputime=0.406 memavail=7024824
+Stats 2888.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000014 bytes_write=1673 bytes_read=12500 bytes_retransmit=0 bytes_invalid=0 send_seq=232 receive_seq=232 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002396 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.46 cputime=0.408 memavail=7024824
+Stats 2889.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000014 bytes_write=1679 bytes_read=12561 bytes_retransmit=0 bytes_invalid=0 send_seq=233 receive_seq=233 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002392 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.46 cputime=0.410 memavail=7025548
+Stats 2890.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000014 bytes_write=1685 bytes_read=12637 bytes_retransmit=0 bytes_invalid=0 send_seq=234 receive_seq=234 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002389 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.46 cputime=0.412 memavail=7025548
+Stats 2891.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000012 bytes_write=1691 bytes_read=12711 bytes_retransmit=0 bytes_invalid=0 send_seq=235 receive_seq=235 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002384 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.46 cputime=0.414 memavail=7025548
+Stats 2892.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000012 bytes_write=1697 bytes_read=12772 bytes_retransmit=0 bytes_invalid=0 send_seq=236 receive_seq=236 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002381 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.42 cputime=0.417 memavail=7025548
+Stats 2893.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000012 bytes_write=1703 bytes_read=12848 bytes_retransmit=0 bytes_invalid=0 send_seq=237 receive_seq=237 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002377 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.42 cputime=0.421 memavail=7025548
+Stats 2894.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000012 bytes_write=1709 bytes_read=12909 bytes_retransmit=0 bytes_invalid=0 send_seq=238 receive_seq=238 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002374 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.42 cputime=0.424 memavail=7025548
+Stats 2895.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000012 bytes_write=1715 bytes_read=12970 bytes_retransmit=0 bytes_invalid=0 send_seq=239 receive_seq=239 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002375 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.42 cputime=0.426 memavail=7025548
+Stats 2896.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000014 bytes_write=1727 bytes_read=13075 bytes_retransmit=0 bytes_invalid=0 send_seq=241 receive_seq=241 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002362 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.42 cputime=0.429 memavail=7025792
+Stats 2897.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000014 bytes_write=1733 bytes_read=13136 bytes_retransmit=0 bytes_invalid=0 send_seq=242 receive_seq=242 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002357 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.39 cputime=0.431 memavail=7025792
+Stats 2898.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000014 bytes_write=1739 bytes_read=13197 bytes_retransmit=0 bytes_invalid=0 send_seq=243 receive_seq=243 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002353 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.39 cputime=0.433 memavail=7025792
+Stats 2899.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000014 bytes_write=1745 bytes_read=13273 bytes_retransmit=0 bytes_invalid=0 send_seq=244 receive_seq=244 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002347 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.39 cputime=0.435 memavail=7025792
+Stats 2900.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000014 bytes_write=1751 bytes_read=13334 bytes_retransmit=0 bytes_invalid=0 send_seq=245 receive_seq=245 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002343 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.39 cputime=0.437 memavail=7025792
+Stats 2901.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000016 bytes_write=1757 bytes_read=13408 bytes_retransmit=0 bytes_invalid=0 send_seq=246 receive_seq=246 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002339 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.39 cputime=0.439 memavail=7025268
+Stats 2902.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000016 bytes_write=1763 bytes_read=13484 bytes_retransmit=0 bytes_invalid=0 send_seq=247 receive_seq=247 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002336 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.36 cputime=0.441 memavail=7025268
+Stats 2903.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000016 bytes_write=1769 bytes_read=13545 bytes_retransmit=0 bytes_invalid=0 send_seq=248 receive_seq=248 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002335 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.36 cputime=0.443 memavail=7025080
+Stats 2904.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000016 bytes_write=1775 bytes_read=13606 bytes_retransmit=0 bytes_invalid=0 send_seq=249 receive_seq=249 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002334 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.36 cputime=0.446 memavail=7025080
+Stats 2905.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000016 bytes_write=1781 bytes_read=13682 bytes_retransmit=0 bytes_invalid=0 send_seq=250 receive_seq=250 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002332 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.36 cputime=0.448 memavail=7025080
+Stats 2906.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000012 mcu_task_stddev=0.000030 bytes_write=1787 bytes_read=13756 bytes_retransmit=0 bytes_invalid=0 send_seq=251 receive_seq=251 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002328 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.36 cputime=0.449 memavail=7025080
+Stats 2907.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000012 mcu_task_stddev=0.000030 bytes_write=1793 bytes_read=13817 bytes_retransmit=0 bytes_invalid=0 send_seq=252 receive_seq=252 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002326 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.33 cputime=0.452 memavail=7025080
+Stats 2908.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000012 mcu_task_stddev=0.000030 bytes_write=1799 bytes_read=13893 bytes_retransmit=0 bytes_invalid=0 send_seq=253 receive_seq=253 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002324 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.33 cputime=0.454 memavail=7025080
+Stats 2909.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000012 mcu_task_stddev=0.000030 bytes_write=1805 bytes_read=13954 bytes_retransmit=0 bytes_invalid=0 send_seq=254 receive_seq=254 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002323 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.33 cputime=0.456 memavail=7022060
+Stats 2910.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000012 mcu_task_stddev=0.000030 bytes_write=1811 bytes_read=14015 bytes_retransmit=0 bytes_invalid=0 send_seq=255 receive_seq=255 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002322 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.33 cputime=0.458 memavail=7022060
+Stats 2911.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000016 bytes_write=1817 bytes_read=14104 bytes_retransmit=0 bytes_invalid=0 send_seq=256 receive_seq=256 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002320 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.33 cputime=0.460 memavail=7022060
+Stats 2912.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000016 bytes_write=1823 bytes_read=14165 bytes_retransmit=0 bytes_invalid=0 send_seq=257 receive_seq=257 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002319 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.30 cputime=0.462 memavail=7022060
+Stats 2913.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000016 bytes_write=1829 bytes_read=14226 bytes_retransmit=0 bytes_invalid=0 send_seq=258 receive_seq=258 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002318 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.30 cputime=0.464 memavail=7022384
+Stats 2914.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000016 bytes_write=1835 bytes_read=14302 bytes_retransmit=0 bytes_invalid=0 send_seq=259 receive_seq=259 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002315 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.30 cputime=0.466 memavail=7022384
+Stats 2915.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000016 bytes_write=1841 bytes_read=14363 bytes_retransmit=0 bytes_invalid=0 send_seq=260 receive_seq=260 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002314 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.30 cputime=0.468 memavail=7022384
+Stats 2916.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000010 mcu_task_stddev=0.000021 bytes_write=1847 bytes_read=14437 bytes_retransmit=0 bytes_invalid=0 send_seq=261 receive_seq=261 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002311 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.30 cputime=0.470 memavail=7023924
+Stats 2917.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000010 mcu_task_stddev=0.000021 bytes_write=1853 bytes_read=14513 bytes_retransmit=0 bytes_invalid=0 send_seq=262 receive_seq=262 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002308 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.28 cputime=0.472 memavail=7023924
+Stats 2918.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000010 mcu_task_stddev=0.000021 bytes_write=1859 bytes_read=14574 bytes_retransmit=0 bytes_invalid=0 send_seq=263 receive_seq=263 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002307 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.28 cputime=0.474 memavail=7023924
+Stats 2919.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000010 mcu_task_stddev=0.000021 bytes_write=1865 bytes_read=14635 bytes_retransmit=0 bytes_invalid=0 send_seq=264 receive_seq=264 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002306 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.28 cputime=0.476 memavail=7023924
+Stats 2920.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000010 mcu_task_stddev=0.000021 bytes_write=1871 bytes_read=14711 bytes_retransmit=0 bytes_invalid=0 send_seq=265 receive_seq=265 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002302 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.28 cputime=0.478 memavail=7023924
+Stats 2921.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000010 mcu_task_stddev=0.000017 bytes_write=1877 bytes_read=14785 bytes_retransmit=0 bytes_invalid=0 send_seq=266 receive_seq=266 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002302 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.28 cputime=0.480 memavail=7023924
+Stats 2922.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000010 mcu_task_stddev=0.000017 bytes_write=1883 bytes_read=14846 bytes_retransmit=0 bytes_invalid=0 send_seq=267 receive_seq=267 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002301 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.25 cputime=0.482 memavail=7023924
+Stats 2923.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000010 mcu_task_stddev=0.000017 bytes_write=1889 bytes_read=14922 bytes_retransmit=0 bytes_invalid=0 send_seq=268 receive_seq=268 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002300 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.25 cputime=0.484 memavail=7023924
+Stats 2924.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000010 mcu_task_stddev=0.000017 bytes_write=1895 bytes_read=14983 bytes_retransmit=0 bytes_invalid=0 send_seq=269 receive_seq=269 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002298 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.25 cputime=0.486 memavail=7023924
+Stats 2925.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000010 mcu_task_stddev=0.000017 bytes_write=1901 bytes_read=15059 bytes_retransmit=0 bytes_invalid=0 send_seq=270 receive_seq=270 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002297 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.25 cputime=0.488 memavail=7023924
+Stats 2926.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000016 bytes_write=1907 bytes_read=15133 bytes_retransmit=0 bytes_invalid=0 send_seq=271 receive_seq=271 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002296 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.25 cputime=0.490 memavail=7023924
+Stats 2927.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000016 bytes_write=1913 bytes_read=15194 bytes_retransmit=0 bytes_invalid=0 send_seq=272 receive_seq=272 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002295 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.23 cputime=0.492 memavail=7023924
+Stats 2928.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000016 bytes_write=1919 bytes_read=15270 bytes_retransmit=0 bytes_invalid=0 send_seq=273 receive_seq=273 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002294 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.23 cputime=0.494 memavail=7023924
+Stats 2929.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000016 bytes_write=1925 bytes_read=15331 bytes_retransmit=0 bytes_invalid=0 send_seq=274 receive_seq=274 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002299 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.23 cputime=0.496 memavail=7023924
+Stats 2930.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000016 bytes_write=1931 bytes_read=15392 bytes_retransmit=0 bytes_invalid=0 send_seq=275 receive_seq=275 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002298 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.23 cputime=0.498 memavail=7023924
+Stats 2931.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000011 mcu_task_stddev=0.000018 bytes_write=1937 bytes_read=15481 bytes_retransmit=0 bytes_invalid=0 send_seq=276 receive_seq=276 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002298 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.23 cputime=0.500 memavail=7022472
+Stats 2932.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000011 mcu_task_stddev=0.000018 bytes_write=1943 bytes_read=15542 bytes_retransmit=0 bytes_invalid=0 send_seq=277 receive_seq=277 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002297 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.22 cputime=0.502 memavail=7022472
+Stats 2933.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000011 mcu_task_stddev=0.000018 bytes_write=1949 bytes_read=15603 bytes_retransmit=0 bytes_invalid=0 send_seq=278 receive_seq=278 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002299 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.22 cputime=0.504 memavail=7022472
+Stats 2934.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000011 mcu_task_stddev=0.000018 bytes_write=1955 bytes_read=15679 bytes_retransmit=0 bytes_invalid=0 send_seq=279 receive_seq=279 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002298 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.22 cputime=0.506 memavail=7022472
+Stats 2935.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000011 mcu_task_stddev=0.000018 bytes_write=1961 bytes_read=15740 bytes_retransmit=0 bytes_invalid=0 send_seq=280 receive_seq=280 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002296 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.22 cputime=0.507 memavail=7022472
+Stats 2936.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000011 mcu_task_stddev=0.000018 bytes_write=1967 bytes_read=15801 bytes_retransmit=0 bytes_invalid=0 send_seq=281 receive_seq=281 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002296 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.22 cputime=0.509 memavail=7022128
+Stats 2937.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000016 mcu_task_stddev=0.000067 bytes_write=1973 bytes_read=15891 bytes_retransmit=0 bytes_invalid=0 send_seq=282 receive_seq=282 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002297 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.20 cputime=0.511 memavail=7022128
+Stats 2938.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000016 mcu_task_stddev=0.000067 bytes_write=1979 bytes_read=15952 bytes_retransmit=0 bytes_invalid=0 send_seq=283 receive_seq=283 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002297 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.20 cputime=0.514 memavail=7022016
+Stats 2939.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000016 mcu_task_stddev=0.000067 bytes_write=1985 bytes_read=16013 bytes_retransmit=0 bytes_invalid=0 send_seq=284 receive_seq=284 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002296 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.20 cputime=0.516 memavail=7022016
+Stats 2940.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000016 mcu_task_stddev=0.000067 bytes_write=1991 bytes_read=16089 bytes_retransmit=0 bytes_invalid=0 send_seq=285 receive_seq=285 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002296 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.20 cputime=0.518 memavail=7022016
+Stats 2941.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000016 mcu_task_stddev=0.000067 bytes_write=1997 bytes_read=16147 bytes_retransmit=0 bytes_invalid=0 send_seq=286 receive_seq=286 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002296 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.20 cputime=0.520 memavail=7022016
+Stats 2942.6: gcodein=0 mcu: mcu_awake=0.004 mcu_task_avg=0.000060 mcu_task_stddev=0.000441 bytes_write=2003 bytes_read=16218 bytes_retransmit=0 bytes_invalid=0 send_seq=287 receive_seq=287 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002296 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.18 cputime=0.522 memavail=7022016
+Stats 2943.6: gcodein=0 mcu: mcu_awake=0.004 mcu_task_avg=0.000060 mcu_task_stddev=0.000441 bytes_write=2009 bytes_read=16289 bytes_retransmit=0 bytes_invalid=0 send_seq=288 receive_seq=288 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002300 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.18 cputime=0.524 memavail=7022016
+Stats 2944.6: gcodein=0 mcu: mcu_awake=0.004 mcu_task_avg=0.000060 mcu_task_stddev=0.000441 bytes_write=2015 bytes_read=16346 bytes_retransmit=0 bytes_invalid=0 send_seq=289 receive_seq=289 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002300 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.18 cputime=0.526 memavail=7022152
+Stats 2945.6: gcodein=0 mcu: mcu_awake=0.004 mcu_task_avg=0.000060 mcu_task_stddev=0.000441 bytes_write=2021 bytes_read=16403 bytes_retransmit=0 bytes_invalid=0 send_seq=290 receive_seq=290 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002302 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.18 cputime=0.528 memavail=7022152
+Stats 2946.6: gcodein=0 mcu: mcu_awake=0.004 mcu_task_avg=0.000060 mcu_task_stddev=0.000441 bytes_write=2027 bytes_read=16476 bytes_retransmit=0 bytes_invalid=0 send_seq=291 receive_seq=291 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002303 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.18 cputime=0.530 memavail=7021648
+Stats 2947.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000016 bytes_write=2033 bytes_read=16550 bytes_retransmit=0 bytes_invalid=0 send_seq=292 receive_seq=292 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002302 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.17 cputime=0.532 memavail=7021396
+Stats 2948.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000016 bytes_write=2039 bytes_read=16611 bytes_retransmit=0 bytes_invalid=0 send_seq=293 receive_seq=293 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002302 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.17 cputime=0.534 memavail=7021396
+Stats 2949.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000016 bytes_write=2045 bytes_read=16687 bytes_retransmit=0 bytes_invalid=0 send_seq=294 receive_seq=294 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002302 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.17 cputime=0.536 memavail=7021648
+Stats 2950.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000016 bytes_write=2051 bytes_read=16748 bytes_retransmit=0 bytes_invalid=0 send_seq=295 receive_seq=295 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002303 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.17 cputime=0.538 memavail=7021648
+Stats 2951.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000016 bytes_write=2057 bytes_read=16809 bytes_retransmit=0 bytes_invalid=0 send_seq=296 receive_seq=296 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002309 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.17 cputime=0.540 memavail=7021648
+Stats 2952.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000015 bytes_write=2063 bytes_read=16898 bytes_retransmit=0 bytes_invalid=0 send_seq=297 receive_seq=297 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002309 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.15 cputime=0.542 memavail=7021648
+Stats 2953.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000015 bytes_write=2069 bytes_read=16959 bytes_retransmit=0 bytes_invalid=0 send_seq=298 receive_seq=298 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002314 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.15 cputime=0.544 memavail=7021648
+Stats 2954.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000015 bytes_write=2075 bytes_read=17020 bytes_retransmit=0 bytes_invalid=0 send_seq=299 receive_seq=299 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002314 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.15 cputime=0.547 memavail=7021648
+Stats 2955.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000015 bytes_write=2081 bytes_read=17096 bytes_retransmit=0 bytes_invalid=0 send_seq=300 receive_seq=300 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002314 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.15 cputime=0.549 memavail=7021648
+Stats 2956.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000015 bytes_write=2087 bytes_read=17157 bytes_retransmit=0 bytes_invalid=0 send_seq=301 receive_seq=301 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002319 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.15 cputime=0.551 memavail=7021268
+Stats 2957.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000015 bytes_write=2099 bytes_read=17247 bytes_retransmit=0 bytes_invalid=0 send_seq=303 receive_seq=303 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002322 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.14 cputime=0.553 memavail=7024736
+Stats 2958.6: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000015 bytes_write=2105 bytes_read=17323 bytes_retransmit=0 bytes_invalid=0 send_seq=304 receive_seq=304 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002320 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.14 cputime=0.555 memavail=7024736
+Stats 2959.7: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000015 bytes_write=2111 bytes_read=17384 bytes_retransmit=0 bytes_invalid=0 send_seq=305 receive_seq=305 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002320 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.14 cputime=0.558 memavail=7024736
+Stats 2960.7: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000015 bytes_write=2117 bytes_read=17445 bytes_retransmit=0 bytes_invalid=0 send_seq=306 receive_seq=306 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002320 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.14 cputime=0.559 memavail=7024736
+Stats 2961.7: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000009 mcu_task_stddev=0.000015 bytes_write=2123 bytes_read=17521 bytes_retransmit=0 bytes_invalid=0 send_seq=307 receive_seq=307 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002320 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.14 cputime=0.562 memavail=7026044
+Stats 2962.7: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000011 bytes_write=2129 bytes_read=17595 bytes_retransmit=0 bytes_invalid=0 send_seq=308 receive_seq=308 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002320 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.13 cputime=0.563 memavail=7025908
+Stats 2963.7: gcodein=0 mcu: mcu_awake=0.001 mcu_task_avg=0.000008 mcu_task_stddev=0.000011 bytes_write=2135 bytes_read=17656 bytes_retransmit=0 bytes_invalid=0 send_seq=309 receive_seq=309 retransmit_seq=0 srtt=0.000 rttvar=0.000 rto=0.025 ready_bytes=0 upcoming_bytes=0 freq=50002321 print_time=89.958 buffer_time=0.000 print_stall=0 extruder: target=0 temp=110.1 pwm=0.000 sysload=0.13 cputime=0.565 memavail=7025320
+webhooks client 135863168464176: Disconnected

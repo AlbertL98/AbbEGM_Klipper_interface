@@ -1,4 +1,5 @@
 # ---- Ubuntu + Klipper + Moonraker + Mainsail ----
+# Mit simulierter Linux-MCU für Docker/WSL2 (kein echtes GPIO nötig)
 FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -57,15 +58,30 @@ RUN python3 -m venv klippy-env && \
     /home/klippy/klippy-env/bin/pip install --upgrade pip && \
     /home/klippy/klippy-env/bin/pip install -r /home/klippy/klipper/scripts/klippy-requirements.txt
 
-# --- SIMULATOR MCU KOMPILIEREN ---
+# --- GPIO SIMULATION PATCH ---
+# Patcht die Linux-MCU Hardware-Dateien damit sie ohne echtes
+# /dev/gpiochip, /sys/bus/iio etc. funktionieren (für Docker/WSL2)
+COPY gpio_patch.py /tmp/gpio_patch.py
+
+# --- LINUX-MCU KOMPILIEREN (mit GPIO-Patch) ---
 WORKDIR /home/klippy/klipper
-RUN make clean && \
+
+# Erst patchen, dann als Linux-MCU bauen
+RUN python3 /tmp/gpio_patch.py && \
+    make clean && \
     echo "CONFIG_LOW_LEVEL_OPTIONS=y" > .config && \
-    echo "CONFIG_MACH_SIMU=y" >> .config && \
-    echo "CONFIG_BOARD_DIRECTORY=\"simulator\"" >> .config && \
+    echo "CONFIG_MACH_LINUX=y" >> .config && \
+    echo 'CONFIG_BOARD_DIRECTORY="linux"' >> .config && \
     echo "CONFIG_CLOCK_FREQ=50000000" >> .config && \
+    echo "CONFIG_LINUX_SELECT=y" >> .config && \
+    echo "CONFIG_HAVE_GPIO=y" >> .config && \
+    echo "CONFIG_HAVE_GPIO_ADC=y" >> .config && \
+    echo "CONFIG_HAVE_GPIO_SPI=y" >> .config && \
+    echo "CONFIG_HAVE_GPIO_I2C=y" >> .config && \
+    echo "CONFIG_HAVE_GPIO_HARD_PWM=y" >> .config && \
+    echo "CONFIG_INLINE_STEPPER_HACK=y" >> .config && \
     make olddefconfig && \
-    make
+    make -j$(nproc)
 
 # Binary an bekannten Ort kopieren
 USER root
@@ -108,6 +124,6 @@ RUN chmod +x /start.sh
 
 RUN chown -R klippy:klippy /home/klippy
 
-EXPOSE 7125 80
+EXPOSE 7125 80 7200
 
 CMD ["/start.sh"]
