@@ -1,0 +1,10 @@
+timestamp,event_type,severity,message,details
+13402.750000,JOB_START,INFO,Job job_1771325019 gestartet,
+13510.265000,SYNC_WARN,WARNING,Tracking 10.9mm > Warn-Limit 10.0mm,
+13513.250000,SYNC_OK,INFO,,
+13513.343000,SYNC_WARN,WARNING,Tracking 11.5mm > Warn-Limit 10.0mm,
+13515.421000,SYNC_OK,INFO,,
+13518.625000,SYNC_WARN,WARNING,Tracking 10.1mm > Warn-Limit 10.0mm,
+13518.656000,SYNC_OK,INFO,,
+13526.640000,JOB_COMPLETE,INFO,"Abgeschlossen: 3775 Zyklen, 3774 TX",
+13528.750000,JOB_STOP,INFO,Job job_1771325019 beendet,"{""counts"": {""plan"": 21, ""tx"": 3774, ""rx"": 35238, ""sync"": 115, ""event"": 8}}"
