@@ -1849,3 +1849,5 @@ System Info:
 [application.py:log_request()] - 101 GET /websocket (127.0.0.1) [_TRUSTED_USER_] 1.18ms
 [websockets.py:open()] - Websocket Opened: ID: 132885349415440, Proxied: False, User Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0, Host Name: localhost
 [websockets.py:_handle_identify()] - Websocket 132885349415440 Client Identified - Name: mainsail, Version: 2.17.0, Type: web
+[websockets.py:on_close()] - Websocket Closed: ID: 132885349415440 Close Code: None, Close Reason: None, Pong Time Elapsed: 9.30
+[server.py:_handle_term_signal()] - Exiting with signal SIGTERM

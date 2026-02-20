@@ -752,3 +752,6 @@ System Info:
 2026-02-20 16:41:15,695 [application.py:log_request()] - 101 GET /websocket (127.0.0.1) [_TRUSTED_USER_] 1.18ms
 2026-02-20 16:41:15,696 [websockets.py:open()] - Websocket Opened: ID: 132885349415440, Proxied: False, User Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0, Host Name: localhost
 2026-02-20 16:41:15,706 [websockets.py:_handle_identify()] - Websocket 132885349415440 Client Identified - Name: mainsail, Version: 2.17.0, Type: web
+2026-02-20 17:00:35,115 [websockets.py:on_close()] - Websocket Closed: ID: 132885349415440 Close Code: None, Close Reason: None, Pong Time Elapsed: 9.30
+2026-02-20 17:00:35,126 [server.py:_handle_term_signal()] - Exiting with signal SIGTERM
+2026-02-20 17:00:35,234 [klippy_connection.py:_on_connection_closed()] - Klippy Connection Removed
