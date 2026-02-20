@@ -264,6 +264,19 @@ class TrajectoryPlanner:
         self.reset_correction()
         logger.info("PLANNER: Queue geleert")
 
+    def reset(self):
+        """
+        Kompletter Reset: Queue, Zähler, Sequenz — alles auf Anfang.
+        Wird zwischen Jobs aufgerufen (reset_to_ready).
+        """
+        self.clear()
+        self._sequence_id = 0
+        self._segments_consumed = 0
+        self._samples_generated = 0
+        self._underflows = 0
+        self._started = False
+        logger.info("PLANNER: Komplett zurückgesetzt")
+
     # ── Status ───────────────────────────────────────────────
 
     def snapshot(self) -> dict:

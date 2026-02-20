@@ -278,6 +278,8 @@ class TcpSegmentReceiver:
                 # Kein Daten — OK, weiter warten
                 continue
             except (ConnectionResetError, BrokenPipeError, OSError) as e:
+                if not self._running:
+                    break  # Shutdown — kein Warning nötig
                 logger.warning("SOURCE: Verbindungsfehler: %s", e)
                 self._disconnect()
                 time.sleep(self.reconnect_interval)

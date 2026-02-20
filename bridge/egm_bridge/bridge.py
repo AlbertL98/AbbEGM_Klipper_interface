@@ -103,6 +103,7 @@ class EgmBridge:
         # Metriken
         self._loop_count = 0
         self._loop_overruns = 0
+        self._shutdown_done = False
 
     # ── Lifecycle ────────────────────────────────────────────
 
@@ -174,26 +175,69 @@ class EgmBridge:
         return True
 
     def stop(self, reason: str = "Manueller Stop"):
-        """Ordentliches Herunterfahren."""
-        logger.info("BRIDGE: Stoppe... (%s)", reason)
+        """
+        Stoppt den laufenden Job, behält aber Verbindungen offen.
+        Für reset_to_ready() → nächster Job kann sofort starten.
+        """
+        logger.info("BRIDGE: Stoppe Job... (%s)", reason)
         self._running = False
 
         if self._loop_thread:
             self._loop_thread.join(timeout=5.0)
+            self._loop_thread = None
 
         self.sm.to_stop(reason)
-
-        if self.receiver:
-            self.receiver.stop()
-        self.egm.disconnect()
-        self.telemetry.stop()
         self.planner.clear()
 
-        logger.info("BRIDGE: Gestoppt (Zyklen: %d, Overruns: %d)",
+        logger.info("BRIDGE: Job gestoppt (Zyklen: %d, Overruns: %d)",
                      self._loop_count, self._loop_overruns)
+
+    def reset_to_ready(self):
+        """
+        Setzt die Bridge nach einem Job zurück in den READY-Zustand.
+        Verbindungen bleiben aktiv — wartet auf nächsten Druckjob.
+
+        Ablauf: STOP → READY (Planner, Metriken, Sync werden resettet)
+        """
+        if self.sm.state == State.READY:
+            logger.debug("BRIDGE: Bereits in READY")
+            return True
+
+        if self.sm.state not in (State.STOP,):
+            logger.warning("BRIDGE: reset_to_ready() nur aus STOP möglich "
+                           "(aktuell: %s)", self.sm.state.value)
+            return False
+
+        # Planner komplett zurücksetzen (Queue + Zähler)
+        self.planner.reset()
+
+        # Sync-Monitor zurücksetzen
+        self.sync.reset()
+
+        # Metriken zurücksetzen
+        self._loop_count = 0
+        self._loop_overruns = 0
+        self._last_sample = None
+        self._last_feedback = None
+        self._last_segment_time = 0.0
+
+        # Telemetrie: Neuen Job vorbereiten
+        self.telemetry.new_session()
+
+        # State Machine: STOP → READY
+        if not self.sm.to_ready("Reset für nächsten Job"):
+            logger.error("BRIDGE: Transition STOP → READY fehlgeschlagen")
+            return False
+
+        logger.info("BRIDGE: Zurück in READY — warte auf nächsten Druckjob")
+        return True
 
     def shutdown(self):
         """Komplettes Herunterfahren inkl. Cleanup — aus JEDEM Zustand."""
+        if self._shutdown_done:
+            return
+        self._shutdown_done = True
+
         logger.info("BRIDGE: Shutdown aus Zustand %s", self.sm.state.value)
         self._running = False
 

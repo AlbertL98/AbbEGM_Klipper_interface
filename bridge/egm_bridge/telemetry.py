@@ -203,6 +203,25 @@ class TelemetryWriter:
 
     # ── Status ───────────────────────────────────────────────
 
+    def new_session(self):
+        """
+        Startet eine neue Telemetrie-Session (neuer Job-Ordner).
+        Wird von bridge.reset_to_ready() aufgerufen.
+        Schließt alte Streams und öffnet neue für den nächsten Job.
+        """
+        # Alte Streams sauber schließen
+        if self._active:
+            self.stop()
+
+        # Neuer Job-ID und Verzeichnis
+        self.job_id = f"job_{int(time.time())}"
+        self._job_dir = os.path.join(self.log_dir, self.job_id)
+        self._counts = {}
+
+        # Streams neu öffnen
+        self.start()
+        logger.info("TELEMETRY: Neue Session gestartet: %s", self.job_id)
+
     def snapshot(self) -> dict:
         return {
             "active": self._active,
