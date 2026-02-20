@@ -581,3 +581,174 @@ System Info:
 2026-02-17 10:43:46,844 [klippy_apis.py:start_print()] - Requesting Job Start, filename = toolhead_test.gcode
 2026-02-17 10:43:47,088 [job_state.py:_send_job_event()] - Job Started: toolhead_test.gcode
 2026-02-17 10:53:16,770 [websockets.py:on_close()] - Websocket Closed: ID: 133172379777648 Close Code: None, Close Reason: None, Pong Time Elapsed: 6.78
+-------------------- Log Start | Fri Feb 20 16:41:01 2026 --------------------
+platform: Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39
+data_path: /home/klippy/printer_data
+is_default_data_path: False
+config_file: /home/klippy/printer_data/config/moonraker.conf
+backup_config: /home/klippy/printer_data/config/.moonraker.conf.bkp
+startup_warnings: []
+verbose: False
+debug: False
+asyncio_debug: False
+is_backup_config: False
+is_python_package: False
+instance_uuid: 8dd85078aac7479f92c3d096ec277254
+unix_socket_path: /home/klippy/printer_data/comms/moonraker.sock
+structured_logging: False
+software_version: v0.10.0-8-g293a4cf
+git_branch: master
+git_remote: origin
+git_repo_url: https://github.com/Arksine/moonraker.git
+modified_files: []
+unofficial_components: []
+log_file: /home/klippy/printer_data/logs/moonraker.log
+python_version: 3.12.3 (main, Jan 22 2026, 20:57:42) [GCC 13.3.0]
+launch_args: /home/klippy/moonraker-env/bin/python /home/klippy/moonraker/moonraker/moonraker.py -d /home/klippy/printer_data
+msgspec_enabled: False
+uvloop_enabled: False
+2026-02-20 16:41:01,851 [confighelper.py:read_file()] - Configuration File '/home/klippy/printer_data/config/moonraker.conf' parsed, total size: 240 B
+2026-02-20 16:41:01,851 [server.py:add_log_rollover_item()] - 
+#################### Moonraker Configuration ####################
+
+[server]
+host = 0.0.0.0
+port = 7125
+klippy_uds_address = /tmp/klippy_uds
+
+[authorization]
+trusted_clients = 
+	0.0.0.0/0
+cors_domains = 
+	*
+
+[octoprint_compat]
+
+[history]
+
+[file_manager]
+enable_object_processing = True
+
+[machine]
+provider = none
+
+#################################################################
+All Configuration Files:
+/home/klippy/printer_data/config/moonraker.conf
+#################################################################
+2026-02-20 16:41:01,878 [server.py:load_component()] - Component (secrets) loaded
+2026-02-20 16:41:01,880 [server.py:load_component()] - Component (template) loaded
+2026-02-20 16:41:01,882 [server.py:load_component()] - Component (klippy_connection) loaded
+2026-02-20 16:41:02,045 [application.py:__init__()] - Detected Tornado Version 6.5.4
+2026-02-20 16:41:02,047 [server.py:load_component()] - Component (application) loaded
+2026-02-20 16:41:02,054 [server.py:load_component()] - Component (websockets) loaded
+2026-02-20 16:41:02,060 [server.py:add_log_rollover_item()] - Loading Sqlite database provider. Sqlite Version: 3.45.1
+2026-02-20 16:41:02,062 [server.py:add_log_rollover_item()] - Unsafe Shutdown Count: 1
+2026-02-20 16:41:02,063 [server.py:load_component()] - Component (database) loaded
+2026-02-20 16:41:02,089 [server.py:load_component()] - Component (dbus_manager) loaded
+2026-02-20 16:41:02,098 [file_manager.py:__init__()] - Using File System Observer: inotify
+2026-02-20 16:41:02,115 [server.py:load_component()] - Component (file_manager) loaded
+2026-02-20 16:41:02,123 [database.py:register_table()] - Found registered table authorized_users
+2026-02-20 16:41:02,124 [authorization.py:__init__()] - Authorization Configuration Loaded
+Trusted Clients:
+0.0.0.0/0
+CORS Domains:
+.*
+2026-02-20 16:41:02,124 [server.py:load_component()] - Component (authorization) loaded
+2026-02-20 16:41:02,126 [server.py:load_component()] - Component (klippy_apis) loaded
+2026-02-20 16:41:02,146 [machine.py:_check_inside_container()] - Container detected via sched: docker
+2026-02-20 16:41:02,146 [server.py:add_log_rollover_item()] - 
+System Info:
+
+***python***
+  version: (3, 12, 3, 'final', 0)
+  version_string: 3.12.3 (main, Jan 22 2026, 20:57:42) [GCC 13.3.0]
+
+***cpu_info***
+  cpu_count: 16
+  bits: 64bit
+  processor: x86_64
+  cpu_desc: AMD Ryzen 7 4800HS with Radeon Graphics
+  serial_number: 
+  hardware_desc: 
+  model: 
+  total_memory: 7829692
+  memory_units: kB
+
+***sd_info***
+
+***distribution***
+  name: Ubuntu 24.04.3 LTS
+  id: ubuntu
+  version: 24.04
+  version_parts: {'major': '24', 'minor': '04', 'build_number': ''}
+  like: debian
+  codename: noble
+  release_info: {}
+  kernel_version: 6.6.87.2-microsoft-standard-WSL2
+
+***virtualization***
+  virt_type: container
+  virt_identifier: docker
+
+***network***
+
+***canbus***
+
+***Allowed Services***
+  klipper_mcu
+  webcamd
+  MoonCord
+  KlipperScreen
+  moonraker-telegram-bot
+  moonraker-obico
+  sonar
+  crowsnest
+  octoeverywhere
+  ratos-configurator
+2026-02-20 16:41:02,147 [server.py:load_component()] - Component (shell_command) loaded
+2026-02-20 16:41:02,147 [machine.py:__init__()] - Using System Provider: none
+2026-02-20 16:41:02,149 [server.py:add_log_rollover_item()] - Module libcamera unavailable, import failed
+2026-02-20 16:41:02,149 [server.py:load_component()] - Component (machine) loaded
+2026-02-20 16:41:02,150 [server.py:load_component()] - Component (data_store) loaded
+2026-02-20 16:41:02,151 [proc_stats.py:__init__()] - Unable to find 'vcgencmd', throttle checking disabled
+2026-02-20 16:41:02,153 [proc_stats.py:_get_cpu_thermal_file()] - Monitoring temperature using default thermal zone
+2026-02-20 16:41:02,153 [server.py:load_component()] - Component (proc_stats) loaded
+2026-02-20 16:41:02,154 [server.py:load_component()] - Component (job_state) loaded
+2026-02-20 16:41:02,155 [server.py:load_component()] - Component (job_queue) loaded
+2026-02-20 16:41:02,157 [database.py:register_table()] - Found registered table job_history
+2026-02-20 16:41:02,157 [database.py:register_table()] - Found registered table job_totals
+2026-02-20 16:41:02,158 [server.py:load_component()] - Component (history) loaded
+2026-02-20 16:41:02,161 [server.py:load_component()] - Component (http_client) loaded
+2026-02-20 16:41:02,162 [server.py:load_component()] - Component (announcements) loaded
+2026-02-20 16:41:02,164 [server.py:load_component()] - Component (webcam) loaded
+2026-02-20 16:41:02,165 [server.py:load_component()] - Component (extensions) loaded
+2026-02-20 16:41:02,167 [server.py:load_component()] - Component (octoprint_compat) loaded
+2026-02-20 16:41:02,167 [server.py:_initialize_component()] - Performing Component Post Init: [database]
+2026-02-20 16:41:02,175 [server.py:_initialize_component()] - Performing Component Post Init: [dbus_manager]
+2026-02-20 16:41:02,176 [dbus_manager.py:component_init()] - Unable to Connect to D-Bus
+2026-02-20 16:41:02,176 [server.py:_initialize_component()] - Performing Component Post Init: [authorization]
+2026-02-20 16:41:02,177 [server.py:_initialize_component()] - Performing Component Post Init: [machine]
+2026-02-20 16:41:02,178 [machine.py:validation_init()] - Installation version in database up to date
+2026-02-20 16:41:02,182 [machine.py:_find_public_ip()] - Detected Local IP: 172.18.0.2
+2026-02-20 16:41:02,183 [server.py:_initialize_component()] - Performing Component Post Init: [proc_stats]
+2026-02-20 16:41:02,183 [server.py:_initialize_component()] - Performing Component Post Init: [history]
+2026-02-20 16:41:02,183 [webcam.py:_set_default_host_ip()] - Default public webcam address set: http://172.18.0.2
+2026-02-20 16:41:02,187 [server.py:_initialize_component()] - Performing Component Post Init: [announcements]
+2026-02-20 16:41:02,192 [server.py:_initialize_component()] - Performing Component Post Init: [webcam]
+2026-02-20 16:41:02,192 [webcam.py:_set_default_host_ip()] - Default public webcam address set: http://172.18.0.2
+2026-02-20 16:41:02,196 [server.py:_initialize_component()] - Performing Component Post Init: [klippy_connection]
+2026-02-20 16:41:02,236 [extensions.py:start_unix_server()] - Creating Unix Domain Socket at '/home/klippy/printer_data/comms/moonraker.sock'
+2026-02-20 16:41:02,237 [server.py:start_server()] - Starting Moonraker on (0.0.0.0, 7125), Hostname: 869cced698c8
+2026-02-20 16:41:02,238 [application.py:listen()] - SSL Certificate/Key not configured, aborting HTTPS Server startup
+2026-02-20 16:41:02,490 [klippy_connection.py:_do_connect()] - Klippy Connection Established
+2026-02-20 16:41:02,741 [server.py:add_log_rollover_item()] - Klipper Version: v0.13.0-540-g57c2e0c96-dirty
+2026-02-20 16:41:02,746 [klippy_connection.py:_request_initial_subscriptions()] - Webhooks Subscribed
+2026-02-20 16:41:02,747 [klippy_connection.py:_request_initial_subscriptions()] - GCode Output Subscribed
+2026-02-20 16:41:02,997 [job_state.py:_handle_started()] - Job state initialized: standby
+2026-02-20 16:41:03,252 [klippy_connection.py:_check_ready()] - Klippy ready
+2026-02-20 16:41:03,750 [data_store.py:_init_sensors()] - Configuring available sensors: ['extruder']
+2026-02-20 16:41:15,695 [authorization.py:_check_trusted_connection()] - Trusted Connection Detected, IP: 127.0.0.1
+2026-02-20 16:41:15,695 [application.py:log_request()] - 101 GET /websocket (127.0.0.1) [_TRUSTED_USER_] 1.18ms
+2026-02-20 16:41:15,696 [websockets.py:open()] - Websocket Opened: ID: 132885349415440, Proxied: False, User Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0, Host Name: localhost
+2026-02-20 16:41:15,706 [websockets.py:_handle_identify()] - Websocket 132885349415440 Client Identified - Name: mainsail, Version: 2.17.0, Type: web
