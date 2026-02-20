@@ -3042,3 +3042,7 @@ System Info:
 [klippy_connection.py:_check_ready()] - Klippy ready
 [data_store.py:_init_sensors()] - Configuring available sensors: ['extruder']
 [authorization.py:_check_trusted_connection()] - Trusted Connection Detected, IP: 172.18.0.1
+[websockets.py:on_close()] - Websocket Closed: ID: 124523588722784 Close Code: None, Close Reason: None, Pong Time Elapsed: 1.61
+[server.py:_handle_term_signal()] - Exiting with signal SIGTERM
+[klippy_connection.py:_on_connection_closed()] - Klippy Connection Removed
+[server.py:main()] - Server Shutdown
