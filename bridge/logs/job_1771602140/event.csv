@@ -1,0 +1,5 @@
+timestamp,event_type,severity,message,details
+4969.326991,JOB_START,INFO,Job job_1771602140 gestartet,
+5399.933622,JOB_START,INFO,Job default gestartet,
+5404.984810,EGM_TIMEOUT,CRITICAL,Watchdog — keine Antwort vom Roboter,
+5407.463062,JOB_STOP,INFO,Job job_1771602140 beendet,"{""counts"": {""plan"": 21, ""tx"": 251, ""rx"": 0, ""sync"": 5, ""event"": 3}}"

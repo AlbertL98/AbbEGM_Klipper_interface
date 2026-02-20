@@ -1,0 +1,3 @@
+timestamp,event_type,severity,message,details
+4886.052651,JOB_START,INFO,Job job_1771602057 gestartet,
+4945.009971,JOB_STOP,INFO,Job job_1771602057 beendet,"{""counts"": {""plan"": 0, ""tx"": 0, ""rx"": 0, ""sync"": 0, ""event"": 1}}"
