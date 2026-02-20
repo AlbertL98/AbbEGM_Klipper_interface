@@ -1,0 +1,5 @@
+timestamp,event_type,severity,message,details
+869.768141,JOB_START,INFO,Job job_1771598041 gestartet,
+870.034845,JOB_START,INFO,Job default gestartet,
+873.044978,JOB_COMPLETE,INFO,"Abgeschlossen: 150 Zyklen, 0 TX",
+874.762235,JOB_STOP,INFO,Job job_1771598041 beendet,"{""counts"": {""plan"": 0, ""tx"": 0, ""rx"": 0, ""sync"": 0, ""event"": 3}}"
