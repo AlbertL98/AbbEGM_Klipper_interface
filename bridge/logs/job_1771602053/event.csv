@@ -1,5 +1,0 @@
-timestamp,event_type,severity,message,details
-4882.771079,JOB_START,INFO,Job job_1771602053 gestartet,
-4882.822177,JOB_START,INFO,Job default gestartet,
-4885.831999,JOB_COMPLETE,INFO,"Abgeschlossen: 150 Zyklen, 0 TX",
-4885.994376,JOB_STOP,INFO,Job job_1771602053 beendet,"{""counts"": {""plan"": 0, ""tx"": 0, ""rx"": 0, ""sync"": 0, ""event"": 3}}"

@@ -119,8 +119,6 @@ path: /home/klippy/printer_data/gcodes
 [force_move]
 enable_force_move: True
 
-[egm_commands]
-
 [move_export]
 output_path: /home/klippy/printer_data/logs/move_segments.csv
 tcp_port: 7200

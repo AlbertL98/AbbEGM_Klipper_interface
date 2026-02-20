@@ -103,7 +103,6 @@ class EgmBridge:
         # Metriken
         self._loop_count = 0
         self._loop_overruns = 0
-        self._shutdown_done = False
 
     # ── Lifecycle ────────────────────────────────────────────
 
@@ -195,10 +194,6 @@ class EgmBridge:
 
     def shutdown(self):
         """Komplettes Herunterfahren inkl. Cleanup — aus JEDEM Zustand."""
-        if self._shutdown_done:
-            return
-        self._shutdown_done = True
-
         logger.info("BRIDGE: Shutdown aus Zustand %s", self.sm.state.value)
         self._running = False
 

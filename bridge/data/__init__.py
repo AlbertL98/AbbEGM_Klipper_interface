@@ -7,7 +7,7 @@
 #   TrajectoryPlanner — Segment-Interpolation
 #   EgmClient        — UDP/EGM-Kommunikation
 #   SyncMonitor      — Synchronisationsüberwachung
-#   ControlServer   — TCP-Steuerung (für Klipper-Extra)
+#   TelemetryWriter  — Logging
 
 from .bridge import EgmBridge
 from .state_machine import BridgeStateMachine, State
@@ -17,6 +17,5 @@ from .egm_client import EgmClient
 from .sync_monitor import SyncMonitor, SyncLevel
 from .telemetry import TelemetryWriter
 from .segment_source import TrapezSegment, TcpSegmentReceiver, CsvSegmentSource
-from .control_server import ControlServer
 
-__version__ = "0.2.0"
+__version__ = "0.1.0"

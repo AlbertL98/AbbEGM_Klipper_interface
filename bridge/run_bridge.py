@@ -4,17 +4,9 @@
 # Nutzung:
 #   python run_bridge.py                          # Mit Default-Config
 #   python run_bridge.py --config my_config.json  # Mit eigener Config
-#   python run_bridge.py --control-port 7201      # Control-Server Port
-#   python run_bridge.py --auto-start             # Altes Verhalten
 #   python run_bridge.py --dry-run                # Nur Config validieren
 #
-# Steuerung über TCP Control-Port (Default 7201):
-#   {"cmd": "start", "job": "my_print"}
-#   {"cmd": "stop"}
-#   {"cmd": "status"}
-#   {"cmd": "set_param", "section": "sync", "key": "...", "value": ...}
-#
-# Wird von egm_commands.py (Klipper-Extra) per G-Code angesprochen.
+# CodingPlan §G2: Core muss auch ohne GUI vollständig bedienbar bleiben
 
 import argparse
 import json
@@ -26,7 +18,6 @@ import time
 from egm_bridge import (
     EgmBridge, BridgeConfig, load_config, save_config, validate_config
 )
-from egm_bridge.control_server import ControlServer
 
 
 def setup_logging(level: str = "INFO"):
@@ -46,14 +37,6 @@ def main():
     parser.add_argument(
         "--config", "-c", default="bridge_config.json",
         help="Pfad zur Konfigurationsdatei (JSON)"
-    )
-    parser.add_argument(
-        "--control-port", type=int, default=7201,
-        help="TCP-Port für Control-Server (Default: 7201)"
-    )
-    parser.add_argument(
-        "--auto-start", action="store_true",
-        help="Job automatisch starten sobald Segmente da sind"
     )
     parser.add_argument(
         "--generate-config", action="store_true",
@@ -102,67 +85,40 @@ def main():
     # ── Bridge starten ───────────────────────────────────
     bridge = EgmBridge(cfg)
 
-    if not bridge.start():
-        logger.error("Bridge-Start fehlgeschlagen!")
-        sys.exit(1)
-
-    # ── Control-Server starten ───────────────────────────
-    control = ControlServer(bridge, port=args.control_port)
-    try:
-        control.start()
-    except OSError:
-        logger.error("Control-Server konnte nicht starten (Port %d belegt?)",
-                     args.control_port)
-        bridge.shutdown()
-        sys.exit(1)
-
-    # ── Graceful Shutdown ────────────────────────────────
-    _shutdown_done = False
-
-    def do_shutdown():
-        nonlocal _shutdown_done
-        if _shutdown_done:
-            return
-        _shutdown_done = True
-        control.stop()
-        bridge.shutdown()
-
+    # Graceful Shutdown bei SIGINT/SIGTERM
     def signal_handler(sig, frame):
         logger.info("Signal %d empfangen — fahre herunter...", sig)
-        do_shutdown()
+        bridge.shutdown()
         sys.exit(0)
 
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
-    # ── Hauptschleife ────────────────────────────────────
-    logger.info("Bridge READY — warte auf Commands (Control-Port: %d)",
-                args.control_port)
-    logger.info("Steuerung: EGM_START / EGM_STOP / EGM_STATUS "
-                "im Mainsail-Terminal")
+    if not bridge.start():
+        logger.error("Bridge-Start fehlgeschlagen!")
+        sys.exit(1)
 
-    if args.auto_start:
-        logger.info("Auto-Start aktiviert — Job startet "
-                    "sobald Segmente empfangen werden")
+    # ── Warten auf Segmente, dann Job starten ────────────
+    logger.info("Bridge READY — warte auf Segmente von Klipper...")
+    logger.info("Tipp: Starte einen Print in Klipper, "
+                "oder sende Segmente per TCP an Port %d",
+                cfg.klipper.tcp_port)
 
+    # Auto-Start: Sobald erstes Segment da ist
     try:
         while True:
-            state = bridge.sm.state.value
-
-            # Auto-Start Modus (Kompatibilität mit altem Verhalten)
-            if (args.auto_start
-                    and state == "READY"
+            if (bridge.sm.state.value == "READY"
                     and bridge.planner.queue_depth > 0):
-                logger.info("Auto-Start: Erstes Segment empfangen "
-                            "(Queue: %d) — starte Job...",
+                logger.info("Erstes Segment empfangen (Queue: %d) "
+                            "— starte Job...",
                             bridge.planner.queue_depth)
                 bridge.run_job()
 
-            elif state == "FAULT":
+            elif bridge.sm.state.value == "FAULT":
                 logger.error("Bridge im FAULT-Zustand!")
                 break
 
-            elif state == "STOP":
+            elif bridge.sm.state.value == "STOP":
                 logger.info("Job abgeschlossen!")
                 snap = bridge.planner.snapshot()
                 logger.info("  Samples: %d | Segmente: %d | Overruns: %d",
@@ -171,12 +127,22 @@ def main():
                             bridge._loop_overruns)
                 break
 
-            time.sleep(0.2)
+            # Periodischer Status im Betrieb
+            elif bridge.sm.state.value in ("RUN", "DEGRADED"):
+                snap = bridge.planner.snapshot()
+                logger.debug(
+                    "Loop: Queue=%d Samples=%d Seg=%s",
+                    snap["queue_depth"],
+                    snap["samples_generated"],
+                    snap["current_segment"],
+                )
+
+            time.sleep(0.1)
 
     except KeyboardInterrupt:
         pass
     finally:
-        do_shutdown()
+        bridge.shutdown()
 
 
 if __name__ == "__main__":

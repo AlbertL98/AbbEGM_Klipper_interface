@@ -15,4 +15,3 @@ services:
       - ./logs:/home/klippy/printer_data/logs
       - ./gcodes:/home/klippy/printer_data/gcodes
       - ./klippy_extras:/home/klippy/custom_extras
-      - ./Bridge:/home/klippy/bridge
