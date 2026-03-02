@@ -15,7 +15,7 @@ import signal
 import sys
 import time
 
-from egm_bridge import (
+from data import (
     EgmBridge, BridgeConfig, load_config, save_config, validate_config
 )
 
