@@ -9,7 +9,7 @@
     "cycle_ms": 20,
     "timeout_ms": 100,
     "watchdog_cycles": 250,
-    "protocol": "auto",
+    "protocol": "protobuf",
     "default_q0": 0.0,
     "default_q1": -0.707106,
     "default_q2": 0.707106,

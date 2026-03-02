@@ -119,7 +119,7 @@ class EgmClient:
             return
         try:
             try:
-                import egm_pb2
+                from . import egm_pb2
             except ImportError:
                 import sys
                 from pathlib import Path
@@ -140,7 +140,7 @@ class EgmClient:
 
     def connect(self) -> bool:
         """
-        Zwei Sockets öffnen — exakt wie workingEGM.py:
+        Zwei Sockets öffnen:
           tx.bind(("127.0.0.1", 6512))
           rx.bind(("0.0.0.0", 6510))
           rx.settimeout(0.1)
