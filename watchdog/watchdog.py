@@ -1,3 +1,4 @@
+# TODO: nich ausreichend getetstet, extruder verküpung myb fehlerhaft, log file wird einfach abgelgegt
 import csv
 import json
 import os

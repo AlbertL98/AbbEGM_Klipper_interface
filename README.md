@@ -42,6 +42,10 @@ Das System läuft in einem **Docker-Container**, der Klipper, Moonraker und Main
 │       ├── test_core.py        Smoke-Tests (State Machine, Planner, Config, Sync)
 │       └── test_egm_direct.py  EGM-Kreisbahn-Test (Vergleich mit workingEGM.py)
 │
+├── watchdog/
+│   ├── egm_pb2.py          Generierter Protobuf-Code (ABB EGM), gleich wie in "bridge/data"
+│   ├── watchdog.md         dokumentation, aktuell etwas schlecht, muss noch überarbeitet werden
+│   └── watchdog.py          Klipper-Extra: Exportiert Trapez-Segmente per CSV + TCP
 ├── gcodes/                     Test-G-Codes
 │   ├── toolhead_test.gcode     XYZ-Bewegungen mit Extrusion
 │   ├── extruder_test.gcode     Reine Extruder-Tests
