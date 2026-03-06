@@ -10,6 +10,16 @@ from __future__ import annotations
 # Jeder EGM-Zyklus (z.B. 4ms) braucht eine Sollposition.
 # Der Planner interpoliert innerhalb des aktuellen Segments
 # und wechselt automatisch zum nächsten.
+#
+# TIME-INDEXED PLAYBACK (v2):
+#   Statt FIFO + lokaler Elapsed-Time wird jetzt Klippers
+#   print_time-Zeitlinie als Referenz genutzt:
+#
+#     t_klipper_now = (bridge_time - t0_bridge) + t0_klipper + offset_s
+#
+#   Damit ist die Ausführung zeitlich konsistent mit Klippers
+#   Extruder-Steuerung. offset_s modelliert die gewünschte
+#   Differenz zwischen Extruder (Klipper) und Roboter (ABB).
 
 import math
 import time
@@ -35,6 +45,7 @@ class EgmSample:
     segment_nr: int         # Zugehöriges Segment
     segment_progress: float  # 0.0 – 1.0 innerhalb des Segments
     sequence_id: int        # Laufende Nummer für EGM
+    t_klipper: float = 0.0  # Klipper-Zeitlinie (für Telemetrie/Debug)
 
 
 @dataclass
@@ -53,33 +64,46 @@ class TrajectoryPlanner:
     """
     Verwaltet die Plan-Queue und erzeugt EGM-Samples.
 
-    Arbeitsweise:
-    1. Segmente werden von außen via add_segment() eingefügt
-    2. next_sample() wird im EGM-Takt aufgerufen
-    3. Der Planner interpoliert innerhalb des aktuellen Segments
-    4. Wenn ein Segment abgearbeitet ist, wechselt er zum nächsten
-    5. Korrekturen werden per apply_correction() eingebracht
-       und nur auf zukünftige Samples angewandt (§B4)
+    TIME-INDEXED PLAYBACK:
+      Statt _segment_elapsed hochzuzählen wird in jedem Zyklus
+      die Klipper-Zeit t_klipper_now berechnet und das passende
+      Segment per print_time ausgewählt.
+
+      t_klipper_now = (bridge_time - t0_bridge) + t0_klipper + offset_s
+
+      t0_bridge / t0_klipper werden beim ersten Segment gekoppelt
+      (via init_time_sync). offset_s ist konfigurierbar und
+      modelliert die zeitliche Differenz Extruder ↔ Roboter.
     """
 
     def __init__(self, cycle_s: float,
                  max_queue_size: int = 2000,
                  correction_max_mm: float = 3.0,
-                 correction_rate_limit: float = 10.0):
+                 correction_rate_limit: float = 10.0,
+                 offset_s: float = 0.0):
         self.cycle_s = cycle_s
         self.max_queue_size = max_queue_size
         self.correction_max_mm = correction_max_mm
         self.correction_rate_limit = correction_rate_limit  # mm/s
+        self.offset_s = offset_s  # Konfigurierbar: Roboter-Vorlauf/Nachlauf
 
         # Plan-Queue: FIFO von Segmenten
         self._queue: deque[TrapezSegment] = deque(maxlen=max_queue_size)
         self._lock = threading.Lock()
 
-        # Aktueller Zustand
+        # Zeitkopplung Klipper ↔ Bridge
+        self._t0_bridge: float = 0.0       # bridge_time beim ersten Segment
+        self._t0_klipper: float = 0.0      # print_time des ersten Segments
+        self._time_synced: bool = False     # Wurde die Kopplung hergestellt?
+
+        # Aktuelles Segment (Cache — das Segment in dem wir uns befinden)
         self._current_segment: Optional[TrapezSegment] = None
-        self._segment_elapsed: float = 0.0  # Zeit im aktuellen Segment
         self._sequence_id: int = 0
-        self._started = False
+
+        # Letzte bekannte Position (für Hold bei Lücken)
+        self._last_position: Optional[tuple[float, float, float]] = None
+        self._last_velocity: float = 0.0
+        self._last_segment_nr: int = 0
 
         # Korrektur (§B4)
         self._correction = CorrectionState()
@@ -89,6 +113,31 @@ class TrajectoryPlanner:
         self._segments_consumed: int = 0
         self._samples_generated: int = 0
         self._underflows: int = 0
+        self._gap_holds: int = 0           # Zyklen in print_time-Lücken
+
+    # ── Zeitkopplung ─────────────────────────────────────────
+
+    def init_time_sync(self, bridge_time: float, klipper_time: float):
+        """
+        Koppelt die Bridge-Zeitlinie mit Klippers print_time.
+
+        Wird typischerweise beim ersten empfangenen Segment
+        aufgerufen: init_time_sync(time.monotonic(), seg.print_time)
+        """
+        self._t0_bridge = bridge_time
+        self._t0_klipper = klipper_time
+        self._time_synced = True
+        logger.info("PLANNER: Zeitkopplung hergestellt — "
+                     "t0_bridge=%.3f t0_klipper=%.3f offset=%.3fs",
+                     bridge_time, klipper_time, self.offset_s)
+
+    def klipper_time_now(self, bridge_time: float) -> float:
+        """Berechnet die aktuelle Klipper-Zeit aus der Bridge-Zeit."""
+        return (bridge_time - self._t0_bridge) + self._t0_klipper + self.offset_s
+
+    @property
+    def time_synced(self) -> bool:
+        return self._time_synced
 
     # ── Queue-Management ─────────────────────────────────────
 
@@ -112,7 +161,7 @@ class TrajectoryPlanner:
         with self._lock:
             total = sum(s.duration for s in self._queue)
             if self._current_segment:
-                total += self._current_segment.duration - self._segment_elapsed
+                total += self._current_segment.duration
             return total
 
     @property
@@ -124,28 +173,61 @@ class TrajectoryPlanner:
         """Queue leer und kein aktives Segment."""
         return self._current_segment is None and len(self._queue) == 0
 
-    # ── Sample-Erzeugung ─────────────────────────────────────
+    # ── Sample-Erzeugung (TIME-INDEXED) ──────────────────────
 
     def next_sample(self, bridge_time: float) -> Optional[EgmSample]:
         """
-        Erzeugt den nächsten EGM-Sollwert.
+        Erzeugt den nächsten EGM-Sollwert basierend auf der
+        Klipper-Zeitlinie.
 
-        Aufgerufen im EGM-Zyklustakt. Gibt None zurück wenn
-        keine Daten verfügbar (Underflow).
+        Ablauf:
+          1. t_klipper_now berechnen
+          2. Vergangene Segmente verwerfen
+          3. Passendes Segment finden (print_time ≤ t_klipper_now < print_time + duration)
+          4. Lokale Zeit berechnen und interpolieren
+          5. Korrektur anwenden
+
+        Gibt None zurück wenn Zeitkopplung noch nicht hergestellt
+        oder kein Segment verfügbar (Underflow).
         """
-        # Neues Segment laden wenn nötig
-        if self._current_segment is None:
-            if not self._advance_segment():
-                self._underflows += 1
-                return None
+        if not self._time_synced:
+            self._underflows += 1
+            return None
 
-        seg = self._current_segment
+        t_klipper_now = self.klipper_time_now(bridge_time)
 
-        # Position im aktuellen Segment interpolieren
-        x, y, z = seg.position_at(self._segment_elapsed)
-        velocity = seg.velocity_at(self._segment_elapsed)
-        progress = (self._segment_elapsed / seg.duration
-                    if seg.duration > 0 else 1.0)
+        # Passendes Segment finden
+        seg = self._find_segment_for_time(t_klipper_now)
+
+        if seg is None:
+            # Kein Segment für diesen Zeitpunkt
+            self._underflows += 1
+
+            # Letzte Position halten wenn möglich
+            if self._last_position is not None:
+                self._gap_holds += 1
+                self._sequence_id += 1
+                return EgmSample(
+                    timestamp=bridge_time,
+                    x=self._last_position[0],
+                    y=self._last_position[1],
+                    z=self._last_position[2],
+                    velocity=0.0,
+                    segment_nr=self._last_segment_nr,
+                    segment_progress=1.0,
+                    sequence_id=self._sequence_id,
+                    t_klipper=t_klipper_now,
+                )
+
+            return None
+
+        # Lokale Zeit innerhalb des Segments
+        local_t = t_klipper_now - seg.print_time
+
+        # Position interpolieren
+        x, y, z = seg.position_at(local_t)
+        velocity = seg.velocity_at(local_t)
+        progress = local_t / seg.duration if seg.duration > 0 else 1.0
 
         # Korrektur anwenden (nur auf Soll, nicht rückwirkend)
         cx, cy, cz = self._get_smoothed_correction()
@@ -156,40 +238,89 @@ class TrajectoryPlanner:
         self._sequence_id += 1
         self._samples_generated += 1
 
-        sample = EgmSample(
+        # Letzte Position merken (für Hold bei Lücken)
+        self._last_position = (x, y, z)
+        self._last_velocity = velocity
+        self._last_segment_nr = seg.nr
+
+        return EgmSample(
             timestamp=bridge_time,
             x=x, y=y, z=z,
             velocity=velocity,
             segment_nr=seg.nr,
             segment_progress=progress,
             sequence_id=self._sequence_id,
+            t_klipper=t_klipper_now,
         )
 
-        # Zeit im Segment voranschreiten
-        self._segment_elapsed += self.cycle_s
+    def _find_segment_for_time(self, t_klipper: float) -> Optional[TrapezSegment]:
+        """
+        Findet das Segment das zum Zeitpunkt t_klipper aktiv ist.
 
-        # Segment abgearbeitet?
-        if self._segment_elapsed >= seg.duration:
-            overshoot = self._segment_elapsed - seg.duration
-            self._advance_segment()
-            # Überschuss auf nächstes Segment übertragen
-            if self._current_segment and overshoot > 0:
-                self._segment_elapsed = overshoot
+        Strategie:
+          1. Prüfe ob _current_segment noch passt
+          2. Verwerfe vergangene Segmente aus der Queue
+          3. Lade nächstes passendes Segment
 
-        return sample
+        Ein Segment ist aktiv wenn:
+          seg.print_time ≤ t_klipper < seg.print_time + seg.duration
+        """
+        # 1. Prüfe aktuelles Segment
+        if self._current_segment is not None:
+            seg = self._current_segment
+            seg_end = seg.print_time + seg.duration
 
-    def _advance_segment(self) -> bool:
-        """Nächstes Segment aus der Queue laden."""
-        with self._lock:
-            if not self._queue:
+            if seg.print_time <= t_klipper < seg_end:
+                # Noch im aktuellen Segment
+                return seg
+
+            if t_klipper >= seg_end:
+                # Segment abgelaufen — Position am Ende merken
+                end_x, end_y, end_z = seg.position_at(seg.duration)
+                self._last_position = (end_x, end_y, end_z)
+                self._last_velocity = seg.velocity_at(seg.duration)
+                self._last_segment_nr = seg.nr
                 self._current_segment = None
-                self._segment_elapsed = 0.0
-                return False
-            self._current_segment = self._queue.popleft()
+                self._segments_consumed += 1
 
-        self._segment_elapsed = 0.0
-        self._segments_consumed += 1
-        return True
+        # 2. Vergangene Segmente verwerfen, passendes laden
+        with self._lock:
+            while self._queue:
+                candidate = self._queue[0]
+                cand_end = candidate.print_time + candidate.duration
+
+                if t_klipper >= cand_end:
+                    # Komplett vergangen — verwerfen
+                    discarded = self._queue.popleft()
+                    self._segments_consumed += 1
+                    # Position am Ende merken
+                    end_x, end_y, end_z = discarded.position_at(
+                        discarded.duration)
+                    self._last_position = (end_x, end_y, end_z)
+                    self._last_velocity = discarded.velocity_at(
+                        discarded.duration)
+                    self._last_segment_nr = discarded.nr
+                    continue
+
+                if candidate.print_time <= t_klipper < cand_end:
+                    # Passt — als aktuelles Segment setzen
+                    self._current_segment = self._queue.popleft()
+                    return self._current_segment
+
+                if t_klipper < candidate.print_time:
+                    # Wir sind in einer Lücke vor dem nächsten Segment
+                    # → Position halten (Gap)
+                    if self._gap_holds % 500 == 0 and self._gap_holds > 0:
+                        logger.debug(
+                            "PLANNER: Zeitlücke — t_klipper=%.3f, "
+                            "nächstes Segment bei %.3f (Δ%.3fs)",
+                            t_klipper, candidate.print_time,
+                            candidate.print_time - t_klipper)
+                    return None
+
+                break  # Sollte nicht erreicht werden
+
+        return None
 
     def peek_ahead(self, n: int = 5) -> list[TrapezSegment]:
         """Die nächsten n Segmente ansehen (ohne zu konsumieren)."""
@@ -260,9 +391,13 @@ class TrajectoryPlanner:
         with self._lock:
             self._queue.clear()
         self._current_segment = None
-        self._segment_elapsed = 0.0
+        self._time_synced = False
+        self._last_position = None
+        self._last_velocity = 0.0
+        self._last_segment_nr = 0
+        self._gap_holds = 0
         self.reset_correction()
-        logger.info("PLANNER: Queue geleert")
+        logger.info("PLANNER: Queue geleert, Zeitkopplung zurückgesetzt")
 
     # ── Status ───────────────────────────────────────────────
 
@@ -272,10 +407,14 @@ class TrajectoryPlanner:
             "queue_depth": len(self._queue),
             "queue_time_s": round(self.queue_time_s, 3),
             "current_segment": seg.nr if seg else None,
-            "segment_elapsed": round(self._segment_elapsed, 4),
+            "time_synced": self._time_synced,
+            "offset_s": self.offset_s,
+            "t0_bridge": round(self._t0_bridge, 3) if self._time_synced else None,
+            "t0_klipper": round(self._t0_klipper, 3) if self._time_synced else None,
             "segments_consumed": self._segments_consumed,
             "samples_generated": self._samples_generated,
             "underflows": self._underflows,
+            "gap_holds": self._gap_holds,
             "correction": {
                 "x": round(self._correction.offset_x, 3),
                 "y": round(self._correction.offset_y, 3),

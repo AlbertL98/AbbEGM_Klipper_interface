@@ -8,6 +8,10 @@ from __future__ import annotations
 #    accel_t, cruise_t, decel_t, axes_r}
 #
 # Stellt Segmente in die Plan-Queue des Bridge-Core.
+#
+# HINWEIS: Time-indexed Playback setzt voraus, dass print_time
+# monoton steigend ist. Der TcpSegmentReceiver validiert dies
+# und loggt Warnungen bei Verstößen.
 
 import json
 import math
@@ -101,6 +105,11 @@ class TrapezSegment:
             axes_r_z=float(row["axes_r_z"]),
         )
 
+    @property
+    def end_time(self) -> float:
+        """print_time + duration — Zeitpunkt an dem dieses Segment endet."""
+        return self.print_time + self.duration
+
     def position_at(self, t: float) -> tuple[float, float, float]:
         """
         Berechnet Position zum Zeitpunkt t (0 ≤ t ≤ duration)
@@ -176,6 +185,9 @@ class TcpSegmentReceiver:
 
     Thread-sicher: Läuft in eigenem Thread, füllt die Queue,
     die vom Bridge-Core konsumiert wird.
+
+    Validiert monoton steigende print_time (Voraussetzung
+    für time-indexed Playback).
     """
 
     def __init__(self, host: str, port: int,
@@ -194,6 +206,10 @@ class TcpSegmentReceiver:
         self._connected = False
         self._segments_received = 0
         self._last_error: Optional[str] = None
+
+        # print_time-Monotonie-Tracking
+        self._last_print_time: float = -1.0
+        self._monotone_violations: int = 0
 
     @property
     def connected(self) -> bool:
@@ -220,7 +236,8 @@ class TcpSegmentReceiver:
         if self._thread:
             self._thread.join(timeout=5.0)
         logger.info("SOURCE: Segment-Empfänger gestoppt "
-                     "(%d Segmente empfangen)", self._segments_received)
+                     "(%d Segmente empfangen, %d Monotonie-Verstöße)",
+                     self._segments_received, self._monotone_violations)
 
     def _connect(self) -> bool:
         try:
@@ -229,6 +246,8 @@ class TcpSegmentReceiver:
             self._socket.connect((self.host, self.port))
             self._connected = True
             self._last_error = None
+            # Monotonie-Tracking bei Reconnect zurücksetzen
+            self._last_print_time = -1.0
             logger.info("SOURCE: Verbunden mit Klipper @ %s:%d",
                          self.host, self.port)
             return True
@@ -298,6 +317,18 @@ class TcpSegmentReceiver:
         if msg_type == "segment":
             try:
                 seg = TrapezSegment.from_dict(msg)
+
+                # print_time-Monotonie prüfen
+                if seg.print_time < self._last_print_time:
+                    self._monotone_violations += 1
+                    logger.warning(
+                        "SOURCE: print_time nicht monoton! "
+                        "Segment #%d: %.6f < vorheriges %.6f "
+                        "(Verstoß #%d)",
+                        seg.nr, seg.print_time, self._last_print_time,
+                        self._monotone_violations)
+                self._last_print_time = seg.print_time
+
                 self._segments_received += 1
                 self.on_segment(seg)
             except (KeyError, ValueError) as e:
@@ -310,6 +341,7 @@ class TcpSegmentReceiver:
         return {
             "connected": self._connected,
             "segments_received": self._segments_received,
+            "monotone_violations": self._monotone_violations,
             "last_error": self._last_error,
             "target": f"{self.host}:{self.port}",
         }
@@ -332,9 +364,14 @@ class CsvSegmentSource:
         import csv
         with open(self.csv_path, "r") as f:
             reader = csv.DictReader(f)
+            prev_time = -1.0
             for row in reader:
                 try:
                     seg = TrapezSegment.from_csv_row(row)
+                    if seg.print_time < prev_time:
+                        logger.warning("CSV: print_time nicht monoton "
+                                       "bei Segment #%d", seg.nr)
+                    prev_time = seg.print_time
                     self.segments.append(seg)
                 except (KeyError, ValueError) as e:
                     logger.warning("CSV: Zeile übersprungen: %s", e)

@@ -5,7 +5,7 @@
 #   1. State Machine — Transitions
 #   2. Config — Laden/Validieren
 #   3. TrapezSegment — Interpolation
-#   4. TrajectoryPlanner — Queue + Sample-Erzeugung
+#   4. TrajectoryPlanner — Time-indexed Playback + Queue
 #   5. SyncMonitor — Metriken
 #
 # Braucht keine Netzwerkverbindungen.
@@ -16,14 +16,15 @@ import math
 import time
 
 # Modul-Pfad setzen
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, base_dir)
 
-from egm_bridge.state_machine import BridgeStateMachine, State
-from egm_bridge.config import BridgeConfig, validate_config
-from egm_bridge.segment_source import TrapezSegment
-from egm_bridge.trajectory_planner import TrajectoryPlanner, EgmSample
-from egm_bridge.sync_monitor import SyncMonitor, SyncLevel, SyncMetrics
-from egm_bridge.egm_client import EgmFeedback
+from data.state_machine import BridgeStateMachine, State
+from data.config import BridgeConfig, validate_config
+from data.segment_source import TrapezSegment
+from data.trajectory_planner import TrajectoryPlanner, EgmSample
+from data.sync_monitor import SyncMonitor, SyncLevel, SyncMetrics
+from data.egm_client import EgmFeedback
 
 
 def test_state_machine():
@@ -69,6 +70,9 @@ def test_config():
     assert cfg.connection.send_port == 6599
     assert cfg.connection.recv_port == 6510
 
+    # time_offset_ms existiert und ist 0 per Default
+    assert cfg.sync.time_offset_ms == 0.0
+
     # Validierung — Defaults sollten OK sein
     errors = validate_config(cfg)
     assert len(errors) == 0, f"Default-Config hat Fehler: {errors}"
@@ -86,6 +90,7 @@ def test_config():
     assert "timestamp" in snap
 
     print("  ✓ Default-Validierung OK")
+    print("  ✓ time_offset_ms vorhanden")
     print("  ✓ Config OK")
 
 
@@ -121,10 +126,14 @@ def test_trapez_segment():
     # Geschwindigkeit
     assert abs(seg.velocity_at(0.5) - 10.0) < 0.001
 
+    # end_time Property
+    assert abs(seg.end_time - 1.0) < 0.001
+
     print("  ✓ Position bei t=0: (0, 0, 100)")
     print("  ✓ Position bei t=0.5: (5, 0, 100)")
     print("  ✓ Position bei t=1.0: (10, 0, 100)")
     print("  ✓ Geschwindigkeit konstant 10mm/s")
+    print("  ✓ end_time Property korrekt")
 
     # Segment mit Trapez-Profil (beschleunigen + bremsen)
     seg2 = TrapezSegment(
@@ -138,28 +147,35 @@ def test_trapez_segment():
         axes_r_x=1.0, axes_r_y=0.0, axes_r_z=0.0,
     )
 
-    # Geschwindigkeit soll von 0 → 20 → 0 gehen
     v_start = seg2.velocity_at(0.0)
     v_mid = seg2.velocity_at(0.3)
     v_end = seg2.velocity_at(0.6)
-    assert v_start < 1.0  # ≈ 0
-    assert abs(v_mid - 20.0) < 0.1  # cruise
-    assert v_end < 1.0  # ≈ 0
+    assert v_start < 1.0
+    assert abs(v_mid - 20.0) < 0.1
+    assert v_end < 1.0
 
     print("  ✓ Trapez-Profil: 0 → 20 → 0 mm/s")
     print("  ✓ TrapezSegment OK")
 
 
-def test_trajectory_planner():
-    print("\n═══ Test: Trajectory Planner ═══")
+def test_trajectory_planner_time_indexed():
+    print("\n═══ Test: Trajectory Planner (Time-Indexed) ═══")
 
     cycle_s = 0.004  # 4ms = 250Hz
-    planner = TrajectoryPlanner(cycle_s=cycle_s, max_queue_size=100)
+    planner = TrajectoryPlanner(cycle_s=cycle_s, max_queue_size=100,
+                                offset_s=0.0)
 
     assert planner.queue_depth == 0
     assert planner.is_starved
+    assert not planner.time_synced
 
-    # 10 Segmente einfügen (jeweils 100ms = 25 Samples bei 4ms)
+    # Ohne Zeitkopplung → kein Sample
+    sample = planner.next_sample(time.monotonic())
+    assert sample is None, "Ohne time_sync sollte kein Sample kommen"
+    print("  ✓ Ohne Zeitkopplung: kein Sample")
+
+    # 10 Segmente einfügen: jeweils 100ms, lückenlos
+    # print_time: 0.0, 0.1, 0.2, ... 0.9
     for i in range(10):
         seg = TrapezSegment(
             nr=i + 1, print_time=i * 0.1, duration=0.1,
@@ -176,38 +192,165 @@ def test_trajectory_planner():
     assert planner.queue_depth == 10
     print(f"  ✓ 10 Segmente eingefügt (Queue-Zeit: {planner.queue_time_s:.1f}s)")
 
-    # Samples erzeugen
+    # Zeitkopplung herstellen: bridge_time=100.0 ↔ klipper_time=0.0
+    t0_bridge = 100.0
+    planner.init_time_sync(bridge_time=t0_bridge, klipper_time=0.0)
+    assert planner.time_synced
+    print("  ✓ Zeitkopplung hergestellt")
+
+    # Samples erzeugen über die gesamte Dauer (1.0s)
     samples = []
-    t = 0.0
-    while not planner.is_starved:
+    t = t0_bridge
+    while t < t0_bridge + 1.05:  # Etwas über 1s hinaus
         sample = planner.next_sample(t)
-        if sample:
+        if sample and sample.velocity > 0:
             samples.append(sample)
         t += cycle_s
 
     print(f"  ✓ {len(samples)} Samples erzeugt")
     assert len(samples) > 200  # 10 * 25 = 250 theoretisch
 
-    # Erster und letzter Sample prüfen
+    # Erster Sample: sollte nahe Position (0, 0, 100) sein
     first = samples[0]
-    last = samples[-1]
     assert abs(first.x - 0.0) < 0.1
-    assert abs(last.x - 10.0) < 0.5  # Ungefähr Endposition
+    assert abs(first.z - 100.0) < 0.001
     print(f"  ✓ Start: ({first.x:.1f}, {first.y:.1f}, {first.z:.1f})")
+
+    # Letzter Sample: sollte nahe Position (10, 0, 100) sein
+    last = samples[-1]
+    assert abs(last.x - 10.0) < 0.5
     print(f"  ✓ Ende:  ({last.x:.1f}, {last.y:.1f}, {last.z:.1f})")
 
-    # Monoton steigend in X?
+    # X monoton steigend
     for i in range(1, len(samples)):
-        assert samples[i].x >= samples[i-1].x - 0.001
+        assert samples[i].x >= samples[i - 1].x - 0.001
 
     print("  ✓ X-Position monoton steigend")
-    print("  ✓ Trajectory Planner OK")
+
+    # t_klipper ist im Sample vorhanden und steigend
+    for i in range(1, len(samples)):
+        assert samples[i].t_klipper >= samples[i - 1].t_klipper - 0.0001
+
+    print("  ✓ t_klipper monoton steigend in Samples")
+
+    # Segment-Zuordnung prüfen: bei t_klipper ≈ 0.55 sollte Segment 6
+    # Seg 6 hat print_time=0.5, duration=0.1 → deckt [0.5, 0.6) ab
+    mid_sample = None
+    for s in samples:
+        if 0.54 < s.t_klipper < 0.56:
+            mid_sample = s
+            break
+    assert mid_sample is not None
+    assert mid_sample.segment_nr == 6, f"Bei t_klipper≈0.55 erwartet Seg 6, bekam {mid_sample.segment_nr}"
+    print(f"  ✓ Segment-Zuordnung korrekt (t_klipper≈0.55 → Seg #{mid_sample.segment_nr})")
+
+    print("  ✓ Trajectory Planner (Time-Indexed) OK")
+
+
+def test_trajectory_planner_offset():
+    print("\n═══ Test: Trajectory Planner (Offset) ═══")
+
+    cycle_s = 0.004
+    offset_s = 0.05  # 50ms Vorlauf
+
+    planner = TrajectoryPlanner(cycle_s=cycle_s, max_queue_size=100,
+                                offset_s=offset_s)
+
+    # Ein Segment: print_time=1.0, duration=1.0
+    seg = TrapezSegment(
+        nr=1, print_time=1.0, duration=1.0,
+        start_x=0.0, start_y=0.0, start_z=100.0,
+        end_x=10.0, end_y=0.0, end_z=100.0,
+        distance=10.0,
+        start_v=10.0, cruise_v=10.0, end_v=10.0,
+        accel=0.0,
+        accel_t=0.0, cruise_t=1.0, decel_t=0.0,
+        axes_r_x=1.0, axes_r_y=0.0, axes_r_z=0.0,
+    )
+    planner.add_segment(seg)
+
+    # Kopplung: bridge_time=0.0 ↔ klipper_time=1.0
+    planner.init_time_sync(bridge_time=0.0, klipper_time=1.0)
+
+    # Ohne Offset: bei bridge_time=0.0 → t_klipper=1.0 (Segment-Start)
+    # Mit Offset +0.05: bei bridge_time=0.0 → t_klipper=1.05 (schon 50ms drin)
+    sample = planner.next_sample(0.0)
+    assert sample is not None
+    assert abs(sample.t_klipper - 1.05) < 0.001, f"t_klipper={sample.t_klipper}, erwartet 1.05"
+    # Position sollte ≈ 0.5mm sein (10mm/s * 0.05s)
+    assert abs(sample.x - 0.5) < 0.1, f"x={sample.x}, erwartet ≈0.5"
+
+    print(f"  ✓ Offset {offset_s * 1000:.0f}ms: t_klipper={sample.t_klipper:.3f}, x={sample.x:.2f}")
+    print("  ✓ Trajectory Planner (Offset) OK")
+
+
+def test_trajectory_planner_gap():
+    print("\n═══ Test: Trajectory Planner (Zeitlücke) ═══")
+
+    cycle_s = 0.004
+    planner = TrajectoryPlanner(cycle_s=cycle_s, max_queue_size=100)
+
+    # Segment 1: print_time=0.0, duration=0.1
+    # Segment 2: print_time=0.5, duration=0.1 (400ms Lücke!)
+    seg1 = TrapezSegment(
+        nr=1, print_time=0.0, duration=0.1,
+        start_x=0.0, start_y=0.0, start_z=100.0,
+        end_x=1.0, end_y=0.0, end_z=100.0,
+        distance=1.0,
+        start_v=10.0, cruise_v=10.0, end_v=10.0,
+        accel=0.0,
+        accel_t=0.0, cruise_t=0.1, decel_t=0.0,
+        axes_r_x=1.0, axes_r_y=0.0, axes_r_z=0.0,
+    )
+    seg2 = TrapezSegment(
+        nr=2, print_time=0.5, duration=0.1,
+        start_x=1.0, start_y=0.0, start_z=100.0,
+        end_x=2.0, end_y=0.0, end_z=100.0,
+        distance=1.0,
+        start_v=10.0, cruise_v=10.0, end_v=10.0,
+        accel=0.0,
+        accel_t=0.0, cruise_t=0.1, decel_t=0.0,
+        axes_r_x=1.0, axes_r_y=0.0, axes_r_z=0.0,
+    )
+
+    planner.add_segment(seg1)
+    planner.add_segment(seg2)
+
+    t0 = 100.0
+    planner.init_time_sync(bridge_time=t0, klipper_time=0.0)
+
+    # Bei t_klipper=0.05 → im Segment 1
+    s1 = planner.next_sample(t0 + 0.05)
+    assert s1 is not None and s1.velocity > 0
+    assert s1.segment_nr == 1
+    print(f"  ✓ t_klipper=0.05: Segment #{s1.segment_nr}, x={s1.x:.2f}")
+
+    # Bei t_klipper=0.25 → in der Lücke, Position halten
+    s_gap = planner.next_sample(t0 + 0.25)
+    # Sollte ein Hold-Sample sein (velocity=0) oder None + Hold
+    # Der Planner gibt None zurück für Lücken (letzte Position halten
+    # passiert im Bridge-Loop). Aber wir haben _last_position gesetzt,
+    # also kommt ein Hold-Sample mit velocity=0.
+    if s_gap is not None:
+        assert s_gap.velocity == 0.0, "In Lücke sollte velocity=0 sein"
+        assert abs(s_gap.x - 1.0) < 0.01, "Hold-Position sollte Seg1-Ende sein"
+        print(f"  ✓ t_klipper=0.25: Lücke, Hold bei x={s_gap.x:.2f}")
+    else:
+        print("  ✓ t_klipper=0.25: Lücke, None (kein Hold-Sample)")
+
+    # Bei t_klipper=0.55 → im Segment 2
+    s2 = planner.next_sample(t0 + 0.55)
+    assert s2 is not None and s2.velocity > 0
+    assert s2.segment_nr == 2
+    print(f"  ✓ t_klipper=0.55: Segment #{s2.segment_nr}, x={s2.x:.2f}")
+
+    print("  ✓ Trajectory Planner (Zeitlücke) OK")
 
 
 def test_sync_monitor():
     print("\n═══ Test: Sync Monitor ═══")
 
-    from egm_bridge.config import SyncConfig
+    from data.config import SyncConfig
     cfg = SyncConfig()
     mon = SyncMonitor(cfg)
 
@@ -230,7 +373,7 @@ def test_sync_monitor():
     # Großer Tracking-Error → WARN/DEGRADE
     feedback_off = EgmFeedback(
         sequence_id=2, timestamp=1.005, robot_time=1004.0,
-        x=103.0, y=50.0, z=200.0,  # 3mm Abweichung
+        x=103.0, y=50.0, z=200.0,
     )
     sample2 = EgmSample(
         timestamp=1.004, x=100.0, y=50.0, z=200.0,
@@ -245,7 +388,7 @@ def test_sync_monitor():
     # Riesiger Error → STOP
     feedback_bad = EgmFeedback(
         sequence_id=3, timestamp=1.009, robot_time=1008.0,
-        x=115.0, y=50.0, z=200.0,  # 15mm Abweichung
+        x=115.0, y=50.0, z=200.0,
     )
     sample3 = EgmSample(
         timestamp=1.008, x=100.0, y=50.0, z=200.0,
@@ -262,13 +405,16 @@ def test_sync_monitor():
 def main():
     print("╔══════════════════════════════════════════╗")
     print("║  EGM-Bridge-Core Smoke Test              ║")
+    print("║  (Time-Indexed Playback)                 ║")
     print("╚══════════════════════════════════════════╝")
 
     tests = [
         test_state_machine,
         test_config,
         test_trapez_segment,
-        test_trajectory_planner,
+        test_trajectory_planner_time_indexed,
+        test_trajectory_planner_offset,
+        test_trajectory_planner_gap,
         test_sync_monitor,
     ]
 

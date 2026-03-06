@@ -25,7 +25,7 @@ class TelemetryWriter:
 
     Streams (§B7):
       PLAN  — Geplante Trajektorie (Segmente aus Klipper)
-      TX    — Gesendete EGM-Sollwerte
+      TX    — Gesendete EGM-Sollwerte (inkl. t_klipper für Debug)
       RX    — Empfangene Ist-Werte vom Roboter
       SYNC  — Tracking-Error, Lag, Jitter, Buffer-Metriken
       EVENT — Zustandswechsel, Warnungen, Fehler
@@ -54,9 +54,10 @@ class TelemetryWriter:
         ])
 
         # TX Stream (an Roboter gesendete Samples)
+        # t_klipper: die berechnete Klipper-Zeit für diesen Sample
         self._open_stream("tx", [
             "timestamp", "seq_id", "x", "y", "z",
-            "velocity", "seg_nr", "seg_progress",
+            "velocity", "seg_nr", "seg_progress", "t_klipper",
         ])
 
         # RX Stream (vom Roboter empfangene Werte)
@@ -157,6 +158,7 @@ class TelemetryWriter:
             f"{sample.velocity:.3f}",
             sample.segment_nr,
             f"{sample.segment_progress:.4f}",
+            f"{sample.t_klipper:.6f}",
         ])
 
     def log_rx(self, feedback):

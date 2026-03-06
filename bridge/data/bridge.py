@@ -11,8 +11,8 @@
 #     ↓ TCP (TrapezSegmente)
 #   SegmentReceiver
 #     ↓ Plan-Queue
-#   TrajectoryPlanner (Interpolation)
-#     ↓ EGM-Samples (4ms Takt)
+#   TrajectoryPlanner (Interpolation, time-indexed)
+#     ↓ EGM-Samples (Zyklustakt)
 #   EgmClient (UDP)
 #     ↓ Sollwerte
 #   ABB Controller
@@ -56,12 +56,16 @@ class EgmBridge:
         # Zykluszeit
         self._cycle_s = config.connection.cycle_ms / 1000.0
 
+        # time_offset_ms aus SyncConfig → Sekunden für den Planner
+        offset_s = config.sync.time_offset_ms / 1000.0
+
         # Komponenten
         self.planner = TrajectoryPlanner(
             cycle_s=self._cycle_s,
             max_queue_size=config.queues.plan_queue_size,
             correction_max_mm=config.sync.correction_max_mm,
             correction_rate_limit=config.sync.correction_rate_limit_mm_per_s,
+            offset_s=offset_s,
         )
 
         self.egm = EgmClient(
@@ -99,6 +103,9 @@ class EgmBridge:
         # End-of-Job-Erkennung
         self._last_segment_time: float = 0.0
         self._starvation_timeout_s: float = 3.0  # Job fertig nach 3s ohne neue Segmente
+
+        # Zeitkopplung: Wurde das erste Segment empfangen?
+        self._first_segment_received: bool = False
 
         # Metriken
         self._loop_count = 0
@@ -142,8 +149,10 @@ class EgmBridge:
         self.telemetry.save_config_snapshot(self.cfg.snapshot())
 
         self.sm.to_ready("Alle Verbindungen hergestellt")
-        logger.info("BRIDGE: Bereit (Zyklus: %.1fms, Profil: %s)",
-                     self.cfg.connection.cycle_ms, self.cfg.profile_name)
+        logger.info("BRIDGE: Bereit (Zyklus: %.1fms, Profil: %s, "
+                     "time_offset: %.1fms)",
+                     self.cfg.connection.cycle_ms, self.cfg.profile_name,
+                     self.cfg.sync.time_offset_ms)
         return True
 
     def run_job(self, job_id: Optional[str] = None):
@@ -217,7 +226,7 @@ class EgmBridge:
         Hauptloop: Läuft im festen EGM-Zyklustakt.
 
         Jeder Zyklus:
-          1. Sample aus Planner holen (Interpolation)
+          1. Sample aus Planner holen (time-indexed Interpolation)
           2. An EGM-Client senden
           3. Sync-Monitor updaten
           4. Telemetrie schreiben
@@ -237,10 +246,10 @@ class EgmBridge:
             self._loop_count += 1
 
             try:
-                # 1. Sample erzeugen
+                # 1. Sample erzeugen (time-indexed)
                 sample = self.planner.next_sample(bridge_time)
 
-                if sample:
+                if sample and sample.velocity > 0:
                     # ── Normaler Betrieb ─────────────────────────
                     starvation_logged = False
                     self._last_sample = sample
@@ -281,10 +290,30 @@ class EgmBridge:
                     # 5. Sync-Level-Reaktion
                     self._handle_sync_level()
 
+                elif sample and sample.velocity == 0:
+                    # ── Position-Hold (Lücke / Gap) ──────────────
+                    # Sample kam zurück mit velocity=0 → Planner
+                    # hält die letzte Position (Zeitlücke in print_time)
+                    self._last_sample = sample
+                    target = EgmTarget(
+                        sequence_id=sample.sequence_id,
+                        timestamp=sample.timestamp,
+                        x=sample.x,
+                        y=sample.y,
+                        z=sample.z,
+                        q0=self.cfg.connection.default_q0,
+                        q1=self.cfg.connection.default_q1,
+                        q2=self.cfg.connection.default_q2,
+                        q3=self.cfg.connection.default_q3,
+                    )
+                    self.egm.send_target(target)
+                    # Kein Sync-Update während Gap-Hold
+
                 else:
-                    # ── Buffer leer — Starvation ─────────────────
+                    # ── Kein Sample — Starvation ─────────────────
                     if not starvation_logged:
-                        logger.info("BRIDGE: Buffer leer — halte Position")
+                        logger.info("BRIDGE: Kein Sample — "
+                                    "warte auf Zeitkopplung oder Segmente")
                         starvation_logged = True
 
                     # Job-Ende prüfen
@@ -292,7 +321,8 @@ class EgmBridge:
                         bridge_time - self._last_segment_time
                         if self._last_segment_time > 0 else 0
                     )
-                    if time_since_seg > self._starvation_timeout_s:
+                    if (time_since_seg > self._starvation_timeout_s
+                            and self._first_segment_received):
                         logger.info(
                             "BRIDGE: Print abgeschlossen "
                             "(keine neuen Segmente seit %.1fs)",
@@ -320,7 +350,6 @@ class EgmBridge:
                         self.egm.send_target(hold)
 
                     # KEIN Sync-Update während Starvation!
-                    # (verhindert falschen Lag-Aufbau → FAULT)
 
             except Exception as e:
                 logger.error("BRIDGE: Loop-Fehler: %s", e, exc_info=True)
@@ -354,7 +383,23 @@ class EgmBridge:
 
     def _on_segment_received(self, seg: TrapezSegment):
         """Callback: Neues Segment von Klipper empfangen."""
-        self._last_segment_time = time.monotonic()
+        now = time.monotonic()
+        self._last_segment_time = now
+
+        # Zeitkopplung beim ersten Segment herstellen
+        if not self._first_segment_received:
+            self._first_segment_received = True
+            self.planner.init_time_sync(
+                bridge_time=now,
+                klipper_time=seg.print_time,
+            )
+            self.telemetry.log_event(
+                "TIME_SYNC", "INFO",
+                f"Zeitkopplung: bridge={now:.3f} ↔ "
+                f"klipper={seg.print_time:.3f} "
+                f"offset={self.planner.offset_s:.3f}s"
+            )
+
         self.planner.add_segment(seg)
         self.telemetry.log_plan(seg)
 
@@ -383,30 +428,6 @@ class EgmBridge:
         )
 
     # ── Reaktionen ───────────────────────────────────────────
-
-    def _handle_buffer_underflow(self):
-        """Reagiert auf leeren Buffer (§B2)."""
-        now = time.monotonic()
-
-        # Job-Ende erkennen: Buffer leer + keine neuen Segmente
-        # seit starvation_timeout Sekunden
-        if (self._last_segment_time > 0
-                and self.planner.is_starved
-                and (now - self._last_segment_time) > self._starvation_timeout_s):
-            logger.info("BRIDGE: Print abgeschlossen "
-                        "(keine neuen Segmente seit %.1fs)",
-                        now - self._last_segment_time)
-            self.telemetry.log_event("JOB_COMPLETE", "INFO",
-                                     "Print abgeschlossen — Buffer leer")
-            self._running = False  # Loop sauber beenden
-            return
-
-        if self.sm.state == State.RUN:
-            action = self.cfg.queues.underflow_action
-            if action == "degrade":
-                self.sm.to_degraded("Buffer-Underflow")
-            elif action == "stop":
-                self.sm.to_stop("Buffer-Underflow — Stop konfiguriert")
 
     def _handle_sync_level(self):
         """Reagiert auf Sync-Level-Änderungen (§E2)."""
@@ -456,6 +477,12 @@ class EgmBridge:
 
         old_value = getattr(section_obj, key)
         setattr(section_obj, key, value)
+
+        # offset_s live aktualisieren wenn time_offset_ms geändert wird
+        if section == "sync" and key == "time_offset_ms":
+            self.planner.offset_s = value / 1000.0
+            logger.info("BRIDGE: Planner offset_s aktualisiert: %.3fs",
+                         self.planner.offset_s)
 
         self.telemetry.log_event(
             "PARAM_CHANGE", "INFO",
