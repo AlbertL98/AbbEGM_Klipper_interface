@@ -45,6 +45,13 @@
     "reconnect_interval_s": 2.0,
     "receive_timeout_s": 5.0
   },
+  "moonraker": {
+    "enabled": true,
+    "host": "127.0.0.1",
+    "port": 7125,
+    "reconnect_interval_s": 3.0,
+    "stale_threshold_ms": 500.0
+  },
   "telemetry": {
     "log_dir": "./logs",
     "log_level": "INFO",

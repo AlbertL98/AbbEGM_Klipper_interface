@@ -86,6 +86,16 @@ class KlipperSourceConfig:
 
 
 @dataclass
+class MoonrakerConfig:
+    """Moonraker-Websocket-Verbindung für Extruder-E-Wert."""
+    enabled: bool = False           # Explizit aktivieren
+    host: str = "127.0.0.1"
+    port: int = 7125                # Moonraker Default-Port
+    reconnect_interval_s: float = 3.0
+    stale_threshold_ms: float = 500.0  # E-Wert-Alter ab dem gewarnt wird
+
+
+@dataclass
 class TelemetryConfig:
     """Logging und Telemetrie (§B7)."""
     log_dir: str = "./logs"
@@ -102,6 +112,7 @@ class BridgeConfig:
     queues: QueueConfig = field(default_factory=QueueConfig)
     sync: SyncConfig = field(default_factory=SyncConfig)
     klipper: KlipperSourceConfig = field(default_factory=KlipperSourceConfig)
+    moonraker: MoonrakerConfig = field(default_factory=MoonrakerConfig)
     telemetry: TelemetryConfig = field(default_factory=TelemetryConfig)
 
     # Profil-Metadaten
@@ -165,6 +176,14 @@ def validate_config(cfg: BridgeConfig) -> list[str]:
     if s.time_offset_ms < -500 or s.time_offset_ms > 500:
         errors.append(f"time_offset_ms={s.time_offset_ms} unrealistisch")
 
+    # Moonraker
+    m = cfg.moonraker
+    if m.enabled:
+        if m.port < 1 or m.port > 65535:
+            errors.append(f"moonraker.port={m.port} ungültig")
+        if m.stale_threshold_ms < 50:
+            errors.append(f"moonraker.stale_threshold_ms={m.stale_threshold_ms} zu klein (< 50)")
+
     return errors
 
 
@@ -188,6 +207,7 @@ def load_config(path: str) -> BridgeConfig:
         ("queues", QueueConfig),
         ("sync", SyncConfig),
         ("klipper", KlipperSourceConfig),
+        ("moonraker", MoonrakerConfig),
         ("telemetry", TelemetryConfig),
     ]:
         if section_name in data:

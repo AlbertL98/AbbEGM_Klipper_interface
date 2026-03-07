@@ -34,6 +34,7 @@ from .trajectory_planner import TrajectoryPlanner, EgmSample
 from .egm_client import EgmClient, EgmTarget, EgmFeedback
 from .sync_monitor import SyncMonitor, SyncLevel
 from .telemetry import TelemetryWriter
+from .moonraker_client import MoonrakerClient
 
 logger = logging.getLogger("egm.bridge")
 
@@ -93,6 +94,15 @@ class EgmBridge:
 
         self.receiver: Optional[TcpSegmentReceiver] = None
 
+        # Moonraker-Client für Extruder-E-Wert (optional)
+        self.moonraker: Optional[MoonrakerClient] = None
+        if config.moonraker.enabled:
+            self.moonraker = MoonrakerClient(
+                host=config.moonraker.host,
+                port=config.moonraker.port,
+                reconnect_interval_s=config.moonraker.reconnect_interval_s,
+            )
+
         # Interner Zustand
         self._loop_thread: Optional[threading.Thread] = None
         self._running = False
@@ -144,6 +154,13 @@ class EgmBridge:
         )
         self.receiver.start()
 
+        # Moonraker-Client starten (optional, für E-Wert-Logging)
+        if self.moonraker:
+            self.moonraker.start()
+            logger.info("BRIDGE: Moonraker E-Wert-Subscriber aktiv "
+                         "→ ws://%s:%d",
+                         self.cfg.moonraker.host, self.cfg.moonraker.port)
+
         # Telemetrie starten
         self.telemetry.start()
         self.telemetry.save_config_snapshot(self.cfg.snapshot())
@@ -194,6 +211,8 @@ class EgmBridge:
 
         if self.receiver:
             self.receiver.stop()
+        if self.moonraker:
+            self.moonraker.stop()
         self.egm.disconnect()
         self.telemetry.stop()
         self.planner.clear()
@@ -212,6 +231,8 @@ class EgmBridge:
         # Verbindungen schließen (unabhängig vom State)
         if self.receiver:
             self.receiver.stop()
+        if self.moonraker:
+            self.moonraker.stop()
         self.egm.disconnect()
         self.telemetry.stop()
         self.planner.clear()
@@ -267,7 +288,26 @@ class EgmBridge:
                         q3=self.cfg.connection.default_q3,
                     )
                     self.egm.send_target(target)
-                    self.telemetry.log_tx(sample)
+
+                    # Extruder-E-Wert für Telemetrie abfragen
+                    e_val = 0.0
+                    e_age = -1.0
+                    if self.moonraker:
+                        ext = self.moonraker.get_extruder_state()
+                        e_val = ext.e_value
+                        e_age = ext.age_ms
+                        # Warnung bei veraltetem E-Wert
+                        if (e_age > self.cfg.moonraker.stale_threshold_ms
+                                and e_age > 0
+                                and self._loop_count % 250 == 0):
+                            logger.warning(
+                                "BRIDGE: Extruder-E-Wert veraltet "
+                                "(age=%.0fms > threshold=%.0fms)",
+                                e_age,
+                                self.cfg.moonraker.stale_threshold_ms)
+
+                    self.telemetry.log_tx(sample, e_value=e_val,
+                                          extruder_age_ms=e_age)
 
                     # 3. Sync updaten (NUR bei echten Samples)
                     with self._feedback_lock:
@@ -456,6 +496,7 @@ class EgmBridge:
             "sync": self.sync.snapshot(),
             "telemetry": self.telemetry.snapshot(),
             "receiver": self.receiver.snapshot() if self.receiver else None,
+            "moonraker": self.moonraker.snapshot() if self.moonraker else None,
             "loop_count": self._loop_count,
             "loop_overruns": self._loop_overruns,
             "config_profile": self.cfg.profile_name,

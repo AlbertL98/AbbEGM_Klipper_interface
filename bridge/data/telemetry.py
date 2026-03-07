@@ -55,9 +55,11 @@ class TelemetryWriter:
 
         # TX Stream (an Roboter gesendete Samples)
         # t_klipper: die berechnete Klipper-Zeit für diesen Sample
+        # e_value / extruder_age_ms: Extruder-Position aus Moonraker
         self._open_stream("tx", [
             "timestamp", "seq_id", "x", "y", "z",
             "velocity", "seg_nr", "seg_progress", "t_klipper",
+            "e_value", "extruder_age_ms",
         ])
 
         # RX Stream (vom Roboter empfangene Werte)
@@ -149,8 +151,9 @@ class TelemetryWriter:
             f"{seg.start_v:.4f}", f"{seg.cruise_v:.4f}", f"{seg.end_v:.4f}",
         ])
 
-    def log_tx(self, sample):
-        """Loggt einen gesendeten Sollwert (TX Stream)."""
+    def log_tx(self, sample, e_value: float = 0.0,
+              extruder_age_ms: float = -1.0):
+        """Loggt einen gesendeten Sollwert (TX Stream) inkl. Extruder-E-Wert."""
         self._write("tx", [
             f"{sample.timestamp:.6f}",
             sample.sequence_id,
@@ -159,6 +162,8 @@ class TelemetryWriter:
             sample.segment_nr,
             f"{sample.segment_progress:.4f}",
             f"{sample.t_klipper:.6f}",
+            f"{e_value:.6f}",
+            f"{extruder_age_ms:.1f}",
         ])
 
     def log_rx(self, feedback):
