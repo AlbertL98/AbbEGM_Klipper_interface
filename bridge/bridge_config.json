@@ -50,6 +50,7 @@
     "host": "127.0.0.1",
     "port": 7125,
     "reconnect_interval_s": 3.0,
+    "poll_interval_ms": 0,
     "stale_threshold_ms": 500.0
   },
   "telemetry": {

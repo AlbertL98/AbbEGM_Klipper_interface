@@ -65,6 +65,9 @@ class SyncConfig:
     jitter_p99_warn_ms: float = 5.0
     jitter_p99_stop_ms: float = 15.0
 
+    # Lag-Messung: Ringbuffer-Größe für positionsbasiertes Matching
+    lag_buffer_size: int = 200       # ~4s bei 50Hz, ~1s bei 250Hz
+
     # Korrektur-Limits (§B4)
     correction_max_mm: float = 3.0          # Max Korrekturbetrag
     correction_rate_limit_mm_per_s: float = 10.0  # Max Änderung/s
@@ -92,6 +95,7 @@ class MoonrakerConfig:
     host: str = "127.0.0.1"
     port: int = 7125                # Moonraker Default-Port
     reconnect_interval_s: float = 3.0
+    poll_interval_ms: float = 0.0      # 0 = nur Subscribe (~4 Hz, Moonraker-Limit)
     stale_threshold_ms: float = 500.0  # E-Wert-Alter ab dem gewarnt wird
 
 
@@ -181,6 +185,11 @@ def validate_config(cfg: BridgeConfig) -> list[str]:
     if m.enabled:
         if m.port < 1 or m.port > 65535:
             errors.append(f"moonraker.port={m.port} ungültig")
+        if m.poll_interval_ms < 0:
+            errors.append(f"moonraker.poll_interval_ms={m.poll_interval_ms} ungültig (< 0)")
+        if 0 < m.poll_interval_ms < 10:
+            errors.append(f"moonraker.poll_interval_ms={m.poll_interval_ms} zu klein "
+                          "(< 10ms, Moonraker-Überlastung)")
         if m.stale_threshold_ms < 50:
             errors.append(f"moonraker.stale_threshold_ms={m.stale_threshold_ms} zu klein (< 50)")
 

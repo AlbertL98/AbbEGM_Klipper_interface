@@ -232,3 +232,259 @@ System Info:
 2026-03-07 09:55:27,840 [websockets.py:on_close()] - Websocket Closed: ID: 126098239745504 Close Code: 1000, Close Reason: None, Pong Time Elapsed: 3.43
 2026-03-07 09:55:27,842 [klippy_connection.py:_on_connection_closed()] - Klippy Connection Removed
 2026-03-07 09:55:27,864 [server.py:main()] - Server Shutdown
+-------------------- Log Start | Sat Mar  7 13:27:29 2026 --------------------
+platform: Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39
+data_path: /home/klippy/printer_data
+is_default_data_path: False
+config_file: /home/klippy/printer_data/config/moonraker.conf
+backup_config: /home/klippy/printer_data/config/.moonraker.conf.bkp
+startup_warnings: []
+verbose: False
+debug: False
+asyncio_debug: False
+is_backup_config: False
+is_python_package: False
+instance_uuid: 27bdb195fc284ffca2fb2b9e363a6b92
+unix_socket_path: /home/klippy/printer_data/comms/moonraker.sock
+structured_logging: False
+software_version: v0.10.0-9-g3fbe6ee
+git_branch: master
+git_remote: origin
+git_repo_url: https://github.com/Arksine/moonraker.git
+modified_files: []
+unofficial_components: []
+log_file: /home/klippy/printer_data/logs/moonraker.log
+python_version: 3.12.3 (main, Jan 22 2026, 20:57:42) [GCC 13.3.0]
+launch_args: /home/klippy/moonraker-env/bin/python /home/klippy/moonraker/moonraker/moonraker.py -d /home/klippy/printer_data
+msgspec_enabled: False
+uvloop_enabled: False
+2026-03-07 13:27:29,844 [confighelper.py:read_file()] - Configuration File '/home/klippy/printer_data/config/moonraker.conf' parsed, total size: 240 B
+2026-03-07 13:27:29,844 [server.py:add_log_rollover_item()] - 
+#################### Moonraker Configuration ####################
+
+[server]
+host = 0.0.0.0
+port = 7125
+klippy_uds_address = /tmp/klippy_uds
+
+[authorization]
+trusted_clients = 
+	0.0.0.0/0
+cors_domains = 
+	*
+
+[octoprint_compat]
+
+[history]
+
+[file_manager]
+enable_object_processing = True
+
+[machine]
+provider = none
+
+#################################################################
+All Configuration Files:
+/home/klippy/printer_data/config/moonraker.conf
+#################################################################
+2026-03-07 13:27:29,894 [server.py:load_component()] - Component (secrets) loaded
+2026-03-07 13:27:29,898 [server.py:load_component()] - Component (template) loaded
+2026-03-07 13:27:29,899 [server.py:load_component()] - Component (klippy_connection) loaded
+2026-03-07 13:27:30,255 [application.py:__init__()] - Detected Tornado Version 6.5.4
+2026-03-07 13:27:30,256 [server.py:load_component()] - Component (application) loaded
+2026-03-07 13:27:30,267 [server.py:load_component()] - Component (websockets) loaded
+2026-03-07 13:27:30,286 [server.py:add_log_rollover_item()] - Loading Sqlite database provider. Sqlite Version: 3.45.1
+2026-03-07 13:27:30,288 [server.py:add_log_rollover_item()] - Unsafe Shutdown Count: 1
+2026-03-07 13:27:30,288 [server.py:load_component()] - Component (database) loaded
+2026-03-07 13:27:30,335 [server.py:load_component()] - Component (dbus_manager) loaded
+2026-03-07 13:27:30,353 [file_manager.py:__init__()] - Using File System Observer: inotify
+2026-03-07 13:27:30,390 [server.py:load_component()] - Component (file_manager) loaded
+2026-03-07 13:27:30,415 [database.py:register_table()] - Found registered table authorized_users
+2026-03-07 13:27:30,415 [authorization.py:__init__()] - Authorization Configuration Loaded
+Trusted Clients:
+0.0.0.0/0
+CORS Domains:
+.*
+2026-03-07 13:27:30,416 [server.py:load_component()] - Component (authorization) loaded
+2026-03-07 13:27:30,418 [server.py:load_component()] - Component (klippy_apis) loaded
+2026-03-07 13:27:30,444 [machine.py:_check_inside_container()] - Container detected via sched: docker
+2026-03-07 13:27:30,445 [server.py:add_log_rollover_item()] - 
+System Info:
+
+***python***
+  version: (3, 12, 3, 'final', 0)
+  version_string: 3.12.3 (main, Jan 22 2026, 20:57:42) [GCC 13.3.0]
+
+***cpu_info***
+  cpu_count: 16
+  bits: 64bit
+  processor: x86_64
+  cpu_desc: AMD Ryzen 7 4800HS with Radeon Graphics
+  serial_number: 
+  hardware_desc: 
+  model: 
+  total_memory: 7829692
+  memory_units: kB
+
+***sd_info***
+
+***distribution***
+  name: Ubuntu 24.04.4 LTS
+  id: ubuntu
+  version: 24.04
+  version_parts: {'major': '24', 'minor': '04', 'build_number': ''}
+  like: debian
+  codename: noble
+  release_info: {}
+  kernel_version: 6.6.87.2-microsoft-standard-WSL2
+
+***virtualization***
+  virt_type: container
+  virt_identifier: docker
+
+***network***
+
+***canbus***
+
+***Allowed Services***
+  klipper_mcu
+  webcamd
+  MoonCord
+  KlipperScreen
+  moonraker-telegram-bot
+  moonraker-obico
+  sonar
+  crowsnest
+  octoeverywhere
+  ratos-configurator
+2026-03-07 13:27:30,446 [server.py:load_component()] - Component (shell_command) loaded
+2026-03-07 13:27:30,446 [machine.py:__init__()] - Using System Provider: none
+2026-03-07 13:27:30,448 [server.py:add_log_rollover_item()] - Module libcamera unavailable, import failed
+2026-03-07 13:27:30,448 [server.py:load_component()] - Component (machine) loaded
+2026-03-07 13:27:30,449 [server.py:load_component()] - Component (data_store) loaded
+2026-03-07 13:27:30,451 [proc_stats.py:__init__()] - Unable to find 'vcgencmd', throttle checking disabled
+2026-03-07 13:27:30,452 [proc_stats.py:_get_cpu_thermal_file()] - Monitoring temperature using default thermal zone
+2026-03-07 13:27:30,452 [server.py:load_component()] - Component (proc_stats) loaded
+2026-03-07 13:27:30,454 [server.py:load_component()] - Component (job_state) loaded
+2026-03-07 13:27:30,455 [server.py:load_component()] - Component (job_queue) loaded
+2026-03-07 13:27:30,457 [database.py:register_table()] - Found registered table job_history
+2026-03-07 13:27:30,457 [database.py:register_table()] - Found registered table job_totals
+2026-03-07 13:27:30,457 [server.py:load_component()] - Component (history) loaded
+2026-03-07 13:27:30,463 [server.py:load_component()] - Component (http_client) loaded
+2026-03-07 13:27:30,465 [server.py:load_component()] - Component (announcements) loaded
+2026-03-07 13:27:30,467 [server.py:load_component()] - Component (webcam) loaded
+2026-03-07 13:27:30,468 [server.py:load_component()] - Component (extensions) loaded
+2026-03-07 13:27:30,470 [server.py:load_component()] - Component (octoprint_compat) loaded
+2026-03-07 13:27:30,470 [server.py:_initialize_component()] - Performing Component Post Init: [database]
+2026-03-07 13:27:30,478 [server.py:_initialize_component()] - Performing Component Post Init: [dbus_manager]
+2026-03-07 13:27:30,479 [dbus_manager.py:component_init()] - Unable to Connect to D-Bus
+2026-03-07 13:27:30,479 [server.py:_initialize_component()] - Performing Component Post Init: [authorization]
+2026-03-07 13:27:30,480 [server.py:_initialize_component()] - Performing Component Post Init: [machine]
+2026-03-07 13:27:30,481 [machine.py:validation_init()] - Installation version in database up to date
+2026-03-07 13:27:30,498 [machine.py:_find_public_ip()] - Detected Local IP: 172.18.0.2
+2026-03-07 13:27:30,498 [server.py:_initialize_component()] - Performing Component Post Init: [proc_stats]
+2026-03-07 13:27:30,498 [server.py:_initialize_component()] - Performing Component Post Init: [history]
+2026-03-07 13:27:30,499 [webcam.py:_set_default_host_ip()] - Default public webcam address set: http://172.18.0.2
+2026-03-07 13:27:30,502 [server.py:_initialize_component()] - Performing Component Post Init: [announcements]
+2026-03-07 13:27:30,505 [server.py:_initialize_component()] - Performing Component Post Init: [webcam]
+2026-03-07 13:27:30,505 [webcam.py:_set_default_host_ip()] - Default public webcam address set: http://172.18.0.2
+2026-03-07 13:27:30,508 [server.py:_initialize_component()] - Performing Component Post Init: [klippy_connection]
+2026-03-07 13:27:30,550 [extensions.py:start_unix_server()] - Creating Unix Domain Socket at '/home/klippy/printer_data/comms/moonraker.sock'
+2026-03-07 13:27:30,551 [server.py:start_server()] - Starting Moonraker on (0.0.0.0, 7125), Hostname: 728700c2d75b
+2026-03-07 13:27:30,552 [application.py:listen()] - SSL Certificate/Key not configured, aborting HTTPS Server startup
+2026-03-07 13:27:30,803 [klippy_connection.py:_do_connect()] - Klippy Connection Established
+2026-03-07 13:27:31,055 [server.py:add_log_rollover_item()] - Klipper Version: v0.13.0-562-g7a4472649-dirty
+2026-03-07 13:27:31,060 [klippy_connection.py:_request_initial_subscriptions()] - Webhooks Subscribed
+2026-03-07 13:27:31,060 [klippy_connection.py:_request_initial_subscriptions()] - GCode Output Subscribed
+2026-03-07 13:27:31,311 [job_state.py:_handle_started()] - Job state initialized: standby
+2026-03-07 13:27:31,566 [klippy_connection.py:_check_ready()] - Klippy ready
+2026-03-07 13:27:32,064 [data_store.py:_init_sensors()] - Configuring available sensors: ['extruder']
+2026-03-07 13:29:33,499 [authorization.py:_check_trusted_connection()] - Trusted Connection Detected, IP: 172.18.0.1
+2026-03-07 13:29:33,501 [application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 2.45ms
+2026-03-07 13:29:33,501 [websockets.py:open()] - Websocket Opened: ID: 136815310581504, Proxied: False, User Agent: , Host Name: 127.0.0.1
+2026-03-07 13:29:47,272 [websockets.py:on_close()] - Websocket Closed: ID: 136815310581504 Close Code: 1000, Close Reason: None, Pong Time Elapsed: 3.77
+2026-03-07 13:30:15,392 [application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 0.42ms
+2026-03-07 13:30:15,392 [websockets.py:open()] - Websocket Opened: ID: 136815299589328, Proxied: False, User Agent: , Host Name: 127.0.0.1
+2026-03-07 13:30:24,805 [authorization.py:_check_trusted_connection()] - Trusted Connection Detected, IP: 127.0.0.1
+2026-03-07 13:30:24,806 [application.py:log_request()] - 101 GET /websocket (127.0.0.1) [_TRUSTED_USER_] 0.75ms
+2026-03-07 13:30:24,806 [websockets.py:open()] - Websocket Opened: ID: 136815299808576, Proxied: False, User Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:148.0) Gecko/20100101 Firefox/148.0, Host Name: localhost
+2026-03-07 13:30:24,841 [websockets.py:_handle_identify()] - Websocket 136815299808576 Client Identified - Name: mainsail, Version: 2.17.0, Type: web
+2026-03-07 13:30:46,377 [klippy_apis.py:start_print()] - Requesting Job Start, filename = toolhead_test.gcode
+2026-03-07 13:30:46,543 [job_state.py:_send_job_event()] - Job Started: toolhead_test.gcode
+2026-03-07 13:32:09,432 [websockets.py:on_close()] - Websocket Closed: ID: 136815299589328 Close Code: 1000, Close Reason: None, Pong Time Elapsed: 3.99
+2026-03-07 13:40:44,226 [application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 1.49ms
+2026-03-07 13:40:44,226 [websockets.py:open()] - Websocket Opened: ID: 136815299940176, Proxied: False, User Agent: , Host Name: 127.0.0.1
+2026-03-07 13:41:00,843 [klippy_apis.py:start_print()] - Requesting Job Start, filename = extruder_test.gcode
+2026-03-07 13:41:00,936 [job_state.py:_send_job_event()] - Job Started: extruder_test.gcode
+2026-03-07 13:41:15,684 [klippy_apis.py:start_print()] - Requesting Job Start, filename = toolhead_test.gcode
+2026-03-07 13:41:15,734 [job_state.py:_send_job_event()] - Job Started: toolhead_test.gcode
+2026-03-07 13:42:51,672 [websockets.py:on_close()] - Websocket Closed: ID: 136815299940176 Close Code: 1000, Close Reason: None, Pong Time Elapsed: 7.43
+2026-03-07 13:55:16,186 [application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 15.31ms
+2026-03-07 13:55:16,189 [websockets.py:open()] - Websocket Opened: ID: 136815299942624, Proxied: False, User Agent: , Host Name: 127.0.0.1
+2026-03-07 13:55:25,979 [klippy_apis.py:start_print()] - Requesting Job Start, filename = toolhead_test.gcode
+2026-03-07 13:55:26,167 [job_state.py:_send_job_event()] - Job Started: toolhead_test.gcode
+2026-03-07 13:55:33,707 [klippy_apis.py:pause_print()] - Requesting job pause...
+2026-03-07 13:55:34,472 [websockets.py:on_close()] - Websocket Closed: ID: 136815299942624 Close Code: 1000, Close Reason: None, Pong Time Elapsed: 8.28
+2026-03-07 13:55:36,021 [klippy_apis.py:cancel_print()] - Requesting job cancel...
+2026-03-07 13:58:54,659 [application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 3.87ms
+2026-03-07 13:58:54,660 [websockets.py:open()] - Websocket Opened: ID: 136815299949152, Proxied: False, User Agent: , Host Name: 127.0.0.1
+2026-03-07 13:59:07,098 [klippy_apis.py:start_print()] - Requesting Job Start, filename = toolhead_test.gcode
+2026-03-07 13:59:07,363 [job_state.py:_send_job_event()] - Job Started: toolhead_test.gcode
+2026-03-07 13:59:12,881 [websockets.py:on_close()] - Websocket Closed: ID: 136815299949152 Close Code: 1000, Close Reason: None, Pong Time Elapsed: 8.22
+2026-03-07 13:59:29,660 [klippy_apis.py:pause_print()] - Requesting job pause...
+2026-03-07 13:59:30,440 [klippy_apis.py:cancel_print()] - Requesting job cancel...
+2026-03-07 14:00:38,547 [klippy_apis.py:start_print()] - Requesting Job Start, filename = toolhead_test.gcode
+2026-03-07 14:00:38,635 [job_state.py:_send_job_event()] - Job Started: toolhead_test.gcode
+2026-03-07 14:00:49,474 [klippy_apis.py:pause_print()] - Requesting job pause...
+2026-03-07 14:00:51,967 [klippy_apis.py:cancel_print()] - Requesting job cancel...
+2026-03-07 14:03:29,480 [application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 0.66ms
+2026-03-07 14:03:29,480 [websockets.py:open()] - Websocket Opened: ID: 136815299937968, Proxied: False, User Agent: , Host Name: 127.0.0.1
+2026-03-07 14:03:45,285 [klippy_apis.py:start_print()] - Requesting Job Start, filename = toolhead_test.gcode
+2026-03-07 14:03:45,460 [job_state.py:_send_job_event()] - Job Started: toolhead_test.gcode
+2026-03-07 14:03:53,818 [websockets.py:on_close()] - Websocket Closed: ID: 136815299937968 Close Code: 1000, Close Reason: None, Pong Time Elapsed: 4.33
+2026-03-07 14:32:30,224 [authorization.py:_prune_conn_handler()] - Trusted Connection Expired, IP: 127.0.0.1
+2026-03-07 14:33:54,955 [application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 9.79ms
+2026-03-07 14:33:54,958 [websockets.py:open()] - Websocket Opened: ID: 136815299946944, Proxied: False, User Agent: , Host Name: 127.0.0.1
+2026-03-07 14:34:13,054 [klippy_apis.py:start_print()] - Requesting Job Start, filename = toolhead_test.gcode
+2026-03-07 14:34:13,188 [job_state.py:_send_job_event()] - Job Started: toolhead_test.gcode
+2026-03-07 14:34:21,538 [websockets.py:on_close()] - Websocket Closed: ID: 136815299946944 Close Code: 1000, Close Reason: None, Pong Time Elapsed: 6.58
+2026-03-07 14:34:25,123 [klippy_apis.py:pause_print()] - Requesting job pause...
+2026-03-07 14:34:26,515 [klippy_apis.py:cancel_print()] - Requesting job cancel...
+2026-03-07 14:37:35,091 [application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 2.58ms
+2026-03-07 14:37:35,091 [websockets.py:open()] - Websocket Opened: ID: 136815299939360, Proxied: False, User Agent: , Host Name: 127.0.0.1
+2026-03-07 14:37:40,578 [klippy_apis.py:start_print()] - Requesting Job Start, filename = toolhead_test.gcode
+2026-03-07 14:37:40,592 [job_state.py:_send_job_event()] - Job Started: toolhead_test.gcode
+2026-03-07 14:37:49,070 [websockets.py:on_close()] - Websocket Closed: ID: 136815299939360 Close Code: 1000, Close Reason: None, Pong Time Elapsed: 3.98
+2026-03-07 14:37:52,073 [klippy_apis.py:pause_print()] - Requesting job pause...
+2026-03-07 14:37:53,882 [klippy_apis.py:cancel_print()] - Requesting job cancel...
+2026-03-07 14:40:44,321 [application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 2.83ms
+2026-03-07 14:40:44,322 [websockets.py:open()] - Websocket Opened: ID: 136815299949728, Proxied: False, User Agent: , Host Name: 127.0.0.1
+2026-03-07 14:40:49,480 [websockets.py:on_close()] - Websocket Closed: ID: 136815299949728 Close Code: 1000, Close Reason: None, Pong Time Elapsed: 5.16
+2026-03-07 14:40:50,497 [application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 1.02ms
+2026-03-07 14:40:50,498 [websockets.py:open()] - Websocket Opened: ID: 136815299945696, Proxied: False, User Agent: , Host Name: 127.0.0.1
+2026-03-07 14:41:02,441 [klippy_apis.py:start_print()] - Requesting Job Start, filename = toolhead_test.gcode
+2026-03-07 14:41:02,469 [job_state.py:_send_job_event()] - Job Started: toolhead_test.gcode
+2026-03-07 14:41:10,913 [websockets.py:on_close()] - Websocket Closed: ID: 136815299945696 Close Code: 1000, Close Reason: None, Pong Time Elapsed: 0.41
+2026-03-07 14:41:12,520 [klippy_apis.py:pause_print()] - Requesting job pause...
+2026-03-07 14:41:16,336 [klippy_apis.py:cancel_print()] - Requesting job cancel...
+2026-03-07 14:44:19,585 [application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 2.22ms
+2026-03-07 14:44:19,586 [websockets.py:open()] - Websocket Opened: ID: 136815299949536, Proxied: False, User Agent: , Host Name: 127.0.0.1
+2026-03-07 14:44:25,935 [klippy_apis.py:start_print()] - Requesting Job Start, filename = toolhead_test.gcode
+2026-03-07 14:44:26,098 [job_state.py:_send_job_event()] - Job Started: toolhead_test.gcode
+2026-03-07 14:45:17,765 [klippy_apis.py:pause_print()] - Requesting job pause...
+2026-03-07 14:45:25,141 [klippy_apis.py:cancel_print()] - Requesting job cancel...
+2026-03-07 14:45:31,064 [websockets.py:on_close()] - Websocket Closed: ID: 136815299949536 Close Code: 1000, Close Reason: None, Pong Time Elapsed: 1.47
+2026-03-07 14:56:35,855 [application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 1.84ms
+2026-03-07 14:56:35,856 [websockets.py:open()] - Websocket Opened: ID: 136815299948240, Proxied: False, User Agent: , Host Name: 127.0.0.1
+2026-03-07 14:56:51,985 [klippy_apis.py:start_print()] - Requesting Job Start, filename = toolhead_test.gcode
+2026-03-07 14:56:52,174 [job_state.py:_send_job_event()] - Job Started: toolhead_test.gcode
+2026-03-07 14:56:57,855 [websockets.py:on_close()] - Websocket Closed: ID: 136815299948240 Close Code: 1000, Close Reason: None, Pong Time Elapsed: 2.00
+2026-03-07 14:57:07,924 [klippy_apis.py:pause_print()] - Requesting job pause...
+2026-03-07 14:57:11,472 [klippy_apis.py:cancel_print()] - Requesting job cancel...
+2026-03-07 14:57:17,526 [application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 2.15ms
+2026-03-07 14:57:17,527 [websockets.py:open()] - Websocket Opened: ID: 136815299945888, Proxied: False, User Agent: , Host Name: 127.0.0.1
+2026-03-07 14:57:24,459 [klippy_apis.py:start_print()] - Requesting Job Start, filename = toolhead_test.gcode
+2026-03-07 14:57:24,517 [job_state.py:_send_job_event()] - Job Started: toolhead_test.gcode
+2026-03-07 14:57:30,270 [websockets.py:on_close()] - Websocket Closed: ID: 136815299945888 Close Code: 1000, Close Reason: None, Pong Time Elapsed: 2.69
+2026-03-07 14:57:34,240 [klippy_apis.py:pause_print()] - Requesting job pause...
+2026-03-07 14:57:38,688 [klippy_apis.py:cancel_print()] - Requesting job cancel...

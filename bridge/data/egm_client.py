@@ -108,6 +108,11 @@ class EgmClient:
         self._connected = False
         self._t0 = 0.0
 
+        # Ringbuffer: sequence_id → send_time (Bridge-Clock)
+        # Für korrektes RTT-Matching bei Feedback-Empfang
+        self._send_times: dict[int, float] = {}
+        self._send_times_max = 200  # Älteste Einträge aufräumen
+
         self._pb2 = None
         self._use_protobuf = False
         self._try_load_protobuf(protocol)
@@ -211,9 +216,18 @@ class EgmClient:
             self._tx_socket.sendto(
                 data, (self.robot_ip, self.send_port)
             )
+            now = time.monotonic()
             self._stats.tx_count += 1
-            self._stats.last_tx_time = time.monotonic()
+            self._stats.last_tx_time = now
             self._stats.cycles_without_response += 1
+
+            # Send-Zeit für RTT-Matching speichern
+            self._send_times[target.sequence_id] = now
+            if len(self._send_times) > self._send_times_max:
+                # Älteste Hälfte aufräumen
+                sorted_ids = sorted(self._send_times)
+                for old_id in sorted_ids[:len(sorted_ids) // 2]:
+                    del self._send_times[old_id]
 
             if self._stats.cycles_without_response > self.watchdog_cycles:
                 logger.error("EGM: Watchdog! %d Zyklen ohne Antwort",
@@ -241,7 +255,15 @@ class EgmClient:
                     self._stats.cycles_without_response = 0
 
                     if self._stats.last_tx_time > 0:
-                        rtt = (rx_time - self._stats.last_tx_time) * 1000
+                        # RTT per sequence_id-Matching
+                        tx_time = self._send_times.get(
+                            feedback.sequence_id)
+                        if tx_time is not None:
+                            rtt = (rx_time - tx_time) * 1000
+                            del self._send_times[feedback.sequence_id]
+                        else:
+                            # Fallback: letztes TX (ungenau)
+                            rtt = (rx_time - self._stats.last_tx_time) * 1000
                         self._stats.rtt_last_ms = rtt
                         alpha = 0.1
                         self._stats.rtt_avg_ms = (

@@ -25,6 +25,7 @@ import time
 import logging
 import threading
 import signal
+import sys
 from typing import Optional
 
 from .state_machine import BridgeStateMachine, State
@@ -37,6 +38,44 @@ from .telemetry import TelemetryWriter
 from .moonraker_client import MoonrakerClient
 
 logger = logging.getLogger("egm.bridge")
+
+
+# ── Windows High-Resolution Timer ───────────────────────────
+# Windows time.sleep() hat ~15ms Auflösung per Default.
+# Für cycle_ms < 15 braucht man timeBeginPeriod(1) aus winmm.dll.
+
+_win_timer_active = False
+
+
+def _enable_win_hires_timer():
+    """Aktiviert 1ms Timer-Auflösung auf Windows."""
+    global _win_timer_active
+    if sys.platform != "win32" or _win_timer_active:
+        return
+    try:
+        import ctypes
+        winmm = ctypes.windll.winmm
+        winmm.timeBeginPeriod(1)
+        _win_timer_active = True
+        logger.info("BRIDGE: Windows High-Res Timer aktiviert (1ms)")
+    except Exception as e:
+        logger.warning("BRIDGE: Windows Timer-Setup fehlgeschlagen: %s "
+                        "— sleep-Auflösung bleibt ~15ms", e)
+
+
+def _disable_win_hires_timer():
+    """Gibt die Timer-Auflösung wieder frei."""
+    global _win_timer_active
+    if sys.platform != "win32" or not _win_timer_active:
+        return
+    try:
+        import ctypes
+        winmm = ctypes.windll.winmm
+        winmm.timeEndPeriod(1)
+        _win_timer_active = False
+        logger.info("BRIDGE: Windows High-Res Timer deaktiviert")
+    except Exception:
+        pass
 
 
 class EgmBridge:
@@ -101,6 +140,7 @@ class EgmBridge:
                 host=config.moonraker.host,
                 port=config.moonraker.port,
                 reconnect_interval_s=config.moonraker.reconnect_interval_s,
+                poll_interval_ms=config.moonraker.poll_interval_ms,
             )
 
         # Interner Zustand
@@ -129,6 +169,10 @@ class EgmBridge:
         INIT → READY (oder FAULT bei Fehlern).
         """
         logger.info("BRIDGE: Starte...")
+
+        # Windows: Timer-Auflösung auf 1ms setzen (nötig für cycle_ms < 15)
+        if self._cycle_s < 0.015:
+            _enable_win_hires_timer()
 
         # Config validieren (§B6)
         errors = validate_config(self.cfg)
@@ -187,7 +231,7 @@ class EgmBridge:
                                      f"Job {job_id} gestartet")
 
         self.sync.reset()
-        self._last_segment_time = time.monotonic()  # Startzeitpunkt
+        self._last_segment_time = time.perf_counter()  # Startzeitpunkt
         self.sm.to_run(f"Job gestartet: {job_id or 'default'}")
 
         self._running = True
@@ -219,6 +263,7 @@ class EgmBridge:
 
         logger.info("BRIDGE: Gestoppt (Zyklen: %d, Overruns: %d)",
                      self._loop_count, self._loop_overruns)
+        _disable_win_hires_timer()
 
     def shutdown(self):
         """Komplettes Herunterfahren inkl. Cleanup — aus JEDEM Zustand."""
@@ -239,6 +284,7 @@ class EgmBridge:
 
         logger.info("BRIDGE: Shutdown abgeschlossen (Zyklen: %d, Overruns: %d)",
                      self._loop_count, self._loop_overruns)
+        _disable_win_hires_timer()
 
     # ── EGM Cycle Loop ───────────────────────────────────────
 
@@ -258,12 +304,20 @@ class EgmBridge:
 
         cycle_s = self._cycle_s
         metric_interval = self.cfg.telemetry.metric_interval_s
-        last_metric_time = time.monotonic()
+        last_metric_time = time.perf_counter()
         starvation_logged = False
+
+        # Auf Windows hat time.monotonic() nur ~15ms Auflösung.
+        # time.perf_counter() hat µs-Auflösung — wir nutzen es für alles.
+        # Für Zyklen < 15ms: reiner Spin-Wait (kein time.sleep).
+        use_spin_only = (cycle_s < 0.015)
+        if use_spin_only:
+            logger.info("BRIDGE: Spin-Wait aktiv (cycle < 15ms, "
+                         "1 CPU-Kern @ 100%%)")
 
         while self._running and self.sm.is_running:
             loop_start = time.perf_counter()
-            bridge_time = time.monotonic()
+            bridge_time = loop_start  # perf_counter für µs-Auflösung
             self._loop_count += 1
 
             try:
@@ -288,6 +342,9 @@ class EgmBridge:
                         q3=self.cfg.connection.default_q3,
                     )
                     self.egm.send_target(target)
+
+                    # Sample im Sync-Monitor für Lag-Matching aufzeichnen
+                    self.sync.record_sent_sample(sample)
 
                     # Extruder-E-Wert für Telemetrie abfragen
                     e_val = 0.0
@@ -314,7 +371,8 @@ class EgmBridge:
                         fb = self._last_feedback
 
                     if fb:
-                        self.telemetry.log_rx(fb)
+                        # RX wird NICHT hier geloggt — das passiert
+                        # bereits in _on_feedback() bei voller ABB-Rate.
                         self.sync.update(
                             sample=sample,
                             feedback=fb,
@@ -398,20 +456,28 @@ class EgmBridge:
                 break
 
             # Zykluszeit einhalten
-            elapsed = time.perf_counter() - loop_start
-            sleep_time = cycle_s - elapsed
-            if sleep_time > 0:
-                time.sleep(sleep_time)
+            if use_spin_only:
+                # Kurze Zyklen (< 15ms): reiner Spin-Wait
+                # time.sleep() ist auf Windows unbrauchbar unter 15ms
+                deadline = loop_start + cycle_s
+                while time.perf_counter() < deadline:
+                    pass
             else:
-                self._loop_overruns += 1
-                if self._loop_overruns % 100 == 1:
-                    logger.warning(
-                        "BRIDGE: Zyklus-Overrun #%d "
-                        "(%.2fms > %.2fms)",
-                        self._loop_overruns,
-                        elapsed * 1000,
-                        cycle_s * 1000
-                    )
+                # Längere Zyklen: normal schlafen
+                elapsed = time.perf_counter() - loop_start
+                sleep_time = cycle_s - elapsed
+                if sleep_time > 0:
+                    time.sleep(sleep_time)
+                else:
+                    self._loop_overruns += 1
+                    if self._loop_overruns % 100 == 1:
+                        logger.warning(
+                            "BRIDGE: Zyklus-Overrun #%d "
+                            "(%.2fms > %.2fms)",
+                            self._loop_overruns,
+                            elapsed * 1000,
+                            cycle_s * 1000
+                        )
 
         logger.info("BRIDGE: EGM-Loop beendet")
 
@@ -423,7 +489,7 @@ class EgmBridge:
 
     def _on_segment_received(self, seg: TrapezSegment):
         """Callback: Neues Segment von Klipper empfangen."""
-        now = time.monotonic()
+        now = time.perf_counter()
         self._last_segment_time = now
 
         # Zeitkopplung beim ersten Segment herstellen

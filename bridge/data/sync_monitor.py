@@ -16,13 +16,21 @@ import logging
 import enum
 from dataclasses import dataclass, field
 from collections import deque
-from typing import Optional
+from typing import Optional, NamedTuple
 
 from .egm_client import EgmFeedback
 from .trajectory_planner import EgmSample
 from .config import SyncConfig
 
 logger = logging.getLogger("egm.sync")
+
+
+class SentSample(NamedTuple):
+    """Gesendetes Sample für positionsbasiertes Lag-Matching."""
+    bridge_time: float   # time.monotonic() / perf_counter beim Senden
+    x: float
+    y: float
+    z: float
 
 
 class SyncLevel(enum.Enum):
@@ -89,6 +97,10 @@ class SyncMonitor:
         self._lag_history: deque[float] = deque(maxlen=history_size)
         self._error_history: deque[float] = deque(maxlen=history_size)
 
+        # Ringbuffer gesendeter Samples für positionsbasiertes Lag-Matching
+        lag_buf_size = getattr(config, 'lag_buffer_size', 200)
+        self._sent_samples: deque[SentSample] = deque(maxlen=lag_buf_size)
+
         # Gleitender Durchschnitt (EMA)
         self._ema_alpha = 0.05  # ~20 Samples Halbwertszeit
         self._tracking_ema = 0.0
@@ -106,6 +118,23 @@ class SyncMonitor:
     def set_level_change_callback(self, callback):
         """Callback wenn sich das Sync-Level ändert."""
         self._on_level_change = callback
+
+    # ── Sent-Sample-Aufzeichnung (für Lag-Matching) ──────────
+
+    def record_sent_sample(self, sample: EgmSample):
+        """
+        Speichert ein gesendetes Sample im Ringbuffer.
+        Muss in jedem EGM-Zyklus NACH dem Senden aufgerufen werden.
+
+        WICHTIG: Wir verwenden time.monotonic() statt sample.timestamp,
+        weil sample.timestamp von time.perf_counter() kommt (bridge loop),
+        aber feedback.timestamp von time.monotonic() (egm_client RX).
+        Auf Windows haben diese unterschiedliche Epochen!
+        """
+        self._sent_samples.append(SentSample(
+            bridge_time=time.monotonic(),
+            x=sample.x, y=sample.y, z=sample.z,
+        ))
 
     # ── Update (wird jeden Zyklus aufgerufen) ────────────────
 
@@ -128,9 +157,22 @@ class SyncMonitor:
         self._metrics.buffer_depth = buffer_depth
         self._metrics.buffer_time_s = buffer_time_s
 
+        in_warmup = self._total_updates <= self._warmup_cycles
+
         if sample and feedback:
             self._update_tracking_error(sample, feedback)
-            self._update_lag(sample, feedback)
+
+            # Lag erst NACH Warmup aufzeichnen — davor ist der
+            # sent_samples-Buffer zu dünn für sinnvolles Matching
+            # und Ausreißer vergiften die Jitter-Berechnung.
+            if not in_warmup:
+                self._update_lag(sample, feedback)
+
+        # Lag-History beim Warmup-Ende leeren (falls doch was
+        # reingerutscht ist, z.B. durch Timing-Varianz)
+        if self._total_updates == self._warmup_cycles:
+            self._lag_history.clear()
+            self._lag_ema = 0.0
 
         # Jitter berechnen
         self._update_jitter()
@@ -177,11 +219,53 @@ class SyncMonitor:
 
     def _update_lag(self, sample: EgmSample, feedback: EgmFeedback):
         """
-        Berechnet den Zeitversatz (Lag).
-        Lag = Differenz zwischen Soll-Zeitstempel und Feedback-Zeitstempel.
+        Berechnet den Lag positionsbasiert (nur Bridge-Clock).
+
+        Sucht im Ringbuffer das gesendete Sample dessen Position
+        am besten zur Feedback-Position passt. Der Lag ist die
+        Zeitdifferenz — alles in time.monotonic().
+
+        RÜCKWÄRTS-SUCHE (neueste zuerst):
+          Bei Stillstand oder langsamer Fahrt haben viele Samples
+          fast identische Positionen. Vorwärts-Suche würde das
+          älteste matchen → falscher Lag. Rückwärts-Suche findet
+          das jüngste passende Sample → stabiler Lag und Jitter.
+
+          Abbruch sobald die Distanz wieder deutlich steigt
+          (wir sind zeitlich am Match vorbei).
         """
-        # Vereinfachte Lag-Berechnung: RTT-basiert
-        lag = abs(sample.timestamp - feedback.timestamp) * 1000  # → ms
+        if len(self._sent_samples) < 2:
+            return
+
+        fx, fy, fz = feedback.x, feedback.y, feedback.z
+
+        best_dist_sq = float('inf')
+        best_time = 0.0
+        rising_count = 0
+
+        for sent in reversed(self._sent_samples):
+            dx = sent.x - fx
+            dy = sent.y - fy
+            dz = sent.z - fz
+            dist_sq = dx*dx + dy*dy + dz*dz
+
+            if dist_sq < best_dist_sq:
+                best_dist_sq = dist_sq
+                best_time = sent.bridge_time
+                rising_count = 0
+            else:
+                rising_count += 1
+                # Wenn die Distanz 5 Samples in Folge steigt
+                # sind wir am Match-Punkt vorbei → Abbruch
+                if rising_count >= 5:
+                    break
+
+        lag = (feedback.timestamp - best_time) * 1000  # → ms
+
+        # Plausibilitätscheck
+        if lag < 0 or best_dist_sq > 2500:  # 50mm = 2500mm²
+            return
+
         self._metrics.lag_ms = lag
 
         self._lag_ema = (
@@ -276,8 +360,12 @@ class SyncMonitor:
     def estimate_clock_offset(self, bridge_time: float,
                               robot_time_ms: float) -> float:
         """
-        Schätzt den Zeitversatz zwischen Bridge- und Robot-Clock.
-        Returns: Offset in ms (bridge_time_ms - robot_time_ms)
+        DEPRECATED: Lag wird jetzt positionsbasiert berechnet
+        (siehe _update_lag). Clock-Offset ist nicht mehr nötig.
+
+        Beibehalten für API-Kompatibilität — gibt weiterhin
+        die rohe Differenz zurück, wird aber nicht mehr
+        für die Sync-Bewertung verwendet.
         """
         bridge_ms = bridge_time * 1000
         return bridge_ms - robot_time_ms
@@ -309,6 +397,7 @@ class SyncMonitor:
         self._metrics = SyncMetrics()
         self._lag_history.clear()
         self._error_history.clear()
+        self._sent_samples.clear()
         self._tracking_ema = 0.0
         self._lag_ema = 0.0
         logger.info("SYNC: Metriken zurückgesetzt")
