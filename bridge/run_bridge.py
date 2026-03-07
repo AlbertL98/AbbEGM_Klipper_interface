@@ -6,7 +6,6 @@
 #   python run_bridge.py --config my_config.json  # Mit eigener Config
 #   python run_bridge.py --dry-run                # Nur Config validieren
 #
-# CodingPlan §G2: Core muss auch ohne GUI vollständig bedienbar bleiben
 
 import argparse
 import json
@@ -107,11 +106,8 @@ def main():
     # Auto-Start: Sobald erstes Segment da ist
     try:
         while True:
-            if (bridge.sm.state.value == "READY"
-                    and bridge.planner.queue_depth > 0):
-                logger.info("Erstes Segment empfangen (Queue: %d) "
-                            "— starte Job...",
-                            bridge.planner.queue_depth)
+            if bridge.sm.state.value == "READY" and bridge.planner.queue_depth > 0:
+                logger.info("Erstes Segment empfangen (Queue: %d) — starte Job...", bridge.planner.queue_depth)
                 bridge.run_job()
 
             elif bridge.sm.state.value == "FAULT":

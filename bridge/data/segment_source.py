@@ -144,7 +144,7 @@ class TrapezSegment:
         x = self.start_x + self.axes_r_x * d
         y = self.start_y + self.axes_r_y * d
         z = self.start_z + self.axes_r_z * d
-        return (x, y, z)
+        return x, y, z
 
     def velocity_at(self, t: float) -> float:
         """Skalare Geschwindigkeit zum Zeitpunkt t."""
