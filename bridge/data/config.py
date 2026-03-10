@@ -100,6 +100,30 @@ class MoonrakerConfig:
 
 
 @dataclass
+class WatchdogConfig:
+    """
+    Klipper-Watchdog: Heartbeat + Stop-Befehle an Klipper.
+
+    Verbindet sich mit dem bridge_watchdog.py Klipper-Extra
+    und sendet periodische Heartbeats. Bei Problemen (FAULT,
+    DEGRADE, Watchdog-Timeout) wird Klipper angewiesen den
+    Print zu pausieren oder zu stoppen.
+
+    Zwei Schutzrichtungen:
+      Bridge → Klipper: "Ich habe ein Problem, stopp den Print!"
+      Klipper → sich selbst: "Bridge meldet sich nicht mehr, ich pausiere."
+    """
+    enabled: bool = True
+    tcp_host: str = "127.0.0.1"
+    tcp_port: int = 7201                # Port des bridge_watchdog Klipper-Extra
+    heartbeat_interval_s: float = 1.0   # Heartbeat alle N Sekunden
+    reconnect_interval_s: float = 2.0   # Reconnect-Interval bei Verbindungsverlust
+    stop_on_fault: bool = True          # Bei FAULT → Stop-Befehl an Klipper
+    pause_on_degrade: bool = False      # Bei DEGRADE → Pause-Befehl an Klipper
+    moonraker_fallback: bool = True     # Zusätzlich über Moonraker-API stoppen
+
+
+@dataclass
 class TelemetryConfig:
     """Logging und Telemetrie (§B7)."""
     log_dir: str = "./logs"
@@ -117,6 +141,7 @@ class BridgeConfig:
     sync: SyncConfig = field(default_factory=SyncConfig)
     klipper: KlipperSourceConfig = field(default_factory=KlipperSourceConfig)
     moonraker: MoonrakerConfig = field(default_factory=MoonrakerConfig)
+    watchdog: WatchdogConfig = field(default_factory=WatchdogConfig)
     telemetry: TelemetryConfig = field(default_factory=TelemetryConfig)
 
     # Profil-Metadaten
@@ -193,6 +218,22 @@ def validate_config(cfg: BridgeConfig) -> list[str]:
         if m.stale_threshold_ms < 50:
             errors.append(f"moonraker.stale_threshold_ms={m.stale_threshold_ms} zu klein (< 50)")
 
+    # Watchdog
+    w = cfg.watchdog
+    if w.enabled:
+        if w.tcp_port < 1 or w.tcp_port > 65535:
+            errors.append(f"watchdog.tcp_port={w.tcp_port} ungültig")
+        if w.heartbeat_interval_s < 0.1:
+            errors.append(f"watchdog.heartbeat_interval_s={w.heartbeat_interval_s} "
+                          "zu klein (< 0.1s)")
+        if w.heartbeat_interval_s > 30.0:
+            errors.append(f"watchdog.heartbeat_interval_s={w.heartbeat_interval_s} "
+                          "zu groß (> 30s)")
+        # Port-Kollision mit move_export prüfen
+        if w.tcp_port == cfg.klipper.tcp_port:
+            errors.append(f"watchdog.tcp_port={w.tcp_port} kollidiert "
+                          f"mit klipper.tcp_port")
+
     return errors
 
 
@@ -217,6 +258,7 @@ def load_config(path: str) -> BridgeConfig:
         ("sync", SyncConfig),
         ("klipper", KlipperSourceConfig),
         ("moonraker", MoonrakerConfig),
+        ("watchdog", WatchdogConfig),
         ("telemetry", TelemetryConfig),
     ]:
         if section_name in data:

@@ -246,7 +246,7 @@ class EgmClient:
         while self._running:
             try:
                 data, addr = self._rx_socket.recvfrom(4096)
-                rx_time = time.monotonic()
+                rx_time = time.perf_counter()
 
                 feedback = self._decode_feedback(data, rx_time)
                 if feedback:

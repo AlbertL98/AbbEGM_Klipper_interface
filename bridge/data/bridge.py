@@ -20,6 +20,8 @@
 #   SyncMonitor (Bewertung)
 #     ↓ Korrektur / State-Änderung
 #   StateMachine
+#     ↓ Stop/Pause-Befehle
+#   KlipperCommandClient (TCP → bridge_watchdog.py)
 
 import time
 import logging
@@ -28,7 +30,7 @@ import signal
 import sys
 from typing import Optional
 
-from .state_machine import BridgeStateMachine, State
+from .state_machine import BridgeStateMachine, State, StateChangeEvent
 from .config import BridgeConfig, validate_config
 from .segment_source import TrapezSegment, TcpSegmentReceiver
 from .trajectory_planner import TrajectoryPlanner, EgmSample
@@ -36,6 +38,7 @@ from .egm_client import EgmClient, EgmTarget, EgmFeedback
 from .sync_monitor import SyncMonitor, SyncLevel
 from .telemetry import TelemetryWriter
 from .moonraker_client import MoonrakerClient
+from .klipper_command import KlipperCommandClient, MoonrakerEmergencyStop
 
 logger = logging.getLogger("egm.bridge")
 
@@ -143,6 +146,19 @@ class EgmBridge:
                 poll_interval_ms=config.moonraker.poll_interval_ms,
             )
 
+        # ── Klipper-Watchdog-Client (Heartbeat + Stop-Befehle) ──
+        self.klipper_cmd: Optional[KlipperCommandClient] = None
+        if config.watchdog.enabled:
+            self.klipper_cmd = KlipperCommandClient(
+                host=config.watchdog.tcp_host,
+                port=config.watchdog.tcp_port,
+                heartbeat_interval_s=config.watchdog.heartbeat_interval_s,
+                reconnect_interval_s=config.watchdog.reconnect_interval_s,
+            )
+
+        # State-Machine-Listener für Watchdog registrieren
+        self.sm.add_listener(self._on_state_change)
+
         # Interner Zustand
         self._loop_thread: Optional[threading.Thread] = None
         self._running = False
@@ -171,7 +187,7 @@ class EgmBridge:
         logger.info("BRIDGE: Starte...")
 
         # Windows: Timer-Auflösung auf 1ms setzen (nötig für cycle_ms < 15)
-        if self._cycle_s < 0.015:
+        if sys.platform == "win32":
             _enable_win_hires_timer()
 
         # Config validieren (§B6)
@@ -205,15 +221,25 @@ class EgmBridge:
                          "→ ws://%s:%d",
                          self.cfg.moonraker.host, self.cfg.moonraker.port)
 
+        # Klipper-Watchdog-Client starten (Heartbeat + Stop-Befehle)
+        if self.klipper_cmd:
+            self.klipper_cmd.start()
+            logger.info("BRIDGE: Klipper-Watchdog-Client aktiv "
+                         "→ %s:%d (Heartbeat: %.1fs)",
+                         self.cfg.watchdog.tcp_host,
+                         self.cfg.watchdog.tcp_port,
+                         self.cfg.watchdog.heartbeat_interval_s)
+
         # Telemetrie starten
         self.telemetry.start()
         self.telemetry.save_config_snapshot(self.cfg.snapshot())
 
         self.sm.to_ready("Alle Verbindungen hergestellt")
         logger.info("BRIDGE: Bereit (Zyklus: %.1fms, Profil: %s, "
-                     "time_offset: %.1fms)",
+                     "time_offset: %.1fms, Watchdog: %s)",
                      self.cfg.connection.cycle_ms, self.cfg.profile_name,
-                     self.cfg.sync.time_offset_ms)
+                     self.cfg.sync.time_offset_ms,
+                     "aktiv" if self.klipper_cmd else "aus")
         return True
 
     def run_job(self, job_id: Optional[str] = None):
@@ -257,6 +283,8 @@ class EgmBridge:
             self.receiver.stop()
         if self.moonraker:
             self.moonraker.stop()
+        if self.klipper_cmd:
+            self.klipper_cmd.stop()
         self.egm.disconnect()
         self.telemetry.stop()
         self.planner.clear()
@@ -278,6 +306,8 @@ class EgmBridge:
             self.receiver.stop()
         if self.moonraker:
             self.moonraker.stop()
+        if self.klipper_cmd:
+            self.klipper_cmd.stop()
         self.egm.disconnect()
         self.telemetry.stop()
         self.planner.clear()
@@ -533,6 +563,88 @@ class EgmBridge:
             f"SYNC_{level.value}", severity, reason
         )
 
+    def _on_state_change(self, event: StateChangeEvent):
+        """
+        Callback: State-Machine-Übergang.
+
+        Aktualisiert den Bridge-State im Watchdog-Heartbeat
+        und sendet bei kritischen Übergängen Befehle an Klipper.
+        """
+        # Watchdog-Heartbeat-State aktualisieren
+        if self.klipper_cmd:
+            self.klipper_cmd.set_bridge_state(event.to_state.value)
+
+        # ── Bei FAULT: Klipper stoppen ──────────────────────
+        if event.to_state == State.FAULT:
+            self._notify_klipper_stop(
+                f"Bridge-FAULT: {event.reason}")
+
+        # ── Bei DEGRADED: Optional Klipper pausieren ────────
+        elif (event.to_state == State.DEGRADED
+              and self.cfg.watchdog.pause_on_degrade):
+            self._notify_klipper_pause(
+                f"Bridge-DEGRADED: {event.reason}")
+
+    # ── Klipper benachrichtigen ──────────────────────────────
+
+    def _notify_klipper_stop(self, reason: str):
+        """
+        Sendet Stop-Befehl an Klipper über alle verfügbaren Kanäle.
+
+        1. Primär: Dedizierter TCP (bridge_watchdog.py)
+        2. Fallback: Moonraker HTTP-API
+        """
+        if not self.cfg.watchdog.stop_on_fault:
+            logger.info("BRIDGE: Klipper-Stop unterdrückt "
+                         "(stop_on_fault=false)")
+            return
+
+        sent = False
+
+        # Kanal 1: Dedizierter TCP
+        if self.klipper_cmd:
+            sent = self.klipper_cmd.send_stop(reason)
+            if sent:
+                logger.info("BRIDGE: Stop an Klipper gesendet (TCP)")
+
+        # Kanal 2: Moonraker HTTP-API als Fallback
+        if not sent and self.cfg.watchdog.moonraker_fallback:
+            logger.warning("BRIDGE: TCP-Stop fehlgeschlagen, "
+                            "versuche Moonraker-Fallback...")
+            mr_host = self.cfg.moonraker.host
+            mr_port = self.cfg.moonraker.port
+            sent = MoonrakerEmergencyStop.send_pause_via_http(
+                mr_host, mr_port)
+            if sent:
+                logger.info("BRIDGE: Stop an Klipper gesendet "
+                             "(Moonraker HTTP)")
+            else:
+                logger.error("BRIDGE: KONNTE KLIPPER NICHT STOPPEN! "
+                              "Weder TCP noch Moonraker verfügbar.")
+
+        self.telemetry.log_event(
+            "KLIPPER_STOP_SENT", "CRITICAL" if sent else "ERROR",
+            f"Klipper-Stop: {reason} (gesendet: {sent})")
+
+    def _notify_klipper_pause(self, reason: str):
+        """Sendet Pause-Befehl an Klipper."""
+        sent = False
+
+        if self.klipper_cmd:
+            sent = self.klipper_cmd.send_pause(reason)
+            if sent:
+                logger.info("BRIDGE: Pause an Klipper gesendet (TCP)")
+
+        if not sent and self.cfg.watchdog.moonraker_fallback:
+            mr_host = self.cfg.moonraker.host
+            mr_port = self.cfg.moonraker.port
+            sent = MoonrakerEmergencyStop.send_pause_via_http(
+                mr_host, mr_port)
+
+        self.telemetry.log_event(
+            "KLIPPER_PAUSE_SENT", "WARNING",
+            f"Klipper-Pause: {reason} (gesendet: {sent})")
+
     # ── Reaktionen ───────────────────────────────────────────
 
     def _handle_sync_level(self):
@@ -563,6 +675,7 @@ class EgmBridge:
             "telemetry": self.telemetry.snapshot(),
             "receiver": self.receiver.snapshot() if self.receiver else None,
             "moonraker": self.moonraker.snapshot() if self.moonraker else None,
+            "watchdog": self.klipper_cmd.snapshot() if self.klipper_cmd else None,
             "loop_count": self._loop_count,
             "loop_overruns": self._loop_overruns,
             "config_profile": self.cfg.profile_name,

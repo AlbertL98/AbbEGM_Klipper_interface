@@ -10,6 +10,7 @@ services:
       - "8181:80"       # Mainsail/Fluidd Web-UI
       - "7125:7125"     # Moonraker API
       - "7200:7200"     # MoveExport TCP-Stream
+      - "7201:7201"     # Bridge-Watchdog (Heartbeat + Stop)
     volumes:
       - ./config:/home/klippy/printer_data/config
       - ./logs:/home/klippy/printer_data/logs

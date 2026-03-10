@@ -1,6 +1,6 @@
 {
   "profile_name": "robotstudio_dev",
-  "profile_version": "1.1",
+  "profile_version": "1.2",
   "connection": {
     "robot_ip": "127.0.0.1",
     "send_port": 6599,
@@ -52,6 +52,16 @@
     "reconnect_interval_s": 3.0,
     "poll_interval_ms": 0,
     "stale_threshold_ms": 500.0
+  },
+  "watchdog": {
+    "enabled": true,
+    "tcp_host": "127.0.0.1",
+    "tcp_port": 7201,
+    "heartbeat_interval_s": 1.0,
+    "reconnect_interval_s": 2.0,
+    "stop_on_fault": true,
+    "pause_on_degrade": false,
+    "moonraker_fallback": true
   },
   "telemetry": {
     "log_dir": "./logs",

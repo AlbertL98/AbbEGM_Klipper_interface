@@ -132,7 +132,7 @@ class SyncMonitor:
         Auf Windows haben diese unterschiedliche Epochen!
         """
         self._sent_samples.append(SentSample(
-            bridge_time=time.monotonic(),
+            bridge_time=time.perf_counter(),
             x=sample.x, y=sample.y, z=sample.z,
         ))
 
