@@ -6,6 +6,13 @@ from __future__ import annotations
 #   - Streams: Planned, TX, RX, Extruder, Sync, Fault
 #   - Präfixe für schnelle Filterung
 #   - Export in CSV
+#
+# EXTRUDER-LOGGING (v2):
+#   E-Wert wird in TX UND RX geloggt:
+#   - TX: Soll-Position + E-Wert → "Was wollten wir?"
+#   - RX: Ist-Position + E-Wert → "Was war tatsächlich?"
+#   extruder_age_ms zeigt wie alt der E-Wert ist (ms seit letztem
+#   Moonraker-Update). Kleiner = besser. Bei 20Hz Polling: ~25-75ms.
 
 import os
 import csv
@@ -25,8 +32,8 @@ class TelemetryWriter:
 
     Streams (§B7):
       PLAN  — Geplante Trajektorie (Segmente aus Klipper)
-      TX    — Gesendete EGM-Sollwerte (inkl. t_klipper für Debug)
-      RX    — Empfangene Ist-Werte vom Roboter
+      TX    — Gesendete EGM-Sollwerte (inkl. t_klipper + E-Wert)
+      RX    — Empfangene Ist-Werte vom Roboter (inkl. E-Wert)
       SYNC  — Tracking-Error, Lag, Jitter, Buffer-Metriken
       EVENT — Zustandswechsel, Warnungen, Fehler
     """
@@ -63,9 +70,13 @@ class TelemetryWriter:
         ])
 
         # RX Stream (vom Roboter empfangene Werte)
+        # e_value / extruder_age_ms: Extruder-Position zum Zeitpunkt
+        # des Feedback-Empfangs. age = wie alt der E-Wert ist (ms).
+        # Für Sync-Analyse: robot_pos(x,y,z) + extruder_pos(e) + age
         self._open_stream("rx", [
             "timestamp", "seq_id", "robot_time",
             "x", "y", "z", "q0", "q1", "q2", "q3",
+            "e_value", "extruder_age_ms",
         ])
 
         # SYNC Stream
@@ -143,7 +154,7 @@ class TelemetryWriter:
     def log_plan(self, seg):
         """Loggt ein geplantes Segment (PLAN Stream)."""
         self._write("plan", [
-            f"{time.monotonic():.6f}",
+            f"{time.perf_counter():.6f}",
             seg.nr, f"{seg.print_time:.6f}", f"{seg.duration:.6f}",
             f"{seg.start_x:.4f}", f"{seg.start_y:.4f}", f"{seg.start_z:.4f}",
             f"{seg.end_x:.4f}", f"{seg.end_y:.4f}", f"{seg.end_z:.4f}",
@@ -166,8 +177,18 @@ class TelemetryWriter:
             f"{extruder_age_ms:.1f}",
         ])
 
-    def log_rx(self, feedback):
-        """Loggt empfangenes Feedback (RX Stream)."""
+    def log_rx(self, feedback, e_value: float = 0.0,
+               extruder_age_ms: float = -1.0):
+        """
+        Loggt empfangenes Feedback (RX Stream) inkl. Extruder-E-Wert.
+
+        Jede Zeile zeigt: "Roboter war bei (x,y,z) und der Extruder
+        war zu diesem Zeitpunkt bei Position e."
+
+        extruder_age_ms gibt an wie alt der E-Wert ist — je kleiner
+        desto genauer die Korrelation. Bei 20Hz Moonraker-Polling
+        ist age typisch 25-75ms.
+        """
         self._write("rx", [
             f"{feedback.timestamp:.6f}",
             feedback.sequence_id,
@@ -175,6 +196,8 @@ class TelemetryWriter:
             f"{feedback.x:.3f}", f"{feedback.y:.3f}", f"{feedback.z:.3f}",
             f"{feedback.q0:.6f}", f"{feedback.q1:.6f}",
             f"{feedback.q2:.6f}", f"{feedback.q3:.6f}",
+            f"{e_value:.6f}",
+            f"{extruder_age_ms:.1f}",
         ])
 
     def log_sync(self, metrics):

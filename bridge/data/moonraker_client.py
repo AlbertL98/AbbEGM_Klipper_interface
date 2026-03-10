@@ -4,16 +4,16 @@ from __future__ import annotations
 # Verbindet sich per Websocket mit der Moonraker-API und pollt aktiv
 # `motion_report.live_position` in konfigurierbarem Intervall.
 #
-# Abhängigkeit: websocket-client (pip install websocket-client)
+# ABHÄNGIGKEIT: websocket-client (pip install websocket-client)
+#   Ohne dieses Paket startet der Client NICHT und loggt einen Fehler.
+#   Der Fehler ist jetzt deutlich sichtbar (WARNING statt nur ERROR).
 #
 # Zwei Modi:
-#   1. Subscription (Baseline): ~4 Hz (Moonraker-intern, nicht steuerbar)
-#   2. Active Polling (Default): Sendet printer.objects.query im eigenen
-#      Takt (z.B. 50ms = 20 Hz). Deutlich höhere Auflösung.
+#   1. Subscription (Baseline): ~4 Hz (Moonraker-intern)
+#   2. Active Polling (Default 50ms = 20 Hz): Deutlich höhere Auflösung
 #
-# Der Polling-Thread sendet JSON-RPC Queries über den offenen Websocket.
-# Antworten werden im on_message-Handler verarbeitet — gleicher Codepath
-# für Subscribe-Pushes und Poll-Antworten.
+# Thread-sicher: get_extruder_state() liest nur einen Cache-Wert
+# und kann aus jedem Thread (z.B. 250Hz RX-Callback) aufgerufen werden.
 
 import json
 import time
@@ -29,7 +29,7 @@ logger = logging.getLogger("egm.moonraker")
 class ExtruderState:
     """Thread-sicherer Snapshot des letzten E-Werts."""
     e_value: float           # Extruder-Position (mm)
-    timestamp: float         # time.monotonic() beim Empfang
+    timestamp: float         # time.perf_counter() beim Empfang
     age_ms: float = 0.0      # Alter seit letztem Update (berechnet bei Abfrage)
 
 
@@ -42,7 +42,7 @@ class MoonrakerClient:
     konfigurierbaren Intervall (Default 50ms = 20 Hz).
 
     Thread-sicher: Läuft in eigenem Thread, der Bridge-Loop
-    fragt get_extruder_state() im EGM-Takt ab.
+    und der RX-Callback fragen get_extruder_state() ab.
     """
 
     def __init__(self,
@@ -60,12 +60,12 @@ class MoonrakerClient:
         self._connected = False
         self._thread: Optional[threading.Thread] = None
         self._poll_thread: Optional[threading.Thread] = None
-        self._ws = None  # websocket.WebSocketApp
+        self._ws = None
 
         # Shared State (Lock-geschützt)
         self._lock = threading.Lock()
         self._e_value: float = 0.0
-        self._e_timestamp: float = 0.0
+        self._e_timestamp: float = 0.0    # time.perf_counter()
         self._update_count: int = 0
         self._poll_count: int = 0
 
@@ -73,12 +73,41 @@ class MoonrakerClient:
         self._rpc_id: int = 0
         self._rpc_id_lock = threading.Lock()
 
+        # Websocket-client Verfügbarkeit vorab prüfen
+        self._ws_available = self._check_websocket_package()
+
+    def _check_websocket_package(self) -> bool:
+        """Prüft ob websocket-client installiert ist."""
+        try:
+            import websocket
+            return True
+        except ImportError:
+            logger.warning(
+                "\n"
+                "╔══════════════════════════════════════════════════╗\n"
+                "║  MOONRAKER: 'websocket-client' NICHT INSTALLIERT ║\n"
+                "║                                                  ║\n"
+                "║  pip install websocket-client                    ║\n"
+                "║                                                  ║\n"
+                "║  Ohne dieses Paket werden keine Extruder-E-Werte ║\n"
+                "║  geloggt! rx.csv/tx.csv haben e_value=0.         ║\n"
+                "╚══════════════════════════════════════════════════╝"
+            )
+            return False
+
     # ── Public API ───────────────────────────────────────────
 
     def start(self):
         """Startet den Websocket-Thread mit Auto-Reconnect."""
         if self._running:
             return
+
+        if not self._ws_available:
+            self._last_error = "websocket-client nicht installiert"
+            logger.warning("MOONRAKER: Client startet NICHT — "
+                           "pip install websocket-client")
+            return
+
         self._running = True
         self._thread = threading.Thread(
             target=self._connection_loop, daemon=True,
@@ -109,10 +138,16 @@ class MoonrakerClient:
         """
         Gibt den aktuellen E-Wert zurück.
 
-        Thread-sicher — wird vom EGM-Loop aufgerufen.
-        age_ms zeigt wie alt der Wert ist (für Telemetrie).
+        Thread-sicher — wird vom EGM-Loop (50Hz) und
+        vom RX-Callback (250Hz) aufgerufen.
+
+        age_ms zeigt wie alt der Wert ist:
+          - < 50ms: aktuell (bei 20Hz Polling)
+          - 50-200ms: etwas veraltet
+          - > 200ms: deutlich veraltet
+          - -1.0: noch nie ein Wert empfangen
         """
-        now = time.monotonic()
+        now = time.perf_counter()
         with self._lock:
             age_ms = ((now - self._e_timestamp) * 1000.0
                       if self._e_timestamp > 0 else -1.0)
@@ -130,6 +165,7 @@ class MoonrakerClient:
         with self._lock:
             return {
                 "connected": self._connected,
+                "ws_available": self._ws_available,
                 "host": self.host,
                 "port": self.port,
                 "poll_interval_ms": self.poll_interval_ms,
@@ -142,13 +178,10 @@ class MoonrakerClient:
     # ── Connection Loop (mit Reconnect) ──────────────────────
 
     def _connection_loop(self):
-        """
-        Äußere Schleife: Verbindet sich, bei Abbruch → Reconnect.
-        Verwendet websocket-client (WebSocketApp) für stabiles Threading.
-        """
+        """Äußere Schleife: Verbindet sich, bei Abbruch → Reconnect."""
         while self._running:
             try:
-                import websocket  # websocket-client Paket
+                import websocket
 
                 url = f"ws://{self.host}:{self.port}/websocket"
                 logger.info("MOONRAKER: Verbinde mit %s ...", url)
@@ -194,14 +227,11 @@ class MoonrakerClient:
     def _poll_loop(self):
         """
         Polling-Thread: Sendet printer.objects.query Requests
-        über den offenen Websocket im konfigurierten Intervall.
-
-        Antworten werden im on_message-Handler verarbeitet —
-        gleicher Codepath wie Subscribe-Pushes.
+        im konfigurierten Intervall (z.B. 50ms = 20 Hz).
         """
         logger.info("MOONRAKER: Polling gestartet (%.0fms = %.0f Hz)",
                      self.poll_interval_ms,
-                     1000.0 / self.poll_interval_ms)
+                     1000.0 / self.poll_interval_ms if self.poll_interval_ms > 0 else 0)
 
         query_objects = {"motion_report": ["live_position"]}
 
@@ -227,7 +257,6 @@ class MoonrakerClient:
                     logger.warning("MOONRAKER: Poll-Fehler: %s", e)
                 break
 
-            # Intervall einhalten
             elapsed = time.perf_counter() - loop_start
             sleep_time = self._poll_interval_s - elapsed
             if sleep_time > 0:
@@ -264,22 +293,18 @@ class MoonrakerClient:
                 name="moonraker-poll"
             )
             self._poll_thread.start()
+        else:
+            logger.info("MOONRAKER: Polling deaktiviert "
+                         "(poll_interval_ms=0), nur Subscribe ~4Hz")
 
     def _on_ws_message(self, ws, message: str):
-        """
-        Eingehende Nachricht verarbeiten.
-
-        Verarbeitet drei Arten von Nachrichten:
-          1. Subscribe-Antwort (initialer Status)
-          2. Poll-Antwort (printer.objects.query Result)
-          3. Push-Notification (notify_status_update)
-        """
+        """Eingehende Nachricht verarbeiten."""
         try:
             msg = json.loads(message)
         except json.JSONDecodeError:
             return
 
-        # Fall 1 + 2: RPC-Antwort (Subscribe oder Query)
+        # RPC-Antwort (Subscribe oder Query)
         result = msg.get("result")
         if result and isinstance(result, dict):
             status = result.get("status")
@@ -287,7 +312,7 @@ class MoonrakerClient:
                 self._process_status(status)
             return
 
-        # Fall 3: Push-Notification vom Subscribe
+        # Push-Notification vom Subscribe
         method = msg.get("method", "")
         if method == "notify_status_update":
             params = msg.get("params", [])
@@ -313,7 +338,10 @@ class MoonrakerClient:
         Extrahiert E-Wert aus motion_report.live_position.
 
         Moonraker liefert: motion_report.live_position = [x, y, z, e]
-        mit voller Float-Präzision. Wir brauchen nur e (Index 3).
+        Wir brauchen nur e (Index 3).
+
+        Timestamps nutzen time.perf_counter() für µs-Auflösung
+        (NICHT time.monotonic() — hat auf Windows nur 15ms Auflösung).
         """
         motion = status.get("motion_report", {})
         position = motion.get("live_position")
@@ -325,7 +353,7 @@ class MoonrakerClient:
 
         if position and isinstance(position, (list, tuple)) and len(position) >= 4:
             e_value = float(position[3])
-            now = time.monotonic()
+            now = time.perf_counter()
 
             with self._lock:
                 self._e_value = e_value
@@ -333,5 +361,5 @@ class MoonrakerClient:
                 self._update_count += 1
 
             if self._update_count <= 3 or self._update_count % 1000 == 0:
-                logger.debug("MOONRAKER: E=%.6f (Update #%d)",
-                             e_value, self._update_count)
+                logger.info("MOONRAKER: E=%.6f (Update #%d)",
+                            e_value, self._update_count)
