@@ -9,15 +9,19 @@
 #   - Jitter (p95/p99 des Lag)
 #   - Buffer-Gesundheit
 #   - Sync-Level: OK → WARN → DEGRADE → STOP
+#
+# CLOCK-FIX: Alle Timestamps nutzen jetzt bridge_now() aus clock.py.
+#   Vorher gemischte Nutzung von time.monotonic() und time.perf_counter()
+#   die auf Windows unterschiedliche Epochen haben.
 
 import math
-import time
 import logging
 import enum
 from dataclasses import dataclass, field
 from collections import deque
 from typing import Optional, NamedTuple
 
+from .clock import bridge_now
 from .egm_client import EgmFeedback
 from .trajectory_planner import EgmSample
 from .config import SyncConfig
@@ -27,7 +31,7 @@ logger = logging.getLogger("egm.sync")
 
 class SentSample(NamedTuple):
     """Gesendetes Sample für positionsbasiertes Lag-Matching."""
-    bridge_time: float   # time.monotonic() / perf_counter beim Senden
+    bridge_time: float   # bridge_now() beim Senden
     x: float
     y: float
     z: float
@@ -126,13 +130,11 @@ class SyncMonitor:
         Speichert ein gesendetes Sample im Ringbuffer.
         Muss in jedem EGM-Zyklus NACH dem Senden aufgerufen werden.
 
-        WICHTIG: Wir verwenden time.monotonic() statt sample.timestamp,
-        weil sample.timestamp von time.perf_counter() kommt (bridge loop),
-        aber feedback.timestamp von time.monotonic() (egm_client RX).
-        Auf Windows haben diese unterschiedliche Epochen!
+        Verwendet bridge_now() — gleiche Clock wie feedback.timestamp
+        (wird in egm_client._receive_loop ebenfalls mit bridge_now() gesetzt).
         """
         self._sent_samples.append(SentSample(
-            bridge_time=time.perf_counter(),
+            bridge_time=bridge_now(),
             x=sample.x, y=sample.y, z=sample.z,
         ))
 
@@ -151,7 +153,7 @@ class SyncMonitor:
             buffer_depth: Aktuelle Queue-Tiefe
             buffer_time_s: Geschätzte Queue-Zeit
         """
-        now = time.monotonic()
+        now = bridge_now()
         self._total_updates += 1
         self._metrics.timestamp = now
         self._metrics.buffer_depth = buffer_depth
@@ -223,7 +225,7 @@ class SyncMonitor:
 
         Sucht im Ringbuffer das gesendete Sample dessen Position
         am besten zur Feedback-Position passt. Der Lag ist die
-        Zeitdifferenz — alles in time.monotonic().
+        Zeitdifferenz — alles via bridge_now().
 
         RÜCKWÄRTS-SUCHE (neueste zuerst):
           Bei Stillstand oder langsamer Fahrt haben viele Samples
@@ -295,7 +297,8 @@ class SyncMonitor:
         # Warmup: Keine Bewertung in den ersten Zyklen
         if self._total_updates < self._warmup_cycles:
             self._metrics.sync_level = SyncLevel.OK
-            self._metrics.sync_reason = f"Warmup ({self._total_updates}/{self._warmup_cycles})"
+            self._metrics.sync_reason = (
+                f"Warmup ({self._total_updates}/{self._warmup_cycles})")
             return
 
         m = self._metrics
@@ -386,7 +389,8 @@ class SyncMonitor:
 
     @property
     def needs_degrade(self) -> bool:
-        return self._metrics.sync_level in (SyncLevel.DEGRADE, SyncLevel.STOP)
+        return self._metrics.sync_level in (SyncLevel.DEGRADE,
+                                            SyncLevel.STOP)
 
     @property
     def needs_stop(self) -> bool:
@@ -400,6 +404,7 @@ class SyncMonitor:
         self._sent_samples.clear()
         self._tracking_ema = 0.0
         self._lag_ema = 0.0
+        self._total_updates = 0
         logger.info("SYNC: Metriken zurückgesetzt")
 
     def snapshot(self) -> dict:

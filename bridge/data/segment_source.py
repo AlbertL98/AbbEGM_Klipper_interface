@@ -9,9 +9,10 @@ from __future__ import annotations
 #
 # Stellt Segmente in die Plan-Queue des Bridge-Core.
 #
-# HINWEIS: Time-indexed Playback setzt voraus, dass print_time
-# monoton steigend ist. Der TcpSegmentReceiver validiert dies
-# und loggt Warnungen bei Verstößen.
+# ÄNDERUNGEN:
+#   - validate(): Plausibilitätsprüfung für Segmente
+#   - position_at(): Distanz-Clamp auf [0, distance]
+#   - Einheitliche Clock via bridge_now()
 
 import json
 import math
@@ -23,7 +24,16 @@ from dataclasses import dataclass
 from typing import Optional, Callable
 from collections import deque
 
+from .clock import bridge_now
+
 logger = logging.getLogger("egm.source")
+
+
+# ── Segment-Validierungsfehler ───────────────────────────────
+
+class SegmentValidationError(ValueError):
+    """Wird bei ungültigen Segmenten geworfen."""
+    pass
 
 
 # ── Datenmodell ──────────────────────────────────────────────
@@ -56,13 +66,51 @@ class TrapezSegment:
     axes_r_y: float
     axes_r_z: float
 
+    def validate(self):
+        """
+        Plausibilitätsprüfung — wirft SegmentValidationError
+        wenn das Segment ungültige Werte enthält.
+
+        Wird nach from_dict() / from_csv_row() aufgerufen.
+        Fängt Fehler ab, die zu Division-by-Zero oder falscher
+        Interpolation führen würden.
+        """
+        if self.duration <= 0:
+            raise SegmentValidationError(
+                f"Segment #{self.nr}: duration={self.duration} <= 0")
+        if self.distance < 0:
+            raise SegmentValidationError(
+                f"Segment #{self.nr}: distance={self.distance} < 0")
+        if self.accel_t < 0 or self.cruise_t < 0 or self.decel_t < 0:
+            raise SegmentValidationError(
+                f"Segment #{self.nr}: negative Phasenzeit "
+                f"(accel_t={self.accel_t}, cruise_t={self.cruise_t}, "
+                f"decel_t={self.decel_t})")
+        phase_sum = self.accel_t + self.cruise_t + self.decel_t
+        if abs(phase_sum - self.duration) > 0.001:
+            raise SegmentValidationError(
+                f"Segment #{self.nr}: Phasensumme "
+                f"{phase_sum:.6f} != duration {self.duration:.6f}")
+        if self.start_v < 0 or self.cruise_v < 0 or self.end_v < 0:
+            raise SegmentValidationError(
+                f"Segment #{self.nr}: negative Geschwindigkeit "
+                f"(start_v={self.start_v}, cruise_v={self.cruise_v}, "
+                f"end_v={self.end_v})")
+        # Richtungsvektor: Länge sollte ~1.0 sein (oder 0 bei Stillstand)
+        r_len = math.sqrt(self.axes_r_x**2 + self.axes_r_y**2
+                          + self.axes_r_z**2)
+        if self.distance > 0.001 and abs(r_len - 1.0) > 0.01:
+            raise SegmentValidationError(
+                f"Segment #{self.nr}: Richtungsvektor nicht normiert "
+                f"(Länge={r_len:.4f})")
+
     @classmethod
     def from_dict(cls, d: dict) -> "TrapezSegment":
         """Erzeugt Segment aus dem JSON-Dict von move_export.py."""
         start = d["start"]
         end = d["end"]
         axes_r = d["axes_r"]
-        return cls(
+        seg = cls(
             nr=d["nr"],
             print_time=d["print_time"],
             duration=d["duration"],
@@ -78,11 +126,13 @@ class TrapezSegment:
             decel_t=d["decel_t"],
             axes_r_x=axes_r[0], axes_r_y=axes_r[1], axes_r_z=axes_r[2],
         )
+        seg.validate()
+        return seg
 
     @classmethod
     def from_csv_row(cls, row: dict) -> "TrapezSegment":
         """Erzeugt Segment aus einer CSV-Zeile (für Batch-Tests)."""
-        return cls(
+        seg = cls(
             nr=int(row["move_nr"]),
             print_time=float(row["print_time"]),
             duration=float(row["move_duration"]),
@@ -104,6 +154,8 @@ class TrapezSegment:
             axes_r_y=float(row["axes_r_y"]),
             axes_r_z=float(row["axes_r_z"]),
         )
+        seg.validate()
+        return seg
 
     @property
     def end_time(self) -> float:
@@ -117,12 +169,15 @@ class TrapezSegment:
 
         Kernstück der Interpolation — wird vom Trajectory Planner
         in jedem EGM-Zyklus aufgerufen.
+
+        FIX: Distanz wird auf [0, self.distance] geclampt, damit
+        Rundungsfehler in der Decel-Phase die Position nicht
+        über das Segment-Ende hinausschießen lassen.
         """
         t = max(0.0, min(t, self.duration))
 
         # Phase 1: Beschleunigung
         if t <= self.accel_t:
-            v = self.start_v + self.accel * t
             d = self.start_v * t + 0.5 * self.accel * t * t
 
         # Phase 2: Konstantfahrt
@@ -140,6 +195,9 @@ class TrapezSegment:
             d_cruise = self.cruise_v * self.cruise_t
             d = (d_accel + d_cruise
                  + self.cruise_v * dt - 0.5 * self.accel * dt * dt)
+
+        # FIX: Distanz auf [0, distance] clampen
+        d = max(0.0, min(d, self.distance))
 
         x = self.start_x + self.axes_r_x * d
         y = self.start_y + self.axes_r_y * d
@@ -205,6 +263,7 @@ class TcpSegmentReceiver:
         self._socket: Optional[socket.socket] = None
         self._connected = False
         self._segments_received = 0
+        self._segments_rejected = 0
         self._last_error: Optional[str] = None
 
         # print_time-Monotonie-Tracking
@@ -236,8 +295,10 @@ class TcpSegmentReceiver:
         if self._thread:
             self._thread.join(timeout=5.0)
         logger.info("SOURCE: Segment-Empfänger gestoppt "
-                     "(%d Segmente empfangen, %d Monotonie-Verstöße)",
-                     self._segments_received, self._monotone_violations)
+                     "(%d empfangen, %d abgelehnt, "
+                     "%d Monotonie-Verstöße)",
+                     self._segments_received, self._segments_rejected,
+                     self._monotone_violations)
 
     def _connect(self) -> bool:
         try:
@@ -331,7 +392,12 @@ class TcpSegmentReceiver:
 
                 self._segments_received += 1
                 self.on_segment(seg)
+
+            except SegmentValidationError as e:
+                self._segments_rejected += 1
+                logger.error("SOURCE: Segment abgelehnt: %s", e)
             except (KeyError, ValueError) as e:
+                self._segments_rejected += 1
                 logger.error("SOURCE: Segment-Parse-Fehler: %s", e)
             return
 
@@ -341,6 +407,7 @@ class TcpSegmentReceiver:
         return {
             "connected": self._connected,
             "segments_received": self._segments_received,
+            "segments_rejected": self._segments_rejected,
             "monotone_violations": self._monotone_violations,
             "last_error": self._last_error,
             "target": f"{self.host}:{self.port}",
@@ -358,6 +425,7 @@ class CsvSegmentSource:
     def __init__(self, csv_path: str):
         self.csv_path = csv_path
         self.segments: list[TrapezSegment] = []
+        self._rejected: int = 0
         self._load()
 
     def _load(self):
@@ -373,11 +441,15 @@ class CsvSegmentSource:
                                        "bei Segment #%d", seg.nr)
                     prev_time = seg.print_time
                     self.segments.append(seg)
+                except SegmentValidationError as e:
+                    self._rejected += 1
+                    logger.warning("CSV: Segment abgelehnt: %s", e)
                 except (KeyError, ValueError) as e:
+                    self._rejected += 1
                     logger.warning("CSV: Zeile übersprungen: %s", e)
 
-        logger.info("CSV: %d Segmente geladen aus %s",
-                     len(self.segments), self.csv_path)
+        logger.info("CSV: %d Segmente geladen, %d abgelehnt aus %s",
+                     len(self.segments), self._rejected, self.csv_path)
 
     def replay(self, on_segment: Callable[[TrapezSegment], None],
                realtime: bool = False):

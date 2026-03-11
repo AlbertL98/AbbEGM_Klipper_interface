@@ -6,6 +6,11 @@ from __future__ import annotations
 #   RX-Socket (0.0.0.0:6510)  → empfängt Feedback von ROB_1
 #
 # Zwei getrennte Sockets wie im ABB-EGM-Standard.
+#
+# CLOCK-FIX: Alle internen Timestamps nutzen jetzt bridge_now()
+#   (= time.perf_counter()). Vorher wurde RTT mit gemischten
+#   Clocks berechnet (monotonic TX vs. perf_counter RX), was
+#   auf Windows zu falschen Werten führte.
 
 import socket
 import time
@@ -13,6 +18,8 @@ import logging
 import threading
 from dataclasses import dataclass, field
 from typing import Optional, Callable
+
+from .clock import bridge_now
 
 logger = logging.getLogger("egm.client")
 
@@ -23,7 +30,7 @@ logger = logging.getLogger("egm.client")
 class EgmTarget:
     """Sollposition für den Roboter (Sensor → Robot)."""
     sequence_id: int
-    timestamp: float        # Bridge-Zeit (s)
+    timestamp: float        # Bridge-Zeit (s), via bridge_now()
     x: float
     y: float
     z: float
@@ -38,7 +45,7 @@ class EgmTarget:
 class EgmFeedback:
     """Istposition vom Roboter (Robot → Sensor)."""
     sequence_id: int
-    timestamp: float        # Empfangszeit (Bridge-Zeit)
+    timestamp: float        # Empfangszeit (Bridge-Zeit), via bridge_now()
     robot_time: float       # Roboter-Zeitstempel (ms)
     x: float
     y: float
@@ -108,7 +115,7 @@ class EgmClient:
         self._connected = False
         self._t0 = 0.0
 
-        # Ringbuffer: sequence_id → send_time (Bridge-Clock)
+        # Ringbuffer: sequence_id → send_time (bridge_now())
         # Für korrektes RTT-Matching bei Feedback-Empfang
         self._send_times: dict[int, float] = {}
         self._send_times_max = 200  # Älteste Einträge aufräumen
@@ -122,22 +129,27 @@ class EgmClient:
             self._use_protobuf = False
             logger.info("EGM: JSON-Modus erzwungen")
             return
+
         try:
             try:
                 from . import egm_pb2
             except ImportError:
                 import sys
                 from pathlib import Path
-                parent = str(Path(__file__).resolve().parent.parent)
-                if parent not in sys.path:
-                    sys.path.insert(0, parent)
-                import egm_pb2
+
+                package_root = str(Path(__file__).resolve().parent.parent)
+                if package_root not in sys.path:
+                    sys.path.insert(0, package_root)
+
+                from data import egm_pb2
+
             self._pb2 = egm_pb2
             self._use_protobuf = True
             logger.info("EGM: Protobuf geladen")
-        except ImportError:
+
+        except ImportError as e:
             if protocol == "protobuf":
-                raise RuntimeError("egm_pb2 nicht gefunden!")
+                raise RuntimeError(f"egm_pb2 nicht gefunden: {e}")
             self._use_protobuf = False
             logger.info("EGM: Kein Protobuf — JSON-Fallback")
 
@@ -216,12 +228,13 @@ class EgmClient:
             self._tx_socket.sendto(
                 data, (self.robot_ip, self.send_port)
             )
-            now = time.monotonic()
+            # FIX: Einheitlich bridge_now() statt time.monotonic()
+            now = bridge_now()
             self._stats.tx_count += 1
             self._stats.last_tx_time = now
             self._stats.cycles_without_response += 1
 
-            # Send-Zeit für RTT-Matching speichern
+            # Send-Zeit für RTT-Matching speichern (gleiche Clock!)
             self._send_times[target.sequence_id] = now
             if len(self._send_times) > self._send_times_max:
                 # Älteste Hälfte aufräumen
@@ -246,7 +259,8 @@ class EgmClient:
         while self._running:
             try:
                 data, addr = self._rx_socket.recvfrom(4096)
-                rx_time = time.perf_counter()
+                # FIX: Einheitlich bridge_now() — gleiche Clock wie TX
+                rx_time = bridge_now()
 
                 feedback = self._decode_feedback(data, rx_time)
                 if feedback:
@@ -256,6 +270,7 @@ class EgmClient:
 
                     if self._stats.last_tx_time > 0:
                         # RTT per sequence_id-Matching
+                        # Jetzt korrekt: beide Zeiten von bridge_now()
                         tx_time = self._send_times.get(
                             feedback.sequence_id)
                         if tx_time is not None:
@@ -263,7 +278,8 @@ class EgmClient:
                             del self._send_times[feedback.sequence_id]
                         else:
                             # Fallback: letztes TX (ungenau)
-                            rtt = (rx_time - self._stats.last_tx_time) * 1000
+                            rtt = (rx_time
+                                   - self._stats.last_tx_time) * 1000
                         self._stats.rtt_last_ms = rtt
                         alpha = 0.1
                         self._stats.rtt_avg_ms = (

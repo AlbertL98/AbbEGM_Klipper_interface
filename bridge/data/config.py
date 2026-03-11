@@ -7,6 +7,10 @@ from __future__ import annotations
 #   - Max speed/accel/Abweichung
 #   - Timeout-/Watchdog-Grenzen
 #   - Plausibilitätsprüfung vor Jobstart (Range Checks)
+#
+# ÄNDERUNGEN:
+#   - WorkspaceEnvelopeConfig: Begrenzungsbox für Zielpositionen
+#   - starvation_timeout_s: Konfigurierbar statt hardcoded
 
 import copy
 import json
@@ -15,6 +19,8 @@ import logging
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Optional
+
+from .clock import bridge_now
 
 logger = logging.getLogger("egm.config")
 
@@ -38,6 +44,52 @@ class EgmConnectionConfig:
 
 
 @dataclass
+class WorkspaceEnvelopeConfig:
+    """
+    Begrenzungsbox für Roboter-Zielpositionen (Kollisionsschutz).
+
+    Jede Zielposition wird VOR dem Senden an den Roboter geprüft.
+    Liegt sie außerhalb der Box, wird NICHT gesendet und die
+    Bridge geht in FAULT → Klipper wird gestoppt.
+
+    Die Werte sollten konservativ gesetzt werden — lieber etwas
+    kleiner als der tatsächliche Arbeitsraum des Roboters.
+
+    Einheit: mm (wie alle Positionen in der Bridge).
+    """
+    enabled: bool = True
+    min_x: float = -500.0
+    max_x: float = 500.0
+    min_y: float = -500.0
+    max_y: float = 500.0
+    min_z: float = -10.0       # Leicht unter 0 für Toleranz
+    max_z: float = 500.0
+
+    def contains(self, x: float, y: float, z: float) -> bool:
+        """Prüft ob Position innerhalb der erlaubten Box liegt."""
+        return (self.min_x <= x <= self.max_x
+                and self.min_y <= y <= self.max_y
+                and self.min_z <= z <= self.max_z)
+
+    def violation_reason(self, x: float, y: float, z: float) -> str:
+        """Beschreibt welche Achse(n) außerhalb liegen."""
+        parts = []
+        if x < self.min_x:
+            parts.append(f"X={x:.2f} < min_x={self.min_x:.2f}")
+        if x > self.max_x:
+            parts.append(f"X={x:.2f} > max_x={self.max_x:.2f}")
+        if y < self.min_y:
+            parts.append(f"Y={y:.2f} < min_y={self.min_y:.2f}")
+        if y > self.max_y:
+            parts.append(f"Y={y:.2f} > max_y={self.max_y:.2f}")
+        if z < self.min_z:
+            parts.append(f"Z={z:.2f} < min_z={self.min_z:.2f}")
+        if z > self.max_z:
+            parts.append(f"Z={z:.2f} > max_z={self.max_z:.2f}")
+        return "; ".join(parts) if parts else "OK"
+
+
+@dataclass
 class QueueConfig:
     """Buffer- und Queue-Parameter (§B2)."""
     plan_queue_size: int = 2000      # Max Segmente in der Plan-Queue
@@ -46,6 +98,7 @@ class QueueConfig:
     low_watermark: int = 20          # Segmente — darunter DEGRADED
     high_watermark: int = 1800       # Segmente — darüber throttle
     underflow_action: str = "degrade"  # "degrade" | "stop"
+    starvation_timeout_s: float = 3.0  # Sekunden ohne Segmente → Job beendet
 
 
 @dataclass
@@ -137,6 +190,7 @@ class TelemetryConfig:
 class BridgeConfig:
     """Gesamtkonfiguration des EGM-Bridge-Core."""
     connection: EgmConnectionConfig = field(default_factory=EgmConnectionConfig)
+    workspace: WorkspaceEnvelopeConfig = field(default_factory=WorkspaceEnvelopeConfig)
     queues: QueueConfig = field(default_factory=QueueConfig)
     sync: SyncConfig = field(default_factory=SyncConfig)
     klipper: KlipperSourceConfig = field(default_factory=KlipperSourceConfig)
@@ -159,7 +213,7 @@ class BridgeConfig:
         return {
             "profile_name": self.profile_name,
             "profile_version": self.profile_version,
-            "timestamp": time.time(),
+            "timestamp": bridge_now(),
             "config": self.to_dict(),
         }
 
@@ -187,12 +241,35 @@ def validate_config(cfg: BridgeConfig) -> list[str]:
     if c.watchdog_cycles < 5:
         errors.append(f"watchdog_cycles={c.watchdog_cycles} zu klein (< 5)")
 
+    # Workspace Envelope
+    w = cfg.workspace
+    if w.enabled:
+        if w.min_x >= w.max_x:
+            errors.append(f"workspace: min_x={w.min_x} >= max_x={w.max_x}")
+        if w.min_y >= w.max_y:
+            errors.append(f"workspace: min_y={w.min_y} >= max_y={w.max_y}")
+        if w.min_z >= w.max_z:
+            errors.append(f"workspace: min_z={w.min_z} >= max_z={w.max_z}")
+        # Warnung bei sehr großem Arbeitsraum
+        vol = ((w.max_x - w.min_x) * (w.max_y - w.min_y)
+               * (w.max_z - w.min_z))
+        if vol > 1e9:  # > 1000mm³ pro Achse im Schnitt
+            errors.append(
+                f"workspace: Volumen={vol:.0f}mm³ sehr groß — "
+                "Begrenzung prüfen")
+
     # Queues
     q = cfg.queues
     if q.low_watermark >= q.high_watermark:
         errors.append("low_watermark >= high_watermark")
     if q.send_queue_lookahead_ms < c.cycle_ms * 5:
         errors.append("lookahead zu klein (< 5 Zyklen)")
+    if q.starvation_timeout_s < 0.5:
+        errors.append(f"starvation_timeout_s={q.starvation_timeout_s} "
+                      "zu klein (< 0.5s)")
+    if q.starvation_timeout_s > 60.0:
+        errors.append(f"starvation_timeout_s={q.starvation_timeout_s} "
+                      "zu groß (> 60s)")
 
     # Sync
     s = cfg.sync
@@ -211,27 +288,29 @@ def validate_config(cfg: BridgeConfig) -> list[str]:
         if m.port < 1 or m.port > 65535:
             errors.append(f"moonraker.port={m.port} ungültig")
         if m.poll_interval_ms < 0:
-            errors.append(f"moonraker.poll_interval_ms={m.poll_interval_ms} ungültig (< 0)")
+            errors.append(f"moonraker.poll_interval_ms={m.poll_interval_ms} "
+                          "ungültig (< 0)")
         if 0 < m.poll_interval_ms < 10:
-            errors.append(f"moonraker.poll_interval_ms={m.poll_interval_ms} zu klein "
-                          "(< 10ms, Moonraker-Überlastung)")
+            errors.append(f"moonraker.poll_interval_ms={m.poll_interval_ms} "
+                          "zu klein (< 10ms, Moonraker-Überlastung)")
         if m.stale_threshold_ms < 50:
-            errors.append(f"moonraker.stale_threshold_ms={m.stale_threshold_ms} zu klein (< 50)")
+            errors.append(f"moonraker.stale_threshold_ms="
+                          f"{m.stale_threshold_ms} zu klein (< 50)")
 
     # Watchdog
-    w = cfg.watchdog
-    if w.enabled:
-        if w.tcp_port < 1 or w.tcp_port > 65535:
-            errors.append(f"watchdog.tcp_port={w.tcp_port} ungültig")
-        if w.heartbeat_interval_s < 0.1:
-            errors.append(f"watchdog.heartbeat_interval_s={w.heartbeat_interval_s} "
-                          "zu klein (< 0.1s)")
-        if w.heartbeat_interval_s > 30.0:
-            errors.append(f"watchdog.heartbeat_interval_s={w.heartbeat_interval_s} "
-                          "zu groß (> 30s)")
+    wd = cfg.watchdog
+    if wd.enabled:
+        if wd.tcp_port < 1 or wd.tcp_port > 65535:
+            errors.append(f"watchdog.tcp_port={wd.tcp_port} ungültig")
+        if wd.heartbeat_interval_s < 0.1:
+            errors.append(f"watchdog.heartbeat_interval_s="
+                          f"{wd.heartbeat_interval_s} zu klein (< 0.1s)")
+        if wd.heartbeat_interval_s > 30.0:
+            errors.append(f"watchdog.heartbeat_interval_s="
+                          f"{wd.heartbeat_interval_s} zu groß (> 30s)")
         # Port-Kollision mit move_export prüfen
-        if w.tcp_port == cfg.klipper.tcp_port:
-            errors.append(f"watchdog.tcp_port={w.tcp_port} kollidiert "
+        if wd.tcp_port == cfg.klipper.tcp_port:
+            errors.append(f"watchdog.tcp_port={wd.tcp_port} kollidiert "
                           f"mit klipper.tcp_port")
 
     return errors
@@ -254,6 +333,7 @@ def load_config(path: str) -> BridgeConfig:
     # Flache Zuordnung zu Dataclasses
     for section_name, section_cls in [
         ("connection", EgmConnectionConfig),
+        ("workspace", WorkspaceEnvelopeConfig),
         ("queues", QueueConfig),
         ("sync", SyncConfig),
         ("klipper", KlipperSourceConfig),

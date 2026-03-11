@@ -7,21 +7,20 @@ from __future__ import annotations
 #   - Präfixe für schnelle Filterung
 #   - Export in CSV
 #
-# EXTRUDER-LOGGING (v2):
-#   E-Wert wird in TX UND RX geloggt:
-#   - TX: Soll-Position + E-Wert → "Was wollten wir?"
-#   - RX: Ist-Position + E-Wert → "Was war tatsächlich?"
-#   extruder_age_ms zeigt wie alt der E-Wert ist (ms seit letztem
-#   Moonraker-Update). Kleiner = besser. Bei 20Hz Polling: ~25-75ms.
+# CLOCK-FIX: Alle Streams nutzen jetzt bridge_now() als Zeitquelle.
+#   Vorher nutzte log_event() time.monotonic() während alle anderen
+#   Streams time.perf_counter() verwendeten — die Timestamps waren
+#   dadurch nicht vergleichbar.
 
 import os
 import csv
-import time
 import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, IO
+
+from .clock import bridge_now
 
 logger = logging.getLogger("egm.telemetry")
 
@@ -40,7 +39,7 @@ class TelemetryWriter:
 
     def __init__(self, log_dir: str, job_id: Optional[str] = None):
         self.log_dir = log_dir
-        self.job_id = job_id or f"job_{int(time.time())}"
+        self.job_id = job_id or f"job_{int(bridge_now())}"
         self._job_dir = os.path.join(log_dir, self.job_id)
 
         self._files: dict[str, IO] = {}
@@ -61,8 +60,6 @@ class TelemetryWriter:
         ])
 
         # TX Stream (an Roboter gesendete Samples)
-        # t_klipper: die berechnete Klipper-Zeit für diesen Sample
-        # e_value / extruder_age_ms: Extruder-Position aus Moonraker
         self._open_stream("tx", [
             "timestamp", "seq_id", "x", "y", "z",
             "velocity", "seg_nr", "seg_progress", "t_klipper",
@@ -70,9 +67,6 @@ class TelemetryWriter:
         ])
 
         # RX Stream (vom Roboter empfangene Werte)
-        # e_value / extruder_age_ms: Extruder-Position zum Zeitpunkt
-        # des Feedback-Empfangs. age = wie alt der E-Wert ist (ms).
-        # Für Sync-Analyse: robot_pos(x,y,z) + extruder_pos(e) + age
         self._open_stream("rx", [
             "timestamp", "seq_id", "robot_time",
             "x", "y", "z", "q0", "q1", "q2", "q3",
@@ -154,17 +148,19 @@ class TelemetryWriter:
     def log_plan(self, seg):
         """Loggt ein geplantes Segment (PLAN Stream)."""
         self._write("plan", [
-            f"{time.perf_counter():.6f}",
+            f"{bridge_now():.6f}",
             seg.nr, f"{seg.print_time:.6f}", f"{seg.duration:.6f}",
-            f"{seg.start_x:.4f}", f"{seg.start_y:.4f}", f"{seg.start_z:.4f}",
+            f"{seg.start_x:.4f}", f"{seg.start_y:.4f}",
+            f"{seg.start_z:.4f}",
             f"{seg.end_x:.4f}", f"{seg.end_y:.4f}", f"{seg.end_z:.4f}",
             f"{seg.distance:.4f}",
-            f"{seg.start_v:.4f}", f"{seg.cruise_v:.4f}", f"{seg.end_v:.4f}",
+            f"{seg.start_v:.4f}", f"{seg.cruise_v:.4f}",
+            f"{seg.end_v:.4f}",
         ])
 
     def log_tx(self, sample, e_value: float = 0.0,
-              extruder_age_ms: float = -1.0):
-        """Loggt einen gesendeten Sollwert (TX Stream) inkl. Extruder-E-Wert."""
+               extruder_age_ms: float = -1.0):
+        """Loggt einen gesendeten Sollwert (TX Stream)."""
         self._write("tx", [
             f"{sample.timestamp:.6f}",
             sample.sequence_id,
@@ -179,21 +175,13 @@ class TelemetryWriter:
 
     def log_rx(self, feedback, e_value: float = 0.0,
                extruder_age_ms: float = -1.0):
-        """
-        Loggt empfangenes Feedback (RX Stream) inkl. Extruder-E-Wert.
-
-        Jede Zeile zeigt: "Roboter war bei (x,y,z) und der Extruder
-        war zu diesem Zeitpunkt bei Position e."
-
-        extruder_age_ms gibt an wie alt der E-Wert ist — je kleiner
-        desto genauer die Korrelation. Bei 20Hz Moonraker-Polling
-        ist age typisch 25-75ms.
-        """
+        """Loggt empfangenes Feedback (RX Stream)."""
         self._write("rx", [
             f"{feedback.timestamp:.6f}",
             feedback.sequence_id,
             f"{feedback.robot_time:.3f}",
-            f"{feedback.x:.3f}", f"{feedback.y:.3f}", f"{feedback.z:.3f}",
+            f"{feedback.x:.3f}", f"{feedback.y:.3f}",
+            f"{feedback.z:.3f}",
             f"{feedback.q0:.6f}", f"{feedback.q1:.6f}",
             f"{feedback.q2:.6f}", f"{feedback.q3:.6f}",
             f"{e_value:.6f}",
@@ -217,9 +205,14 @@ class TelemetryWriter:
 
     def log_event(self, event_type: str, severity: str,
                   message: str, details: Optional[dict] = None):
-        """Loggt ein Event (EVENT Stream)."""
+        """
+        Loggt ein Event (EVENT Stream).
+
+        FIX: Nutzt jetzt bridge_now() statt time.monotonic(),
+        damit Event-Timestamps mit TX/RX/SYNC vergleichbar sind.
+        """
         self._write("event", [
-            f"{time.monotonic():.6f}",
+            f"{bridge_now():.6f}",
             event_type, severity, message,
             json.dumps(details) if details else "",
         ])

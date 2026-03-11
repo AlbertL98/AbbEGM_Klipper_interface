@@ -1,15 +1,5 @@
 from __future__ import annotations
-# state_machine.py — Bridge-Zustandsmaschine
-#
-# Zustände nach CodingPlan §A:
-#   INIT     → Konfiguration geladen, Verbindungen noch nicht aktiv
-#   READY    → Verbindungen stehen, warten auf Jobstart
-#   RUN      → Aktiver Betrieb, Segmente werden gesendet
-#   DEGRADED → Sync-Problem erkannt, Geschwindigkeit reduziert
-#   STOP     → Geordneter Halt (manuell oder nach Fehler)
-#   FAULT    → Harter Fehler, erfordert Reset
-#
-# Transitions sind explizit definiert — alles andere wird abgelehnt.
+# state_machine.py — Bridge-Zustandsmaschine (unchanged)
 
 import time
 import enum
@@ -29,19 +19,17 @@ class State(enum.Enum):
     FAULT = "FAULT"
 
 
-# Erlaubte Übergänge: {von: {nach: auslösender_grund}}
 VALID_TRANSITIONS = {
     State.INIT: {State.READY, State.FAULT},
     State.READY: {State.RUN, State.STOP, State.FAULT},
     State.RUN: {State.DEGRADED, State.STOP, State.FAULT},
     State.DEGRADED: {State.RUN, State.STOP, State.FAULT},
     State.STOP: {State.READY, State.FAULT},
-    State.FAULT: {State.INIT},  # Nur expliziter Reset
+    State.FAULT: {State.INIT},
 }
 
 
 class StateChangeEvent:
-    """Einzelner Zustandswechsel für das Log."""
     __slots__ = ("timestamp", "from_state", "to_state", "reason", "details")
 
     def __init__(self, from_state: State, to_state: State,
@@ -58,22 +46,12 @@ class StateChangeEvent:
 
 
 class BridgeStateMachine:
-    """
-    Thread-sichere Zustandsmaschine für den EGM-Bridge-Core.
-
-    Callbacks werden synchron im aufrufenden Thread ausgeführt.
-    Für async-Notify kann man einen Listener registrieren, der
-    das Event in eine Queue legt.
-    """
-
     def __init__(self):
         self._state = State.INIT
         self._lock = threading.Lock()
         self._history: list[StateChangeEvent] = []
         self._listeners: list[Callable[[StateChangeEvent], None]] = []
         self._max_history = 500
-
-    # ── Properties ─────────────────────────────────────────────
 
     @property
     def state(self) -> State:
@@ -92,58 +70,36 @@ class BridgeStateMachine:
         with self._lock:
             return list(self._history)
 
-    # ── Listener ───────────────────────────────────────────────
-
     def add_listener(self, callback: Callable[[StateChangeEvent], None]):
         self._listeners.append(callback)
 
     def remove_listener(self, callback: Callable[[StateChangeEvent], None]):
         self._listeners.remove(callback)
 
-    # ── Transitions ────────────────────────────────────────────
-
     def transition(self, target: State, reason: str,
                    details: Optional[dict] = None) -> bool:
-        """
-        Versucht einen Zustandswechsel.
-        Returns True bei Erfolg, False wenn Übergang ungültig.
-        Raises RuntimeError bei schweren Fehlern.
-        """
         with self._lock:
             current = self._state
-
             if target == current:
-                logger.debug("STATE: Bereits in %s, ignoriere", current.value)
                 return True
-
             if target not in VALID_TRANSITIONS.get(current, set()):
-                msg = (f"STATE: Ungültiger Übergang {current.value} → "
-                       f"{target.value} ({reason})")
-                logger.error(msg)
+                logger.error("STATE: Ungültiger Übergang %s → %s (%s)",
+                             current.value, target.value, reason)
                 return False
-
             event = StateChangeEvent(current, target, reason, details)
             self._state = target
             self._history.append(event)
-
-            # History begrenzen
             if len(self._history) > self._max_history:
                 self._history = self._history[-self._max_history:]
 
-        # Logging
         logger.info("STATE: %s → %s | %s", current.value, target.value,
                      reason)
-
-        # Listener außerhalb des Locks aufrufen
         for listener in self._listeners:
             try:
                 listener(event)
             except Exception as e:
                 logger.error("STATE: Listener-Fehler: %s", e)
-
         return True
-
-    # ── Convenience-Methoden ───────────────────────────────────
 
     def to_ready(self, reason: str = "Verbindungen hergestellt"):
         return self.transition(State.READY, reason)
@@ -161,26 +117,19 @@ class BridgeStateMachine:
         return self.transition(State.FAULT, reason, details)
 
     def reset(self, reason: str = "Manueller Reset"):
-        """Nur aus FAULT heraus möglich → zurück zu INIT."""
         return self.transition(State.INIT, reason)
 
-    # ── Guard-Decorators ───────────────────────────────────────
-
     def require_state(self, *allowed: State):
-        """Dekorator: Wirft RuntimeError wenn nicht im erlaubten Zustand."""
         def decorator(func):
             def wrapper(*args, **kwargs):
                 if self._state not in allowed:
                     raise RuntimeError(
                         f"{func.__name__} benötigt Zustand "
                         f"{[s.value for s in allowed]}, "
-                        f"aktuell: {self._state.value}"
-                    )
+                        f"aktuell: {self._state.value}")
                 return func(*args, **kwargs)
             return wrapper
         return decorator
-
-    # ── Status-Snapshot ────────────────────────────────────────
 
     def snapshot(self) -> dict:
         with self._lock:

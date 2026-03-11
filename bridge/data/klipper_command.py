@@ -4,12 +4,10 @@ from __future__ import annotations
 # Sendet Heartbeats und Stop/Pause-Befehle an das
 # bridge_watchdog.py Klipper-Extra.
 #
-# Zwei Kanäle für maximale Zuverlässigkeit:
-#   1. Dedizierter TCP (Heartbeat + Befehle) → bridge_watchdog.py
-#   2. Moonraker JSON-RPC (Emergency Stop als Fallback)
-#
-# Heartbeat-Frequenz ist unabhängig vom EGM-Zyklus und
-# läuft in eigenem Thread (Default: alle 1s).
+# FIXES:
+#   - Reconnect-Zähler: Erste Verbindung zählt nicht als Reconnect,
+#     danach wird korrekt hochgezählt.
+#   - Einheitliche Clock via bridge_now()
 
 import json
 import socket
@@ -17,6 +15,8 @@ import time
 import logging
 import threading
 from typing import Optional
+
+from .clock import bridge_now
 
 logger = logging.getLogger("egm.command")
 
@@ -27,17 +27,6 @@ class KlipperCommandClient:
 
     Thread-sicher: Heartbeat läuft in eigenem Thread,
     stop()/pause() können von jedem Thread aufgerufen werden.
-
-    Verwendung in bridge.py:
-        self.klipper_cmd = KlipperCommandClient(
-            host="127.0.0.1", port=7201,
-            heartbeat_interval_s=1.0,
-        )
-        self.klipper_cmd.start()
-        ...
-        self.klipper_cmd.send_stop("Sync-Fehler")
-        ...
-        self.klipper_cmd.stop()
     """
 
     def __init__(self,
@@ -62,7 +51,8 @@ class KlipperCommandClient:
         # Statistik
         self._heartbeats_sent: int = 0
         self._commands_sent: int = 0
-        self._reconnect_count: int = 0
+        self._connect_count: int = 0      # Gesamte Verbindungen
+        self._reconnect_count: int = 0    # Nur Reconnects (nicht erste)
         self._last_error: Optional[str] = None
 
     # ── Public API ───────────────────────────────────────────
@@ -97,34 +87,20 @@ class KlipperCommandClient:
         self._bridge_state = state
 
     def send_stop(self, reason: str) -> bool:
-        """
-        Sendet Stop-Befehl an Klipper.
-
-        Klipper wird den Print pausieren oder Emergency-Stoppen
-        (je nach Konfiguration in [bridge_watchdog]).
-
-        Returns True wenn erfolgreich gesendet.
-        """
+        """Sendet Stop-Befehl an Klipper."""
         return self._send_command({
             "type": "stop",
             "reason": reason,
-            "ts": time.monotonic(),
+            "ts": bridge_now(),
             "bridge_state": self._bridge_state,
         })
 
     def send_pause(self, reason: str) -> bool:
-        """
-        Sendet Pause-Befehl an Klipper.
-
-        Sanfter als Stop — Klipper pausiert den Print,
-        kann danach fortgesetzt werden.
-
-        Returns True wenn erfolgreich gesendet.
-        """
+        """Sendet Pause-Befehl an Klipper."""
         return self._send_command({
             "type": "pause",
             "reason": reason,
-            "ts": time.monotonic(),
+            "ts": bridge_now(),
             "bridge_state": self._bridge_state,
         })
 
@@ -138,6 +114,7 @@ class KlipperCommandClient:
             "target": f"{self.host}:{self.port}",
             "heartbeats_sent": self._heartbeats_sent,
             "commands_sent": self._commands_sent,
+            "connect_count": self._connect_count,
             "reconnect_count": self._reconnect_count,
             "bridge_state": self._bridge_state,
             "last_error": self._last_error,
@@ -146,12 +123,7 @@ class KlipperCommandClient:
     # ── Heartbeat Loop ───────────────────────────────────────
 
     def _heartbeat_loop(self):
-        """
-        Hauptloop: Verbinden, Heartbeat senden, bei Fehler reconnecten.
-
-        Heartbeat ist bewusst langsam (Default 1s) — es geht nicht
-        um Echtzeit-Synchronisation sondern um Lebenszeichen.
-        """
+        """Hauptloop: Verbinden, Heartbeat senden, bei Fehler reconnecten."""
         while self._running:
             # Verbinden falls nötig
             if not self._connected:
@@ -164,7 +136,7 @@ class KlipperCommandClient:
             success = self._send_command({
                 "type": "heartbeat",
                 "state": self._bridge_state,
-                "ts": time.monotonic(),
+                "ts": bridge_now(),
             })
 
             if success:
@@ -200,19 +172,24 @@ class KlipperCommandClient:
                 self._connected = True
                 self._last_error = None
 
-            self._reconnect_count += 1 if self._reconnect_count > 0 else 0
-            logger.info("KLIPPER-CMD: Verbunden mit %s:%d",
-                         self.host, self.port)
+            # FIX: Korrekte Reconnect-Zählung
+            self._connect_count += 1
+            if self._connect_count > 1:
+                self._reconnect_count += 1
+                logger.info("KLIPPER-CMD: Reconnect #%d mit %s:%d",
+                             self._reconnect_count, self.host, self.port)
+            else:
+                logger.info("KLIPPER-CMD: Verbunden mit %s:%d",
+                             self.host, self.port)
             return True
 
         except (ConnectionRefusedError, OSError) as e:
             self._last_error = str(e)
-            # Nur alle 10s loggen um Spam zu vermeiden
-            if self._reconnect_count % 5 == 0:
+            # Nur alle 5 Versuche loggen um Spam zu vermeiden
+            if self._connect_count % 5 == 0:
                 logger.debug("KLIPPER-CMD: Verbindung zu %s:%d "
                              "fehlgeschlagen: %s",
                              self.host, self.port, e)
-            self._reconnect_count += 1
             return False
 
     def _disconnect(self):
@@ -227,12 +204,7 @@ class KlipperCommandClient:
                 self._socket = None
 
     def _send_command(self, cmd: dict) -> bool:
-        """
-        Sendet ein JSON-Line-Kommando an Klipper.
-
-        Thread-sicher dank _socket_lock.
-        Returns True wenn erfolgreich.
-        """
+        """Sendet ein JSON-Line-Kommando an Klipper. Thread-sicher."""
         with self._socket_lock:
             if not self._connected or not self._socket:
                 return False
@@ -256,23 +228,13 @@ class KlipperCommandClient:
 
 
 class MoonrakerEmergencyStop:
-    """
-    Fallback: Emergency Stop über Moonraker JSON-RPC.
-
-    Wird verwendet wenn der direkte TCP-Kanal nicht verfügbar ist.
-    Nutzt den bereits bestehenden Moonraker-Websocket (falls verbunden).
-    """
+    """Fallback: Emergency Stop über Moonraker JSON-RPC."""
 
     @staticmethod
     def send_via_http(host: str = "127.0.0.1",
                       port: int = 7125,
                       timeout_s: float = 2.0) -> bool:
-        """
-        Sendet Emergency Stop über Moonraker HTTP-API.
-
-        Einfacher als Websocket — für Notfälle ausreichend.
-        POST /printer/emergency_stop
-        """
+        """POST /printer/emergency_stop"""
         try:
             import http.client
             conn = http.client.HTTPConnection(host, port,
@@ -292,11 +254,7 @@ class MoonrakerEmergencyStop:
     def send_pause_via_http(host: str = "127.0.0.1",
                             port: int = 7125,
                             timeout_s: float = 2.0) -> bool:
-        """
-        Sendet PAUSE über Moonraker HTTP-API.
-
-        POST /printer/gcode/script?script=PAUSE
-        """
+        """POST /printer/gcode/script?script=PAUSE"""
         try:
             import http.client
             import urllib.parse

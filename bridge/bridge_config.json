@@ -1,6 +1,6 @@
 {
   "profile_name": "robotstudio_dev",
-  "profile_version": "1.3",
+  "profile_version": "1.4",
   "connection": {
     "robot_ip": "127.0.0.1",
     "send_port": 6599,
@@ -15,13 +15,23 @@
     "default_q2": 0.707106,
     "default_q3": 0.0
   },
+  "workspace": {
+    "enabled": true,
+    "min_x": -200.0,
+    "max_x": 200.0,
+    "min_y": -200.0,
+    "max_y": 200.0,
+    "min_z": 0.0,
+    "max_z": 400.0
+  },
   "queues": {
     "plan_queue_size": 2000,
     "send_queue_lookahead_ms": 200.0,
     "feedback_queue_size": 500,
     "low_watermark": 5,
     "high_watermark": 1800,
-    "underflow_action": "degrade"
+    "underflow_action": "degrade",
+    "starvation_timeout_s": 3.0
   },
   "sync": {
     "tracking_warn_mm": 10.0,
