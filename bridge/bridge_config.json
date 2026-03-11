@@ -17,10 +17,10 @@
   },
   "workspace": {
     "enabled": true,
-    "min_x": -200.0,
-    "max_x": 200.0,
-    "min_y": -200.0,
-    "max_y": 200.0,
+    "min_x": -300.0,
+    "max_x": 300.0,
+    "min_y": -300.0,
+    "max_y": 300.0,
     "min_z": 0.0,
     "max_z": 400.0
   },
@@ -79,5 +79,15 @@
     "csv_export": true,
     "metric_interval_s": 1.0,
     "max_log_size_mb": 100
+  },
+  "estimator": {
+    "enabled": true,
+    "t_delay_init_ms": 50.0,
+    "ema_slow": 0.04,
+    "ema_fast": 0.25,
+    "ema_output": 0.08,
+    "offset_back_ms": 5.0,
+    "alpha_weight": 10.0,
+    "tx_buffer_size": 500
   }
 }

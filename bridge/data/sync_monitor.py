@@ -79,6 +79,10 @@ class SyncMetrics:
     clamp_count: int = 0
     underrun_count: int = 0
 
+    # Latenz-Estimator (wird von EgmBridge nach jedem RX-Update gesetzt)
+    t_delay_ms: float = 0.0          # Aktuelles T_delay (geglättet, ms)
+    estimator_weight: float = 0.0    # Letztes Update-Gewicht [0..1]
+
 
 class SyncMonitor:
     """
@@ -424,4 +428,6 @@ class SyncMonitor:
             "warn_count": m.warn_count,
             "degrade_count": m.degrade_count,
             "total_updates": self._total_updates,
+            "t_delay_ms": round(m.t_delay_ms, 2),
+            "estimator_weight": round(m.estimator_weight, 3),
         }

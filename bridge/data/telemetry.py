@@ -64,6 +64,7 @@ class TelemetryWriter:
             "timestamp", "seq_id", "x", "y", "z",
             "velocity", "seg_nr", "seg_progress", "t_klipper",
             "e_value", "extruder_age_ms",
+            "lookahead_ms",      # Aktiver Lookahead beim Senden (Estimator-Output)
         ])
 
         # RX Stream (vom Roboter empfangene Werte)
@@ -80,11 +81,28 @@ class TelemetryWriter:
             "lag_ms", "jitter_p99_ms",
             "buffer_depth", "buffer_time_s",
             "sync_level",
+            "t_delay_ms",        # Aktives T_delay aus Estimator (ms)
+            "estimator_weight",  # Letztes Update-Gewicht [0..1]
         ])
 
         # EVENT Stream
         self._open_stream("event", [
             "timestamp", "event_type", "severity", "message", "details",
+        ])
+
+        # ESTIMATOR Stream — Closed-Loop-Latenz-Debug (pro RX-Packet)
+        self._open_stream("estimator", [
+            "timestamp",
+            "t_delay_raw_ms",     # T_delay nach EMA-Update (vor Fading)
+            "t_delay_output_ms",  # Geglätteter Lookahead-Wert (aktiv im Planner)
+            "tang_err_mm",        # Tangentialfehler am Matchpunkt
+            "norm_err_mm",        # Normalfehler (Bahnabweichung)
+            "weight",             # Update-Gewicht [0..1] — klein an Ecken
+            "correction_ms",      # Angewandte Zeitkorrektur (ms)
+            "ema_rate",           # Verwendete EMA-Rate (slow/fast)
+            "match_found",        # TX-Matchpunkt gefunden (0/1)
+            "match_dist_mm",      # XY-Distanz zum Matchpunkt
+            "match_age_ms",       # Alter des Matchpunkts ≈ gemessenes Delay
         ])
 
         self._active = True
@@ -128,7 +146,7 @@ class TelemetryWriter:
         self._counts[name] = 0
 
     # Low-volume Streams die sofort geflusht werden
-    _FLUSH_ALWAYS = {"plan", "event", "sync"}
+    _FLUSH_ALWAYS = {"plan", "event", "sync", "estimator"}
 
     def _write(self, stream: str, row: list):
         if not self._active or stream not in self._writers:
@@ -159,7 +177,8 @@ class TelemetryWriter:
         ])
 
     def log_tx(self, sample, e_value: float = 0.0,
-               extruder_age_ms: float = -1.0):
+               extruder_age_ms: float = -1.0,
+               lookahead_ms: float = 0.0):
         """Loggt einen gesendeten Sollwert (TX Stream)."""
         self._write("tx", [
             f"{sample.timestamp:.6f}",
@@ -171,6 +190,7 @@ class TelemetryWriter:
             f"{sample.t_klipper:.6f}",
             f"{e_value:.6f}",
             f"{extruder_age_ms:.1f}",
+            f"{lookahead_ms:.2f}",
         ])
 
     def log_rx(self, feedback, e_value: float = 0.0,
@@ -201,6 +221,32 @@ class TelemetryWriter:
             metrics.buffer_depth,
             f"{metrics.buffer_time_s:.3f}",
             metrics.sync_level.value,
+            f"{metrics.t_delay_ms:.2f}",
+            f"{metrics.estimator_weight:.3f}",
+        ])
+
+    def log_estimator(self, debug) -> None:
+        """
+        Loggt einen Estimator-Debug-Snapshot (ESTIMATOR Stream).
+
+        Wird pro RX-Packet aufgerufen (~250Hz bei EGM).
+        Ermöglicht Post-hoc-Analyse: Wann/Wo konvergiert T_delay?
+        Wo bleibt weight < 0.2 (Ecken korrekt erkannt)?
+
+        Parameter: debug — EstimatorDebug Dataclass
+        """
+        self._write("estimator", [
+            f"{debug.timestamp:.6f}",
+            f"{debug.t_delay_raw_ms:.3f}",
+            f"{debug.t_delay_output_ms:.3f}",
+            f"{debug.tang_err_mm:.3f}",
+            f"{debug.norm_err_mm:.3f}",
+            f"{debug.weight:.4f}",
+            f"{debug.correction_ms:.3f}",
+            f"{debug.ema_rate_used:.3f}",
+            "1" if debug.match_found else "0",
+            f"{debug.match_dist_mm:.3f}",
+            f"{debug.match_age_ms:.2f}",
         ])
 
     def log_event(self, event_type: str, severity: str,

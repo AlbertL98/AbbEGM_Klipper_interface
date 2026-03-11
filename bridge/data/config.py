@@ -187,6 +187,37 @@ class TelemetryConfig:
 
 
 @dataclass
+class LatencyEstimatorConfig:
+    """
+    Konfiguration des adaptiven Latenz-Estimators (Closed-Loop-Korrektur).
+
+    Der Estimator lernt laufend die tatsächliche Controller-Latenz T_delay
+    (TX-Senden → physische Ankunft am Roboter) und passt den Lookahead
+    des TrajectoryPlanners automatisch an.
+
+    Bei enabled=False verhält sich der Planner wie bisher — er verwendet
+    den fixen time_offset_ms aus SyncConfig.
+    """
+    enabled: bool = True
+
+    # Initialwert für T_delay (ms). Guter Startwert ≈ time_offset_ms oder
+    # bekannte Controller-Zykluszeit. Estimator konvergiert von hier aus.
+    t_delay_init_ms: float = 50.0
+
+    # EMA-Lernraten
+    ema_slow: float = 0.04      # Normalbetrieb (~25 Samples Halbwertszeit)
+    ema_fast: float = 0.25      # Bei erkannter Beschleunigung (~3 Samples)
+    ema_output: float = 0.08    # Output-Fading (~12 Samples) — dämpft Sprünge
+
+    # Matching-Parameter
+    offset_back_ms: float = 5.0     # Geschätzte Netzwerklatenz RX→Python (fix)
+    alpha_weight: float = 10.0      # Gewichtungsfaktor Normal/Tangential
+
+    # TX-Ringbuffer-Größe (Samples). 500 ≈ 10s bei 50Hz
+    tx_buffer_size: int = 500
+
+
+@dataclass
 class BridgeConfig:
     """Gesamtkonfiguration des EGM-Bridge-Core."""
     connection: EgmConnectionConfig = field(default_factory=EgmConnectionConfig)
@@ -197,6 +228,8 @@ class BridgeConfig:
     moonraker: MoonrakerConfig = field(default_factory=MoonrakerConfig)
     watchdog: WatchdogConfig = field(default_factory=WatchdogConfig)
     telemetry: TelemetryConfig = field(default_factory=TelemetryConfig)
+    estimator: LatencyEstimatorConfig = field(
+        default_factory=LatencyEstimatorConfig)
 
     # Profil-Metadaten
     profile_name: str = "default"
@@ -313,6 +346,27 @@ def validate_config(cfg: BridgeConfig) -> list[str]:
             errors.append(f"watchdog.tcp_port={wd.tcp_port} kollidiert "
                           f"mit klipper.tcp_port")
 
+    # Latenz-Estimator
+    est = cfg.estimator
+    if est.enabled:
+        if est.t_delay_init_ms < 1.0 or est.t_delay_init_ms > 1000.0:
+            errors.append(f"estimator.t_delay_init_ms="
+                          f"{est.t_delay_init_ms} außerhalb [1, 1000]ms")
+        if not (0.001 <= est.ema_slow <= 0.5):
+            errors.append(f"estimator.ema_slow={est.ema_slow} "
+                          "außerhalb [0.001, 0.5]")
+        if not (0.001 <= est.ema_fast <= 1.0):
+            errors.append(f"estimator.ema_fast={est.ema_fast} "
+                          "außerhalb [0.001, 1.0]")
+        if est.ema_slow >= est.ema_fast:
+            errors.append("estimator: ema_slow muss < ema_fast sein")
+        if est.alpha_weight <= 0:
+            errors.append(f"estimator.alpha_weight={est.alpha_weight} "
+                          "muss > 0 sein")
+        if est.tx_buffer_size < 50:
+            errors.append(f"estimator.tx_buffer_size="
+                          f"{est.tx_buffer_size} zu klein (< 50)")
+
     return errors
 
 
@@ -340,6 +394,7 @@ def load_config(path: str) -> BridgeConfig:
         ("moonraker", MoonrakerConfig),
         ("watchdog", WatchdogConfig),
         ("telemetry", TelemetryConfig),
+        ("estimator", LatencyEstimatorConfig),
     ]:
         if section_name in data:
             section_obj = getattr(cfg, section_name)

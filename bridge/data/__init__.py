@@ -15,6 +15,7 @@ from .clock import bridge_now
 from .bridge import EgmBridge
 from .state_machine import BridgeStateMachine, State
 from .config import (BridgeConfig, WorkspaceEnvelopeConfig,
+                     LatencyEstimatorConfig,
                      load_config, save_config, validate_config)
 from .trajectory_planner import TrajectoryPlanner
 from .egm_client import EgmClient
@@ -23,12 +24,14 @@ from .telemetry import TelemetryWriter
 from .segment_source import (TrapezSegment, TcpSegmentReceiver,
                              CsvSegmentSource, SegmentValidationError)
 from .klipper_command import KlipperCommandClient
+from .latency_estimator import LatencyEstimator, EstimatorDebug
 
 __all__ = [
     "bridge_now",
     "EgmBridge",
     "BridgeStateMachine", "State",
     "BridgeConfig", "WorkspaceEnvelopeConfig",
+    "LatencyEstimatorConfig",
     "load_config", "save_config", "validate_config",
     "TrajectoryPlanner",
     "EgmClient",
@@ -37,6 +40,7 @@ __all__ = [
     "TrapezSegment", "TcpSegmentReceiver", "CsvSegmentSource",
     "SegmentValidationError",
     "KlipperCommandClient",
+    "LatencyEstimator", "EstimatorDebug",
 ]
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
