@@ -25,11 +25,10 @@ from .config import BridgeConfig, validate_config
 from .segment_source import TrapezSegment, TcpSegmentReceiver
 from .trajectory_planner import TrajectoryPlanner, EgmSample
 from .egm_client import EgmClient, EgmTarget, EgmFeedback
-from .sync_monitor import SyncMonitor, SyncLevel
+from .sync_monitor import SyncMonitor, SyncLevel, EstimatorDebug
 from .telemetry import TelemetryWriter
 from .moonraker_client import MoonrakerClient
 from .klipper_command import KlipperCommandClient, MoonrakerEmergencyStop
-from .latency_estimator import LatencyEstimator
 
 logger = logging.getLogger("egm.bridge")
 
@@ -91,28 +90,22 @@ class EgmBridge:
         # time_offset_ms aus SyncConfig → Sekunden für den Planner (Fallback)
         offset_s = config.sync.time_offset_ms / 1000.0
 
-        # Latenz-Estimator (Closed-Loop) — vor dem Planner erstellen,
-        # damit der Planner direkt die Referenz bekommt.
-        est_cfg = config.estimator
-        self.estimator = LatencyEstimator(
-            t_delay_init_ms=est_cfg.t_delay_init_ms,
-            ema_slow=est_cfg.ema_slow,
-            ema_fast=est_cfg.ema_fast,
-            ema_output=est_cfg.ema_output,
-            offset_back_ms=est_cfg.offset_back_ms,
-            alpha_weight=est_cfg.alpha_weight,
-            tx_buffer_size=est_cfg.tx_buffer_size,
-            enabled=est_cfg.enabled,
+        # SyncMonitor (Closed-Loop) — integriert den Offset-Estimator.
+        # Vor dem Planner erstellen, damit der Planner die Referenz bekommt.
+        self.sync = SyncMonitor(
+            config=config.sync,
+            estimator_config=config.estimator,
         )
+        self.sync.set_level_change_callback(self._on_sync_level_change)
 
-        # Komponenten
+        # Komponenten — Planner bekommt self.sync als lor-Interface
+        # (Duck-Typing: hat get_lookahead() und enabled Property)
         self.planner = TrajectoryPlanner(
             cycle_s=self._cycle_s,
             max_queue_size=config.queues.plan_queue_size,
             correction_max_mm=config.sync.correction_max_mm,
             correction_rate_limit=config.sync.correction_rate_limit_mm_per_s,
-            offset_s=offset_s,
-            estimator=self.estimator,
+            offset_s=offset_s
         )
 
         self.egm = EgmClient(
@@ -130,9 +123,6 @@ class EgmBridge:
             on_feedback=self._on_feedback,
             on_timeout=self._on_egm_timeout,
         )
-
-        self.sync = SyncMonitor(config=config.sync)
-        self.sync.set_level_change_callback(self._on_sync_level_change)
 
         self.telemetry = TelemetryWriter(
             log_dir=config.telemetry.log_dir,
@@ -427,7 +417,11 @@ class EgmBridge:
 
             try:
                 # 1. Sample erzeugen
-                sample = self.planner.next_sample(bt)
+                if self.sync.enabled:
+                    lookahead = self.sync.get_lookahead()
+                else:
+                    lookahead = self.planner.offset_s
+                sample = self.planner.next_sample(bt, lookahead)
 
                 if sample and sample.velocity > 0:
                     # ── Normaler Betrieb ─────────────────────────
@@ -452,41 +446,15 @@ class EgmBridge:
                     )
                     self.egm.send_target(target)
 
-                    # Sync-Monitor
+                    # Sync-Monitor: TX aufzeichnen (gleich nach send,
+                    # damit RX-Callback sofort matchen kann)
                     self.sync.record_sent_sample(sample)
 
-                    # Estimator TX-Log aktualisieren (gleich nach send,
-                    # damit RX-Callback sofort matchen kann)
-                    self.estimator.record_tx(
-                        timestamp=sample.timestamp,
-                        x=sample.x, y=sample.y, z=sample.z,
-                        velocity=sample.velocity,
-                    )
-
-                    # E-Wert + aktueller Lookahead für TX-Log
-                    e_val = 0.0
-                    e_age = -1.0
-                    if self.moonraker:
-                        ext = self.moonraker.get_extruder_state()
-                        e_val = ext.e_value
-                        e_age = ext.age_ms
-                        if (e_age > self.cfg.moonraker.stale_threshold_ms
-                                and e_age > 0
-                                and self._loop_count % 250 == 0):
-                            logger.warning(
-                                "BRIDGE: Extruder-E-Wert veraltet "
-                                "(age=%.0fms > threshold=%.0fms)",
-                                e_age,
-                                self.cfg.moonraker.stale_threshold_ms)
-
                     self.telemetry.log_tx(
-                        sample,
-                        e_value=e_val,
-                        extruder_age_ms=e_age,
-                        lookahead_ms=self.estimator.T_delay_output_ms,
+                        sample
                     )
 
-                    # 3. Sync updaten
+                    # 3. Sync updaten (Bewertung + Cycle-Log, 50Hz)
                     with self._feedback_lock:
                         fb = self._last_feedback
 
@@ -497,12 +465,6 @@ class EgmBridge:
                             buffer_depth=self.planner.queue_depth,
                             buffer_time_s=self.planner.queue_time_s,
                         )
-                        # Estimator-Metriken in SyncMetrics übertragen
-                        # (für SYNC-Stream und snapshot)
-                        self.sync.metrics.t_delay_ms = (
-                            self.estimator.T_delay_output_ms)
-                        self.sync.metrics.estimator_weight = (
-                            self.estimator.last_debug.weight)
 
                     # 4. Periodische Metriken
                     if bt - last_metric_time >= metric_interval:
@@ -534,11 +496,7 @@ class EgmBridge:
 
                     # TX auch bei velocity=0 aufzeichnen —
                     # sonst bleibt der Buffer leer während Holds/Gaps
-                    self.estimator.record_tx(
-                        timestamp=sample.timestamp,
-                        x=sample.x, y=sample.y, z=sample.z,
-                        velocity=0.0,
-                    )
+                    self.sync.record_sent_sample(sample)
 
                 else:
                     # ── Starvation ───────────────────────────────
@@ -580,13 +538,7 @@ class EgmBridge:
                         self.egm.send_target(hold)
 
                         # TX auch bei Starvation-Hold aufzeichnen
-                        self.estimator.record_tx(
-                            timestamp=bt,
-                            x=self._last_sample.x,
-                            y=self._last_sample.y,
-                            z=self._last_sample.z,
-                            velocity=0.0,
-                        )
+                        self.sync.record_sent_sample(self._last_sample)
 
             except Exception as e:
                 logger.error("BRIDGE: Loop-Fehler: %s", e, exc_info=True)
@@ -648,26 +600,13 @@ class EgmBridge:
         with self._feedback_lock:
             self._last_feedback = feedback
 
-        # Latenz-Estimator aktualisieren (im RX-Thread, ~250Hz)
-        # update() ist threadsicher für den T_delay_output float (GIL)
-        debug = self.estimator.update(
-            rx_x=feedback.x,
-            rx_y=feedback.y,
-            rx_z=feedback.z,
-            rx_timestamp=feedback.timestamp,
-        )
-        self.telemetry.log_estimator(debug)
+        # Offset-Estimator aktualisieren (im RX-Thread, ~250Hz)
+        # on_feedback_received() ist threadsicher (Lock auf T_delay)
+        debug = self.sync.on_feedback_received(feedback)
+        if debug is not None:
+            self.telemetry.log_estimator(debug)
 
-        # E-Wert für RX-Log
-        e_val = 0.0
-        e_age = -1.0
-        if self.moonraker:
-            ext = self.moonraker.get_extruder_state()
-            e_val = ext.e_value
-            e_age = ext.age_ms
-
-        self.telemetry.log_rx(feedback, e_value=e_val,
-                              extruder_age_ms=e_age)
+        self.telemetry.log_rx(feedback)
 
     def _on_egm_timeout(self):
         """Callback: EGM-Watchdog ausgelöst."""
@@ -759,7 +698,6 @@ class EgmBridge:
             "planner": self.planner.snapshot(),
             "egm": self.egm.snapshot(),
             "sync": self.sync.snapshot(),
-            "estimator": self.estimator.snapshot(),
             "telemetry": self.telemetry.snapshot(),
             "receiver": (self.receiver.snapshot()
                          if self.receiver else None),

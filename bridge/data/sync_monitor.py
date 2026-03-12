@@ -1,41 +1,48 @@
-# sync_monitor.py — Synchronisationsüberwachung
+# sync_monitor.py — Closed-Loop Synchronisationsüberwachung
 #
-# CodingPlan §B3: Clock-Mapping, Lag, Jitter, Tracking-Error
-# CodingPlan §E:  Messbare Sync-Kriterien, Reaktion bei Unsynchronität
+# Konsolidiert den bisherigen SyncMonitor und LatencyEstimator in eine Klasse.
+# Portiert die Matching-Logik aus EGM_Error_Test.py.
 #
-# Berechnet laufend:
-#   - Tracking-Error (Soll/Ist Position)
-#   - Lag (Zeitversatz Soll/Ist)
-#   - Jitter (p95/p99 des Lag)
-#   - Buffer-Gesundheit
-#   - Sync-Level: OK → WARN → DEGRADE → STOP
+# Zwei Update-Pfade:
+#   - on_feedback_received() → 250Hz (RX-Thread), Offset-Estimator
+#   - update()               → 50Hz  (EGM-Loop), Sync-Bewertung + Logging
 #
-# CLOCK-FIX: Alle Timestamps nutzen jetzt bridge_now() aus clock.py.
-#   Vorher gemischte Nutzung von time.monotonic() und time.perf_counter()
-#   die auf Windows unterschiedliche Epochen haben.
+# Closed-Loop-Prinzip:
+#   1. Bridge sendet Sample → record_sent_sample()
+#   2. RX-Thread empfängt Feedback → on_feedback_received()
+#      → Position-Matching im Suchfenster → T_delay EMA-Update
+#   3. EGM-Loop holt Lookahead → get_lookahead()
+#      → TrajectoryPlanner nutzt Lookahead für nächstes Sample
+#   4. EGM-Loop ruft update() → Sync-Level + Cycle-Log
+#
+# Offset-Aufteilung:
+#   - T_delay (adaptiv):       TX-Senden → Roboter erreicht Position
+#   - OFFSET_BACK (fix, 5ms):  Position erreicht → Feedback empfangen
+#
+# Der Klipper-Bridge-Offset ist NICHT Teil dieser Regelung (separater konstanter Wert).
+#
+# CLOCK-FIX: Alle Timestamps nutzen bridge_now() aus clock.py.
 
 import math
+import bisect
 import logging
 import enum
+import threading
 from dataclasses import dataclass, field
 from collections import deque
-from typing import Optional, NamedTuple
+from typing import Optional, Callable, List, NamedTuple
 
 from .clock import bridge_now
 from .egm_client import EgmFeedback
 from .trajectory_planner import EgmSample
-from .config import SyncConfig
+from .config import SyncConfig, LatencyEstimatorConfig
 
 logger = logging.getLogger("egm.sync")
 
 
-class SentSample(NamedTuple):
-    """Gesendetes Sample für positionsbasiertes Lag-Matching."""
-    bridge_time: float   # bridge_now() beim Senden
-    x: float
-    y: float
-    z: float
-
+# ═══════════════════════════════════════════════════════════════════════
+# Datenstrukturen
+# ═══════════════════════════════════════════════════════════════════════
 
 class SyncLevel(enum.Enum):
     OK = "OK"
@@ -46,24 +53,37 @@ class SyncLevel(enum.Enum):
 
 @dataclass
 class SyncMetrics:
-    """Aktuelle Sync-Metriken (Snapshot)."""
+    """Aktueller Sync-Zustand (Snapshot pro Zyklus)."""
     timestamp: float = 0.0
+    robot_time: float = 0.0
 
-    # Tracking-Error (mm)
-    tracking_error_mm: float = 0.0
-    tracking_error_x: float = 0.0
-    tracking_error_y: float = 0.0
-    tracking_error_z: float = 0.0
-    tracking_error_max: float = 0.0     # Historisches Maximum
-    tracking_error_avg: float = 0.0     # Gleitender Durchschnitt
+    # Ist-Position (letztes Feedback)
+    ist_x: float = 0.0
+    ist_y: float = 0.0
+    ist_z: float = 0.0
 
-    # Lag (ms)
-    lag_ms: float = 0.0
-    lag_avg_ms: float = 0.0
+    # Soll-Position (best-match aus Ringbuffer)
+    soll_x: float = 0.0
+    soll_y: float = 0.0
+    soll_z: float = 0.0
+    soll_v: float = 0.0          # Soll-Geschwindigkeit am Matchpunkt (mm/s)
 
-    # Jitter (ms)
-    jitter_p95_ms: float = 0.0
-    jitter_p99_ms: float = 0.0
+    # TCP-Fehler
+    error_tcp_pos: float = 0.0   # Euklidischer Positionsfehler (mm)
+    error_tcp_speed: float = 0.0 # Geschwindigkeitsfehler Soll-Ist (mm/s)
+
+    # Richtungsaufgelöster Fehler
+    tang_error: float = 0.0      # Tangentialfehler (mm, vorzeichenbehaftet)
+    norm_error: float = 0.0      # Normalfehler (mm, immer >= 0)
+
+    # Offset (Kern des Closed Loop)
+    t_delay_ms: float = 0.0          # Aktueller Roh-Offset (ms)
+    t_delay_output_ms: float = 0.0   # Geglätteter Output-Offset (ms)
+    offset_rate_ms_per_s: float = 0.0  # Änderungsrate des Offsets (ms/s)
+
+    # Estimator-Internals
+    estimator_weight: float = 0.0
+    accel_detected: bool = False
 
     # Buffer
     buffer_depth: int = 0
@@ -76,308 +96,543 @@ class SyncMetrics:
     # Zähler
     warn_count: int = 0
     degrade_count: int = 0
-    clamp_count: int = 0
-    underrun_count: int = 0
+    total_updates: int = 0
 
-    # Latenz-Estimator (wird von EgmBridge nach jedem RX-Update gesetzt)
-    t_delay_ms: float = 0.0          # Aktuelles T_delay (geglättet, ms)
-    estimator_weight: float = 0.0    # Letztes Update-Gewicht [0..1]
 
+class CycleLogEntry(NamedTuple):
+    """Ein Log-Eintrag pro update()-Aufruf → Telemetry."""
+    timestamp: float
+    robot_time: float
+    ist_x: float
+    ist_y: float
+    ist_z: float
+    soll_x: float
+    soll_y: float
+    soll_z: float
+    soll_v: float
+    error_tcp_speed: float
+    error_tcp_pos: float
+    offset_ms: float
+    sync_level: str
+    tang_error: float
+    norm_error: float
+
+
+class EstimatorDebug(NamedTuple):
+    """Debug-Info pro Estimator-Update (250Hz) → Telemetry."""
+    timestamp: float
+    t_delay_ms: float
+    t_delay_output_ms: float
+    tang_err_mm: float
+    norm_err_mm: float
+    weight: float
+    accel_detected: bool
+    ema_used: float
+    correction_ms: float
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# SyncMonitor — Closed-Loop Offset-Estimator + Sync-Bewertung
+# ═══════════════════════════════════════════════════════════════════════
 
 class SyncMonitor:
     """
-    Überwacht die Synchronität zwischen geplanter
-    Trajektorie und Roboter-Feedback.
+    Überwacht die Synchronität zwischen geplanter Trajektorie und
+    Roboter-Feedback. Berechnet einen adaptiven Zeitoffset (T_delay),
+    der als Lookahead für das EGM-Senden verwendet wird.
 
-    Wird in jedem EGM-Zyklus mit dem letzten gesendeten
-    Sample und dem letzten empfangenen Feedback gefüttert.
+    Ersetzt den bisherigen separaten LatencyEstimator und SyncMonitor.
+
+    Thread-Sicherheit:
+      - on_feedback_received() wird im RX-Thread aufgerufen (250Hz)
+      - get_lookahead() wird im EGM-Loop aufgerufen (50Hz)
+      - update() wird im EGM-Loop aufgerufen (50Hz)
+      Alle drei greifen auf _t_delay/_t_delay_output zu → Lock.
     """
 
     def __init__(self, config: SyncConfig,
-                 history_size: int = 1000):
+                 estimator_config: LatencyEstimatorConfig,
+                 evaluate_direction: bool = True):
+        """
+        Parameters:
+            config:             Sync-Grenzwerte (Tracking, Offset-Levels)
+            estimator_config:   Estimator-Parameter (EMA-Raten, Buffer, etc.)
+            evaluate_direction: True = Tangential/Normal-Zerlegung aktiv
+                                False = nur Gesamtfehler, Gewichtung = 1.0
+        """
         self.cfg = config
-        self._history_size = history_size
+        self.est_cfg = estimator_config
+        self.evaluate_direction = evaluate_direction
 
-        # Metriken-Zustand
+        # ── Estimator-Parameter aus Config ───────────────────────────
+        self._OFFSET_BACK_S = estimator_config.offset_back_ms / 1000.0
+        self._EMA_SLOW = estimator_config.ema_slow
+        self._EMA_FAST = estimator_config.ema_fast
+        self._EMA_OUTPUT = estimator_config.ema_output
+        self._ALPHA_NORMAL = estimator_config.alpha_weight
+        self._TX_BUFFER_SIZE = estimator_config.tx_buffer_size
+
+        # Konstanten (selten geändert)
+        self._EPS: float = 1e-9
+        self._SEARCH_WIN_S: float = 0.120        # ±60ms Suchfenster
+        self._ACCEL_THR_MMS2: float = 8.0        # mm/s² → Fast-Modus
+        self._MIN_TANG_MM: float = 0.5            # Min. Tangentialfehler
+        self._TANG_SPAN: int = 3                  # ±3 Punkte für Tangente
+        self._T_DELAY_MIN: float = 0.020          # 20ms Untergrenze
+        self._T_DELAY_MAX: float = 0.800          # 800ms Obergrenze
+
+        # ── Offset-Estimator-State ───────────────────────────────────
+        init_delay = estimator_config.t_delay_init_ms / 1000.0
+        self._t_delay = init_delay
+        self._t_delay_output = init_delay
+        self._lock = threading.Lock()
+
+        # ── TX-Ringbuffer (parallele Listen für bisect) ──────────────
+        self._tx_times: List[float] = []
+        self._tx_x: List[float] = []
+        self._tx_y: List[float] = []
+        self._tx_z: List[float] = []
+        self._tx_vel: List[float] = []
+
+        # ── Metriken ─────────────────────────────────────────────────
         self._metrics = SyncMetrics()
+        self._error_history: deque[float] = deque(maxlen=1000)
 
-        # Histogramm-Daten für Jitter-Berechnung
-        self._lag_history: deque[float] = deque(maxlen=history_size)
-        self._error_history: deque[float] = deque(maxlen=history_size)
+        # ── Estimator-Tracking (RX-Thread) ───────────────────────────
+        self._prev_speed: Optional[float] = None
+        self._prev_t_rx: Optional[float] = None
+        self._prev_t_delay: float = init_delay
+        self._prev_t_delay_time: float = 0.0
+        self._n_estimator_updates: int = 0
 
-        # Ringbuffer gesendeter Samples für positionsbasiertes Lag-Matching
-        lag_buf_size = getattr(config, 'lag_buffer_size', 200)
-        self._sent_samples: deque[SentSample] = deque(maxlen=lag_buf_size)
+        # ── Ist-Geschwindigkeit ──────────────────────────────────────
+        self._prev_fb_pos: Optional[tuple] = None
+        self._prev_fb_time: Optional[float] = None
+        self._ist_velocity: float = 0.0
 
-        # Gleitender Durchschnitt (EMA)
-        self._ema_alpha = 0.05  # ~20 Samples Halbwertszeit
-        self._tracking_ema = 0.0
-        self._lag_ema = 0.0
+        # ── Letztes Estimator-Debug ──────────────────────────────────
+        self._last_est_debug: Optional[EstimatorDebug] = None
 
-        # Zähler
+        # ── Zähler ───────────────────────────────────────────────────
         self._total_updates = 0
         self._warn_count = 0
         self._degrade_count = 0
-        self._warmup_cycles = 100  # ~2s bei 50Hz — keine Bewertung davor
+        self._warmup_cycles = 100  # ~2s bei 50Hz
+        self._consecutive_warn = 5
+        self._consecutive_degrade = 3
+        self._consecutive_stop = 1
 
-        # Callbacks
-        self._on_level_change: Optional[callable] = None
+        # ── Callbacks ────────────────────────────────────────────────
+        self._on_level_change: Optional[Callable] = None
+        self._on_cycle_log: Optional[Callable] = None
 
-    def set_level_change_callback(self, callback):
-        """Callback wenn sich das Sync-Level ändert."""
+    # ── Callbacks ────────────────────────────────────────────────────
+
+    def set_level_change_callback(self, callback: Callable):
+        """Callback wenn sich das Sync-Level ändert: fn(level, reason)"""
         self._on_level_change = callback
 
-    # ── Sent-Sample-Aufzeichnung (für Lag-Matching) ──────────
+    def set_cycle_log_callback(self, callback: Callable):
+        """Callback für jeden update()-Log-Eintrag: fn(CycleLogEntry)"""
+        self._on_cycle_log = callback
+
+    # ═════════════════════════════════════════════════════════════════
+    # Lookahead-API (Thread-Safe, von Planner/Bridge aufgerufen)
+    # ═════════════════════════════════════════════════════════════════
+
+    def get_lookahead(self) -> float:
+        """
+        Gibt den aktuellen geglätteten Offset zurück (positiv, Sekunden).
+
+        Wird vom TrajectoryPlanner verwendet:
+            query_time = elapsed + sync_monitor.get_lookahead()
+
+        Der Output bewegt sich sanft auf den Roh-Offset zu
+        (EMA_OUTPUT pro Aufruf) → kein Ruckeln beim Senden.
+        """
+        with self._lock:
+            self._t_delay_output += self._EMA_OUTPUT * (
+                self._t_delay - self._t_delay_output
+            )
+            return self._t_delay_output
+
+    @property
+    def T_delay_output_ms(self) -> float:
+        """Aktueller geglätteter Offset in ms."""
+        with self._lock:
+            return self._t_delay_output * 1000.0
+
+    @property
+    def enabled(self) -> bool:
+        """Ist der Estimator aktiv?"""
+        return self.est_cfg.enabled
+
+    # ═════════════════════════════════════════════════════════════════
+    # TX-Aufzeichnung (EGM-Loop, 50Hz)
+    # ═════════════════════════════════════════════════════════════════
 
     def record_sent_sample(self, sample: EgmSample):
         """
-        Speichert ein gesendetes Sample im Ringbuffer.
-        Muss in jedem EGM-Zyklus NACH dem Senden aufgerufen werden.
+        Speichert ein gesendetes Sample im TX-Ringbuffer.
+        Wird im EGM-Loop NACH dem Senden aufgerufen.
 
-        Verwendet bridge_now() — gleiche Clock wie feedback.timestamp
-        (wird in egm_client._receive_loop ebenfalls mit bridge_now() gesetzt).
+        Ersetzt sowohl den alten SyncMonitor.record_sent_sample()
+        als auch LatencyEstimator.record_tx().
         """
-        self._sent_samples.append(SentSample(
-            bridge_time=bridge_now(),
-            x=sample.x, y=sample.y, z=sample.z,
-        ))
+        t = bridge_now()
+        self._tx_times.append(t)
+        self._tx_x.append(sample.x)
+        self._tx_y.append(sample.y)
+        self._tx_z.append(sample.z)
+        vel = getattr(sample, 'velocity', 0.0) or 0.0
+        self._tx_vel.append(vel)
 
-    # ── Update (wird jeden Zyklus aufgerufen) ────────────────
+        # Ringbuffer begrenzen
+        if len(self._tx_times) > self._TX_BUFFER_SIZE:
+            excess = len(self._tx_times) - self._TX_BUFFER_SIZE
+            del self._tx_times[:excess]
+            del self._tx_x[:excess]
+            del self._tx_y[:excess]
+            del self._tx_z[:excess]
+            del self._tx_vel[:excess]
+
+    # ═════════════════════════════════════════════════════════════════
+    # Feedback-Pfad: 250Hz (RX-Thread) — Offset-Estimator
+    # ═════════════════════════════════════════════════════════════════
+
+    def on_feedback_received(self, feedback: EgmFeedback) -> Optional[EstimatorDebug]:
+        """
+        Wird im RX-Thread bei jedem empfangenen Feedback aufgerufen (~250Hz).
+
+        Macht das Position-Matching und aktualisiert T_delay.
+        Gibt EstimatorDebug zurück (oder None wenn kein Update).
+
+        Diese Methode ist der Kern des Closed Loop — sie läuft mit der
+        vollen Feedback-Rate für bestmögliches Matching.
+        """
+        if not self.est_cfg.enabled:
+            return None
+
+        n = len(self._tx_times)
+        if n < 6:
+            return None
+
+        t_rx = feedback.timestamp
+        ix, iy, iz = feedback.x, feedback.y, feedback.z
+
+        # ── Ist-Geschwindigkeit ──────────────────────────────────────
+        pos = (ix, iy, iz)
+        if self._prev_fb_pos is not None and self._prev_fb_time is not None:
+            dt = t_rx - self._prev_fb_time
+            if dt > self._EPS:
+                px, py, pz = self._prev_fb_pos
+                dist = math.sqrt((ix-px)**2 + (iy-py)**2 + (iz-pz)**2)
+                self._ist_velocity = dist / dt
+        self._prev_fb_pos = pos
+        self._prev_fb_time = t_rx
+
+        # ── Erwartete TX-Sendezeit ───────────────────────────────────
+        with self._lock:
+            T_d = self._t_delay
+
+        t_actual = t_rx - self._OFFSET_BACK_S   # Wann war der Roboter dort
+        t_tx_guess = t_actual - T_d              # Erwartete TX-Zeit
+
+        # ── Suchfenster im TX-Ringbuffer (bisect) ────────────────────
+        t_lo = t_tx_guess - self._SEARCH_WIN_S / 2
+        t_hi = t_tx_guess + self._SEARCH_WIN_S / 2
+        idx_lo = max(0,   bisect.bisect_left(self._tx_times, t_lo, 0, n))
+        idx_hi = min(n-1, bisect.bisect_right(self._tx_times, t_hi, 0, n))
+
+        if idx_hi - idx_lo < 2:
+            return None
+
+        # ── Nächsten TX-Punkt suchen (XY-Abstand) ────────────────────
+        best_idx = idx_lo
+        best_dist = float('inf')
+        for i in range(idx_lo, idx_hi + 1):
+            dx = self._tx_x[i] - ix
+            dy = self._tx_y[i] - iy
+            d = dx*dx + dy*dy
+            if d < best_dist:
+                best_dist = d
+                best_idx = i
+
+        # ── Match-Ergebnisse in Metriken schreiben ───────────────────
+        m = self._metrics
+        m.ist_x = ix
+        m.ist_y = iy
+        m.ist_z = iz
+        m.robot_time = getattr(feedback, 'robot_time',
+                               getattr(feedback, 'timestamp', 0.0))
+        m.soll_x = self._tx_x[best_idx]
+        m.soll_y = self._tx_y[best_idx]
+        m.soll_z = self._tx_z[best_idx]
+        m.soll_v = self._tx_vel[best_idx]
+
+        err_x = ix - m.soll_x
+        err_y = iy - m.soll_y
+        err_z = iz - m.soll_z
+        m.error_tcp_pos = math.sqrt(err_x**2 + err_y**2 + err_z**2)
+        m.error_tcp_speed = m.soll_v - self._ist_velocity
+
+        self._error_history.append(m.error_tcp_pos)
+
+        # ── Tangential/Normal-Zerlegung ──────────────────────────────
+        tang_err = 0.0
+        norm_err = m.error_tcp_pos
+        weight = 1.0
+        speed = max(m.soll_v, self._EPS)
+
+        if self.evaluate_direction:
+            lo_t = max(idx_lo, best_idx - self._TANG_SPAN)
+            hi_t = min(idx_hi, best_idx + self._TANG_SPAN)
+            dtx = self._tx_x[hi_t] - self._tx_x[lo_t]
+            dty = self._tx_y[hi_t] - self._tx_y[lo_t]
+            tang_len = math.sqrt(dtx*dtx + dty*dty)
+
+            if tang_len > self._EPS:
+                tang = (dtx / tang_len, dty / tang_len)
+
+                # Tangentialfehler (vorzeichenbehaftet):
+                #   positiv = Roboter ist Soll voraus
+                #   negativ = Roboter hinkt hinterher
+                tang_err = err_x * tang[0] + err_y * tang[1]
+
+                # Normalfehler (immer >= 0)
+                norm_sq = max(0.0, err_x**2 + err_y**2 - tang_err**2)
+                norm_err = math.sqrt(norm_sq)
+
+                # Gewichtung: gutes Timing-Signal → weight ≈ 1
+                tang_mag = abs(tang_err)
+                weight = tang_mag / (
+                    tang_mag + self._ALPHA_NORMAL * norm_err + self._EPS
+                )
+                if tang_mag < self._MIN_TANG_MM:
+                    weight = 0.0
+            else:
+                # Roboter steht fast still → kein Update
+                weight = 0.0
+
+        m.tang_error = tang_err
+        m.norm_error = norm_err
+        m.estimator_weight = weight
+
+        # ── Delay-Schätzung ──────────────────────────────────────────
+        if self.evaluate_direction and abs(tang_err) >= self._MIN_TANG_MM:
+            tang_time = tang_err / speed
+            T_d_raw = t_actual - self._tx_times[best_idx]
+            T_d_refined = T_d_raw - tang_time
+        else:
+            T_d_raw = t_actual - self._tx_times[best_idx]
+            T_d_refined = T_d_raw
+
+        T_d_refined = max(self._T_DELAY_MIN,
+                          min(self._T_DELAY_MAX, T_d_refined))
+
+        # ── Beschleunigungs-Erkennung ────────────────────────────────
+        accel_detected = False
+        if self._prev_speed is not None and self._prev_t_rx is not None:
+            dt_rx = t_rx - self._prev_t_rx
+            if dt_rx > self._EPS:
+                accel = abs(speed - self._prev_speed) / dt_rx
+                if accel > self._ACCEL_THR_MMS2:
+                    accel_detected = True
+        self._prev_speed = speed
+        self._prev_t_rx = t_rx
+        m.accel_detected = accel_detected
+
+        ema = self._EMA_FAST if accel_detected else self._EMA_SLOW
+
+        # ── EMA-Update ───────────────────────────────────────────────
+        with self._lock:
+            correction = ema * weight * (T_d_refined - self._t_delay)
+            self._t_delay += correction
+            self._n_estimator_updates += 1
+            m.t_delay_ms = self._t_delay * 1000.0
+            m.t_delay_output_ms = self._t_delay_output * 1000.0
+
+        # ── Offset-Änderungsrate ─────────────────────────────────────
+        now = t_rx
+        if self._prev_t_delay_time > 0:
+            dt_offset = now - self._prev_t_delay_time
+            if dt_offset > self._EPS:
+                m.offset_rate_ms_per_s = (
+                    (self._t_delay - self._prev_t_delay) * 1000.0 / dt_offset
+                )
+        self._prev_t_delay = self._t_delay
+        self._prev_t_delay_time = now
+
+        # ── Debug-Info ───────────────────────────────────────────────
+        debug = EstimatorDebug(
+            timestamp=t_rx,
+            t_delay_ms=self._t_delay * 1000.0,
+            t_delay_output_ms=self._t_delay_output * 1000.0,
+            tang_err_mm=tang_err,
+            norm_err_mm=norm_err,
+            weight=weight,
+            accel_detected=accel_detected,
+            ema_used=ema,
+            correction_ms=correction * 1000.0,
+        )
+        self._last_est_debug = debug
+        return debug
+
+    # ═════════════════════════════════════════════════════════════════
+    # Sync-Bewertung + Logging: 50Hz (EGM-Loop)
+    # ═════════════════════════════════════════════════════════════════
 
     def update(self, sample: Optional[EgmSample],
                feedback: Optional[EgmFeedback],
                buffer_depth: int = 0,
                buffer_time_s: float = 0.0):
         """
-        Aktualisiert alle Metriken.
+        Bewertet den Sync-Zustand und erzeugt Cycle-Log.
+        Wird im EGM-Loop aufgerufen (~50Hz).
 
-        Parameters:
-            sample:       Letzter gesendeter Sollwert
-            feedback:     Letztes empfangenes Feedback
-            buffer_depth: Aktuelle Queue-Tiefe
-            buffer_time_s: Geschätzte Queue-Zeit
+        Die schwere Arbeit (Offset-Matching) passiert bereits in
+        on_feedback_received() bei 250Hz. Hier wird nur bewertet
+        und geloggt.
         """
         now = bridge_now()
         self._total_updates += 1
-        self._metrics.timestamp = now
-        self._metrics.buffer_depth = buffer_depth
-        self._metrics.buffer_time_s = buffer_time_s
 
-        in_warmup = self._total_updates <= self._warmup_cycles
+        m = self._metrics
+        m.timestamp = now
+        m.buffer_depth = buffer_depth
+        m.buffer_time_s = buffer_time_s
+        m.total_updates = self._total_updates
 
-        if sample and feedback:
-            self._update_tracking_error(sample, feedback)
+        # Aktuellen Output-Offset in Metriken synchronisieren
+        with self._lock:
+            m.t_delay_ms = self._t_delay * 1000.0
+            m.t_delay_output_ms = self._t_delay_output * 1000.0
 
-            # Lag erst NACH Warmup aufzeichnen — davor ist der
-            # sent_samples-Buffer zu dünn für sinnvolles Matching
-            # und Ausreißer vergiften die Jitter-Berechnung.
-            if not in_warmup:
-                self._update_lag(sample, feedback)
-
-        # Lag-History beim Warmup-Ende leeren (falls doch was
-        # reingerutscht ist, z.B. durch Timing-Varianz)
-        if self._total_updates == self._warmup_cycles:
-            self._lag_history.clear()
-            self._lag_ema = 0.0
-
-        # Jitter berechnen
-        self._update_jitter()
-
-        # Bewertung
-        old_level = self._metrics.sync_level
+        # Sync-Level bewerten
+        old_level = m.sync_level
         self._evaluate_sync_level()
 
-        if self._metrics.sync_level != old_level:
+        if m.sync_level != old_level:
             logger.info("SYNC: Level %s → %s | %s",
-                         old_level.value,
-                         self._metrics.sync_level.value,
-                         self._metrics.sync_reason)
+                        old_level.value, m.sync_level.value, m.sync_reason)
             if self._on_level_change:
-                self._on_level_change(self._metrics.sync_level,
-                                      self._metrics.sync_reason)
+                self._on_level_change(m.sync_level, m.sync_reason)
 
-    def _update_tracking_error(self, sample: EgmSample,
-                                feedback: EgmFeedback):
-        """Berechnet den Tracking-Error (Soll-Ist)."""
-        dx = sample.x - feedback.x
-        dy = sample.y - feedback.y
-        dz = sample.z - feedback.z
-        error = math.sqrt(dx*dx + dy*dy + dz*dz)
+        # Cycle-Log ausgeben
+        if self._on_cycle_log:
+            self._emit_cycle_log()
 
-        self._metrics.tracking_error_x = dx
-        self._metrics.tracking_error_y = dy
-        self._metrics.tracking_error_z = dz
-        self._metrics.tracking_error_mm = error
-
-        # EMA
-        self._tracking_ema = (
-            self._ema_alpha * error +
-            (1 - self._ema_alpha) * self._tracking_ema
-        )
-        self._metrics.tracking_error_avg = self._tracking_ema
-
-        # Maximum
-        self._metrics.tracking_error_max = max(
-            self._metrics.tracking_error_max, error
-        )
-
-        self._error_history.append(error)
-
-    def _update_lag(self, sample: EgmSample, feedback: EgmFeedback):
-        """
-        Berechnet den Lag positionsbasiert (nur Bridge-Clock).
-
-        Sucht im Ringbuffer das gesendete Sample dessen Position
-        am besten zur Feedback-Position passt. Der Lag ist die
-        Zeitdifferenz — alles via bridge_now().
-
-        RÜCKWÄRTS-SUCHE (neueste zuerst):
-          Bei Stillstand oder langsamer Fahrt haben viele Samples
-          fast identische Positionen. Vorwärts-Suche würde das
-          älteste matchen → falscher Lag. Rückwärts-Suche findet
-          das jüngste passende Sample → stabiler Lag und Jitter.
-
-          Abbruch sobald die Distanz wieder deutlich steigt
-          (wir sind zeitlich am Match vorbei).
-        """
-        if len(self._sent_samples) < 2:
-            return
-
-        fx, fy, fz = feedback.x, feedback.y, feedback.z
-
-        best_dist_sq = float('inf')
-        best_time = 0.0
-        rising_count = 0
-
-        for sent in reversed(self._sent_samples):
-            dx = sent.x - fx
-            dy = sent.y - fy
-            dz = sent.z - fz
-            dist_sq = dx*dx + dy*dy + dz*dz
-
-            if dist_sq < best_dist_sq:
-                best_dist_sq = dist_sq
-                best_time = sent.bridge_time
-                rising_count = 0
-            else:
-                rising_count += 1
-                # Wenn die Distanz 5 Samples in Folge steigt
-                # sind wir am Match-Punkt vorbei → Abbruch
-                if rising_count >= 5:
-                    break
-
-        lag = (feedback.timestamp - best_time) * 1000  # → ms
-
-        # Plausibilitätscheck
-        if lag < 0 or best_dist_sq > 2500:  # 50mm = 2500mm²
-            return
-
-        self._metrics.lag_ms = lag
-
-        self._lag_ema = (
-            self._ema_alpha * lag +
-            (1 - self._ema_alpha) * self._lag_ema
-        )
-        self._metrics.lag_avg_ms = self._lag_ema
-        self._lag_history.append(lag)
-
-    def _update_jitter(self):
-        """Berechnet p95/p99 Jitter aus der Lag-History."""
-        if len(self._lag_history) < 10:
-            return
-
-        sorted_lags = sorted(self._lag_history)
-        n = len(sorted_lags)
-        self._metrics.jitter_p95_ms = sorted_lags[int(n * 0.95)]
-        self._metrics.jitter_p99_ms = sorted_lags[int(min(n * 0.99, n - 1))]
-
-    # ── Sync-Level-Bewertung (§E) ────────────────────────────
+    # ── Sync-Level-Bewertung ──────────────────────────────────────────────────────
 
     def _evaluate_sync_level(self):
-        """
-        Bewertet den Sync-Zustand anhand aller Metriken.
-        Hierarchisch: STOP > DEGRADE > WARN > OK
-        """
-        # Warmup: Keine Bewertung in den ersten Zyklen
         if self._total_updates < self._warmup_cycles:
             self._metrics.sync_level = SyncLevel.OK
             self._metrics.sync_reason = (
-                f"Warmup ({self._total_updates}/{self._warmup_cycles})")
+                f"Warmup ({self._total_updates}/{self._warmup_cycles})"
+            )
             return
 
         m = self._metrics
         c = self.cfg
         reasons = []
 
-        # ── STOP-Bedingungen ──
-        if m.tracking_error_mm > c.tracking_stop_mm:
-            reasons.append(f"Tracking {m.tracking_error_mm:.1f}mm > "
-                           f"Stop-Limit {c.tracking_stop_mm}mm")
-        if m.lag_ms > c.lag_stop_ms:
-            reasons.append(f"Lag {m.lag_ms:.1f}ms > "
-                           f"Stop-Limit {c.lag_stop_ms}ms")
-        if m.jitter_p99_ms > c.jitter_p99_stop_ms:
-            reasons.append(f"Jitter p99 {m.jitter_p99_ms:.1f}ms > "
-                           f"Stop-Limit {c.jitter_p99_stop_ms}ms")
+        offset_warn_ms = getattr(c, 'offset_warn_ms', 350.0)
+        offset_degrade_ms = getattr(c, 'offset_degrade_ms', 500.0)
+        offset_stop_ms = getattr(c, 'offset_stop_ms', 800.0)
+        offset_rate_warn = getattr(c, 'offset_rate_warn_ms_per_s', 200.0)
+        norm_error_warn_mm = getattr(c, 'norm_error_warn_mm', 5.0)
+        norm_error_degrade_mm = getattr(c, 'norm_error_degrade_mm', 15.0)
+        tracking_stop_mm = getattr(c, 'tracking_stop_mm', 50.0)
+
+        # Wie viele aufeinanderfolgende Bad-Cycles nötig, bevor eskaliert wird
+        stop_confirm = getattr(c, 'stop_confirm_cycles', 1)  # sofort – STOP bleibt hart
+        degrade_confirm = getattr(c, 'degrade_confirm_cycles', 3)
+        warn_confirm = getattr(c, 'warn_confirm_cycles', 5)
+
+        # ── STOP ─────────────────────────────────────────────────────────────────
+        if m.t_delay_ms > offset_stop_ms:
+            reasons.append(f"Offset {m.t_delay_ms:.0f}ms > Stop {offset_stop_ms:.0f}ms")
+        if m.error_tcp_pos > tracking_stop_mm:
+            reasons.append(f"TCP-Error {m.error_tcp_pos:.1f}mm > Stop {tracking_stop_mm:.0f}mm")
 
         if reasons:
-            m.sync_level = SyncLevel.STOP
-            m.sync_reason = "; ".join(reasons)
-            return
+            self._consecutive_stop += 1
+            self._consecutive_degrade = 0
+            self._consecutive_warn = 0
+            if self._consecutive_stop >= stop_confirm:
+                m.sync_level = SyncLevel.STOP
+                m.sync_reason = "; ".join(reasons)
+                return
+        else:
+            self._consecutive_stop = 0
 
-        # ── DEGRADE-Bedingungen ──
-        if m.tracking_error_mm > c.tracking_degrade_mm:
-            reasons.append(f"Tracking {m.tracking_error_mm:.1f}mm > "
-                           f"Degrade-Limit {c.tracking_degrade_mm}mm")
-        if m.lag_ms > c.lag_degrade_ms:
-            reasons.append(f"Lag {m.lag_ms:.1f}ms > "
-                           f"Degrade-Limit {c.lag_degrade_ms}ms")
-
-        if reasons:
-            m.sync_level = SyncLevel.DEGRADE
-            m.sync_reason = "; ".join(reasons)
-            self._degrade_count += 1
-            m.degrade_count = self._degrade_count
-            return
-
-        # ── WARN-Bedingungen ──
-        if m.tracking_error_mm > c.tracking_warn_mm:
-            reasons.append(f"Tracking {m.tracking_error_mm:.1f}mm > "
-                           f"Warn-Limit {c.tracking_warn_mm}mm")
-        if m.lag_ms > c.lag_warn_ms:
-            reasons.append(f"Lag {m.lag_ms:.1f}ms > "
-                           f"Warn-Limit {c.lag_warn_ms}ms")
-        if m.jitter_p99_ms > c.jitter_p99_warn_ms:
-            reasons.append(f"Jitter p99 {m.jitter_p99_ms:.1f}ms > "
-                           f"Warn-Limit {c.jitter_p99_warn_ms}ms")
+        # ── DEGRADE ───────────────────────────────────────────────────────────────
+        if m.t_delay_ms > offset_degrade_ms:
+            reasons.append(f"Offset {m.t_delay_ms:.0f}ms > Degrade {offset_degrade_ms:.0f}ms")
+        if m.norm_error > norm_error_degrade_mm:
+            reasons.append(f"Norm-Error {m.norm_error:.1f}mm > Degrade {norm_error_degrade_mm:.0f}mm")
 
         if reasons:
-            m.sync_level = SyncLevel.WARN
-            m.sync_reason = "; ".join(reasons)
-            self._warn_count += 1
-            m.warn_count = self._warn_count
-            return
+            self._consecutive_degrade += 1
+            self._consecutive_warn = 0
+            if self._consecutive_degrade >= degrade_confirm:
+                m.sync_level = SyncLevel.DEGRADE
+                m.sync_reason = "; ".join(reasons)
+                self._degrade_count += 1
+                m.degrade_count = self._degrade_count
+                return
+        else:
+            self._consecutive_degrade = 0
 
-        # ── OK ──
+        # ── WARN ──────────────────────────────────────────────────────────────────
+        if m.t_delay_ms > offset_warn_ms:
+            reasons.append(f"Offset {m.t_delay_ms:.0f}ms > Warn {offset_warn_ms:.0f}ms")
+        if abs(m.offset_rate_ms_per_s) > offset_rate_warn:
+            reasons.append(f"Offset-Rate {m.offset_rate_ms_per_s:.0f}ms/s > Warn {offset_rate_warn:.0f}ms/s")
+        if m.norm_error > norm_error_warn_mm:
+            reasons.append(f"Norm-Error {m.norm_error:.1f}mm > Warn {norm_error_warn_mm:.0f}ms")
+
+        if reasons:
+            self._consecutive_warn += 1
+            if self._consecutive_warn >= warn_confirm:
+                m.sync_level = SyncLevel.WARN
+                m.sync_reason = "; ".join(reasons)
+                self._warn_count += 1
+                m.warn_count = self._warn_count
+                return
+        else:
+            self._consecutive_warn = 0
+
+        # ── OK ────────────────────────────────────────────────────────────────────
         m.sync_level = SyncLevel.OK
         m.sync_reason = ""
 
-    # ── Clock-Mapping (§B3) ──────────────────────────────────
+    # ── Cycle-Log ────────────────────────────────────────────────────
 
-    def estimate_clock_offset(self, bridge_time: float,
-                              robot_time_ms: float) -> float:
-        """
-        DEPRECATED: Lag wird jetzt positionsbasiert berechnet
-        (siehe _update_lag). Clock-Offset ist nicht mehr nötig.
+    def _emit_cycle_log(self):
+        m = self._metrics
+        entry = CycleLogEntry(
+            timestamp=m.timestamp,
+            robot_time=m.robot_time,
+            ist_x=m.ist_x,
+            ist_y=m.ist_y,
+            ist_z=m.ist_z,
+            soll_x=m.soll_x,
+            soll_y=m.soll_y,
+            soll_z=m.soll_z,
+            soll_v=m.soll_v,
+            error_tcp_speed=m.error_tcp_speed,
+            error_tcp_pos=m.error_tcp_pos,
+            offset_ms=m.t_delay_output_ms,
+            sync_level=m.sync_level.value,
+            tang_error=m.tang_error,
+            norm_error=m.norm_error,
+        )
+        self._on_cycle_log(entry)
 
-        Beibehalten für API-Kompatibilität — gibt weiterhin
-        die rohe Differenz zurück, wird aber nicht mehr
-        für die Sync-Bewertung verwendet.
-        """
-        bridge_ms = bridge_time * 1000
-        return bridge_ms - robot_time_ms
-
-    # ── Zugriff ──────────────────────────────────────────────
+    # ═════════════════════════════════════════════════════════════════
+    # Kompatibilität + Properties
+    # ═════════════════════════════════════════════════════════════════
 
     @property
     def metrics(self) -> SyncMetrics:
@@ -393,41 +648,79 @@ class SyncMonitor:
 
     @property
     def needs_degrade(self) -> bool:
-        return self._metrics.sync_level in (SyncLevel.DEGRADE,
-                                            SyncLevel.STOP)
+        return self._metrics.sync_level in (SyncLevel.DEGRADE, SyncLevel.STOP)
 
     @property
     def needs_stop(self) -> bool:
         return self._metrics.sync_level == SyncLevel.STOP
 
+    @property
+    def last_debug(self) -> Optional[EstimatorDebug]:
+        """Letztes Estimator-Debug (für Telemetry)."""
+        return self._last_est_debug
+
+    def estimate_clock_offset(self, bridge_time: float,
+                              robot_time_ms: float) -> float:
+        """DEPRECATED: Offset wird jetzt positionsbasiert berechnet."""
+        return bridge_time * 1000 - robot_time_ms
+
+    # ── Reset ────────────────────────────────────────────────────────
+
     def reset(self):
-        """Metriken zurücksetzen (z.B. bei Jobstart)."""
+        """Metriken und Estimator zurücksetzen (z.B. bei Jobstart)."""
+        init_delay = self.est_cfg.t_delay_init_ms / 1000.0
+
         self._metrics = SyncMetrics()
-        self._lag_history.clear()
         self._error_history.clear()
-        self._sent_samples.clear()
-        self._tracking_ema = 0.0
-        self._lag_ema = 0.0
+        self._tx_times.clear()
+        self._tx_x.clear()
+        self._tx_y.clear()
+        self._tx_z.clear()
+        self._tx_vel.clear()
+
+        with self._lock:
+            self._t_delay = init_delay
+            self._t_delay_output = init_delay
+
+        self._prev_speed = None
+        self._prev_t_rx = None
+        self._prev_t_delay = init_delay
+        self._prev_t_delay_time = 0.0
+        self._prev_fb_pos = None
+        self._prev_fb_time = None
+        self._ist_velocity = 0.0
         self._total_updates = 0
-        logger.info("SYNC: Metriken zurückgesetzt")
+        self._warn_count = 0
+        self._degrade_count = 0
+        self._n_estimator_updates = 0
+        self._last_est_debug = None
+
+        logger.info("SYNC: Reset (T_delay_init=%.0fms, Estimator=%s)",
+                     init_delay * 1000,
+                     "aktiv" if self.est_cfg.enabled else "aus")
+
+    # ── Snapshot ─────────────────────────────────────────────────────
 
     def snapshot(self) -> dict:
         m = self._metrics
         return {
             "sync_level": m.sync_level.value,
             "sync_reason": m.sync_reason,
-            "tracking_error_mm": round(m.tracking_error_mm, 3),
-            "tracking_error_avg": round(m.tracking_error_avg, 3),
-            "tracking_error_max": round(m.tracking_error_max, 3),
-            "lag_ms": round(m.lag_ms, 2),
-            "lag_avg_ms": round(m.lag_avg_ms, 2),
-            "jitter_p95_ms": round(m.jitter_p95_ms, 2),
-            "jitter_p99_ms": round(m.jitter_p99_ms, 2),
+            "t_delay_ms": round(m.t_delay_ms, 2),
+            "t_delay_output_ms": round(m.t_delay_output_ms, 2),
+            "offset_rate_ms_per_s": round(m.offset_rate_ms_per_s, 2),
+            "error_tcp_pos": round(m.error_tcp_pos, 3),
+            "error_tcp_speed": round(m.error_tcp_speed, 2),
+            "tang_error": round(m.tang_error, 3),
+            "norm_error": round(m.norm_error, 3),
+            "soll_v": round(m.soll_v, 2),
+            "estimator_weight": round(m.estimator_weight, 3),
+            "accel_detected": m.accel_detected,
             "buffer_depth": m.buffer_depth,
             "buffer_time_s": round(m.buffer_time_s, 3),
             "warn_count": m.warn_count,
             "degrade_count": m.degrade_count,
-            "total_updates": self._total_updates,
-            "t_delay_ms": round(m.t_delay_ms, 2),
-            "estimator_weight": round(m.estimator_weight, 3),
+            "total_updates": m.total_updates,
+            "estimator_updates": self._n_estimator_updates,
+            "estimator_enabled": self.est_cfg.enabled,
         }

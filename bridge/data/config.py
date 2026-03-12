@@ -126,10 +126,22 @@ class SyncConfig:
     correction_rate_limit_mm_per_s: float = 10.0  # Max Änderung/s
     correction_enabled: bool = True
 
-    # Offset-Modell (§B5)
+    # Offset-Modell (§B5) — Legacy, verwendet wenn Estimator deaktiviert
     time_offset_ms: float = 0.0       # Δt0 — Basis-Offset
     offset_kv: float = 0.0            # Geschwindigkeitsabhängig
     offset_ka: float = 0.0            # Beschleunigungsabhängig
+
+    # ── Closed-Loop Sync-Level-Grenzwerte (NEU) ──────────────────
+    # Ersetzen die alten lag_*-Grenzwerte für den neuen Offset-Estimator.
+    # 100–300ms Offset ist normal für ABB EGM → OK.
+    offset_warn_ms: float = 350.0             # Offset > X → WARN
+    offset_degrade_ms: float = 500.0          # Offset > X → DEGRADE
+    offset_stop_ms: float = 800.0             # Offset > X → STOP
+    offset_rate_warn_ms_per_s: float = 200.0  # Offset-Änderungsrate > X → WARN
+
+    # Normal-Error-Grenzwerte (Bahnabweichung senkrecht zur Fahrtrichtung)
+    norm_error_warn_mm: float = 5.0           # Normalfehler > X → WARN
+    norm_error_degrade_mm: float = 15.0       # Normalfehler > X → DEGRADE
 
 
 @dataclass
@@ -314,6 +326,19 @@ def validate_config(cfg: BridgeConfig) -> list[str]:
         errors.append("correction_max_mm muss > 0 sein")
     if s.time_offset_ms < -500 or s.time_offset_ms > 500:
         errors.append(f"time_offset_ms={s.time_offset_ms} unrealistisch")
+
+    # Offset-Grenzwerte (Closed-Loop Sync-Levels)
+    if not (s.offset_warn_ms < s.offset_degrade_ms < s.offset_stop_ms):
+        errors.append("Offset-Grenzen nicht monoton steigend "
+                       f"(warn={s.offset_warn_ms}, degrade={s.offset_degrade_ms}, "
+                       f"stop={s.offset_stop_ms})")
+    if s.offset_rate_warn_ms_per_s <= 0:
+        errors.append(f"offset_rate_warn_ms_per_s={s.offset_rate_warn_ms_per_s} "
+                       "muss > 0 sein")
+    if not (s.norm_error_warn_mm < s.norm_error_degrade_mm):
+        errors.append("Norm-Error-Grenzen nicht monoton steigend")
+    if s.norm_error_warn_mm <= 0:
+        errors.append(f"norm_error_warn_mm={s.norm_error_warn_mm} muss > 0 sein")
 
     # Moonraker
     m = cfg.moonraker

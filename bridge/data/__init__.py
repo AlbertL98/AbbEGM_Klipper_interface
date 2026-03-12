@@ -24,7 +24,6 @@ from .telemetry import TelemetryWriter
 from .segment_source import (TrapezSegment, TcpSegmentReceiver,
                              CsvSegmentSource, SegmentValidationError)
 from .klipper_command import KlipperCommandClient
-from .latency_estimator import LatencyEstimator, EstimatorDebug
 
 __all__ = [
     "bridge_now",
@@ -39,8 +38,7 @@ __all__ = [
     "TelemetryWriter",
     "TrapezSegment", "TcpSegmentReceiver", "CsvSegmentSource",
     "SegmentValidationError",
-    "KlipperCommandClient",
-    "LatencyEstimator", "EstimatorDebug",
+    "KlipperCommandClient"
 ]
 
 __version__ = "0.4.0"

@@ -6902,3 +6902,1038 @@ System Info:
 [common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Disconnected
 [common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Disconnected
 [server.py:main()] - Server Shutdown
+
+Application Info:
+platform: Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39
+data_path: /home/klippy/printer_data
+is_default_data_path: False
+config_file: /home/klippy/printer_data/config/moonraker.conf
+backup_config: /home/klippy/printer_data/config/.moonraker.conf.bkp
+startup_warnings: []
+verbose: False
+debug: False
+asyncio_debug: False
+is_backup_config: False
+is_python_package: False
+instance_uuid: d80773716ba54a94aaa1369a7dd315c3
+unix_socket_path: /home/klippy/printer_data/comms/moonraker.sock
+structured_logging: False
+software_version: v0.10.0-10-gfb257f8
+git_branch: master
+git_remote: origin
+git_repo_url: https://github.com/Arksine/moonraker.git
+modified_files: []
+unofficial_components: []
+log_file: /home/klippy/printer_data/logs/moonraker.log
+python_version: 3.12.3 (main, Jan 22 2026, 20:57:42) [GCC 13.3.0]
+launch_args: /home/klippy/moonraker-env/bin/python /home/klippy/moonraker/moonraker/moonraker.py -d /home/klippy/printer_data
+msgspec_enabled: False
+uvloop_enabled: False
+[confighelper.py:read_file()] - Configuration File '/home/klippy/printer_data/config/moonraker.conf' parsed, total size: 240 B
+[server.py:add_log_rollover_item()] - 
+#################### Moonraker Configuration ####################
+
+[server]
+host = 0.0.0.0
+port = 7125
+klippy_uds_address = /tmp/klippy_uds
+
+[authorization]
+trusted_clients = 
+	0.0.0.0/0
+cors_domains = 
+	*
+
+[octoprint_compat]
+
+[history]
+
+[file_manager]
+enable_object_processing = True
+
+[machine]
+provider = none
+
+#################################################################
+All Configuration Files:
+/home/klippy/printer_data/config/moonraker.conf
+#################################################################
+[server.py:load_component()] - Component (secrets) loaded
+[server.py:load_component()] - Component (template) loaded
+[server.py:load_component()] - Component (klippy_connection) loaded
+[application.py:__init__()] - Detected Tornado Version 6.5.4
+[server.py:load_component()] - Component (application) loaded
+[server.py:load_component()] - Component (websockets) loaded
+[server.py:add_log_rollover_item()] - Loading Sqlite database provider. Sqlite Version: 3.45.1
+[server.py:add_log_rollover_item()] - Unsafe Shutdown Count: 1
+[server.py:load_component()] - Component (database) loaded
+[server.py:load_component()] - Component (dbus_manager) loaded
+[file_manager.py:__init__()] - Using File System Observer: inotify
+[server.py:load_component()] - Component (file_manager) loaded
+[database.py:register_table()] - Found registered table authorized_users
+[authorization.py:__init__()] - Authorization Configuration Loaded
+Trusted Clients:
+0.0.0.0/0
+CORS Domains:
+.*
+[server.py:load_component()] - Component (authorization) loaded
+[server.py:load_component()] - Component (klippy_apis) loaded
+[machine.py:_check_inside_container()] - Container detected via sched: docker
+[server.py:add_log_rollover_item()] - 
+System Info:
+
+***python***
+  version: (3, 12, 3, 'final', 0)
+  version_string: 3.12.3 (main, Jan 22 2026, 20:57:42) [GCC 13.3.0]
+
+***cpu_info***
+  cpu_count: 16
+  bits: 64bit
+  processor: x86_64
+  cpu_desc: AMD Ryzen 7 4800HS with Radeon Graphics
+  serial_number: 
+  hardware_desc: 
+  model: 
+  total_memory: 6066364
+  memory_units: kB
+
+***sd_info***
+
+***distribution***
+  name: Ubuntu 24.04.4 LTS
+  id: ubuntu
+  version: 24.04
+  version_parts: {'major': '24', 'minor': '04', 'build_number': ''}
+  like: debian
+  codename: noble
+  release_info: {}
+  kernel_version: 6.6.87.2-microsoft-standard-WSL2
+
+***virtualization***
+  virt_type: container
+  virt_identifier: docker
+
+***network***
+
+***canbus***
+
+***Allowed Services***
+  klipper_mcu
+  webcamd
+  MoonCord
+  KlipperScreen
+  moonraker-telegram-bot
+  moonraker-obico
+  sonar
+  crowsnest
+  octoeverywhere
+  ratos-configurator
+[server.py:load_component()] - Component (shell_command) loaded
+[machine.py:__init__()] - Using System Provider: none
+[server.py:add_log_rollover_item()] - Module libcamera unavailable, import failed
+[server.py:load_component()] - Component (machine) loaded
+[server.py:load_component()] - Component (data_store) loaded
+[proc_stats.py:__init__()] - Unable to find 'vcgencmd', throttle checking disabled
+[proc_stats.py:_get_cpu_thermal_file()] - Monitoring temperature using default thermal zone
+[server.py:load_component()] - Component (proc_stats) loaded
+[server.py:load_component()] - Component (job_state) loaded
+[server.py:load_component()] - Component (job_queue) loaded
+[database.py:register_table()] - Found registered table job_history
+[database.py:register_table()] - Found registered table job_totals
+[server.py:load_component()] - Component (history) loaded
+[server.py:load_component()] - Component (http_client) loaded
+[server.py:load_component()] - Component (announcements) loaded
+[server.py:load_component()] - Component (webcam) loaded
+[server.py:load_component()] - Component (extensions) loaded
+[server.py:load_component()] - Component (octoprint_compat) loaded
+[server.py:_initialize_component()] - Performing Component Post Init: [database]
+[server.py:_initialize_component()] - Performing Component Post Init: [dbus_manager]
+[dbus_manager.py:component_init()] - Unable to Connect to D-Bus
+[server.py:_initialize_component()] - Performing Component Post Init: [authorization]
+[server.py:_initialize_component()] - Performing Component Post Init: [machine]
+[machine.py:validation_init()] - Installation version in database up to date
+[machine.py:_find_public_ip()] - Detected Local IP: 172.18.0.2
+[server.py:_initialize_component()] - Performing Component Post Init: [proc_stats]
+[server.py:_initialize_component()] - Performing Component Post Init: [history]
+[webcam.py:_set_default_host_ip()] - Default public webcam address set: http://172.18.0.2
+[server.py:_initialize_component()] - Performing Component Post Init: [announcements]
+[server.py:_initialize_component()] - Performing Component Post Init: [webcam]
+[webcam.py:_set_default_host_ip()] - Default public webcam address set: http://172.18.0.2
+[server.py:_initialize_component()] - Performing Component Post Init: [klippy_connection]
+[extensions.py:start_unix_server()] - Creating Unix Domain Socket at '/home/klippy/printer_data/comms/moonraker.sock'
+[server.py:start_server()] - Starting Moonraker on (0.0.0.0, 7125), Hostname: 98cf656ba5ae
+[application.py:listen()] - SSL Certificate/Key not configured, aborting HTTPS Server startup
+[klippy_connection.py:_do_connect()] - Klippy Connection Established
+[server.py:add_log_rollover_item()] - Klipper Version: v0.13.0-572-g88a71c3ce-dirty
+[klippy_connection.py:_request_initial_subscriptions()] - Webhooks Subscribed
+[klippy_connection.py:_request_initial_subscriptions()] - GCode Output Subscribed
+[job_state.py:_handle_started()] - Job state initialized: standby
+[klippy_connection.py:_check_ready()] - Klippy ready
+[data_store.py:_init_sensors()] - Configuring available sensors: ['extruder']
+
+Application Info:
+platform: Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39
+data_path: /home/klippy/printer_data
+is_default_data_path: False
+config_file: /home/klippy/printer_data/config/moonraker.conf
+backup_config: /home/klippy/printer_data/config/.moonraker.conf.bkp
+startup_warnings: []
+verbose: False
+debug: False
+asyncio_debug: False
+is_backup_config: False
+is_python_package: False
+instance_uuid: 9b300b36b1a44af9ac655aafb3a15147
+unix_socket_path: /home/klippy/printer_data/comms/moonraker.sock
+structured_logging: False
+software_version: v0.10.0-10-gfb257f8
+git_branch: master
+git_remote: origin
+git_repo_url: https://github.com/Arksine/moonraker.git
+modified_files: []
+unofficial_components: []
+log_file: /home/klippy/printer_data/logs/moonraker.log
+python_version: 3.12.3 (main, Mar  3 2026, 12:15:18) [GCC 13.3.0]
+launch_args: /home/klippy/moonraker-env/bin/python /home/klippy/moonraker/moonraker/moonraker.py -d /home/klippy/printer_data
+msgspec_enabled: False
+uvloop_enabled: False
+[confighelper.py:read_file()] - Configuration File '/home/klippy/printer_data/config/moonraker.conf' parsed, total size: 240 B
+[server.py:add_log_rollover_item()] - 
+#################### Moonraker Configuration ####################
+
+[server]
+host = 0.0.0.0
+port = 7125
+klippy_uds_address = /tmp/klippy_uds
+
+[authorization]
+trusted_clients = 
+	0.0.0.0/0
+cors_domains = 
+	*
+
+[octoprint_compat]
+
+[history]
+
+[file_manager]
+enable_object_processing = True
+
+[machine]
+provider = none
+
+#################################################################
+All Configuration Files:
+/home/klippy/printer_data/config/moonraker.conf
+#################################################################
+[server.py:load_component()] - Component (secrets) loaded
+[server.py:load_component()] - Component (template) loaded
+[server.py:load_component()] - Component (klippy_connection) loaded
+[application.py:__init__()] - Detected Tornado Version 6.5.4
+[server.py:load_component()] - Component (application) loaded
+[server.py:load_component()] - Component (websockets) loaded
+[server.py:add_log_rollover_item()] - Loading Sqlite database provider. Sqlite Version: 3.45.1
+[server.py:add_log_rollover_item()] - Unsafe Shutdown Count: 0
+[server.py:load_component()] - Component (database) loaded
+[server.py:load_component()] - Component (dbus_manager) loaded
+[file_manager.py:__init__()] - Using File System Observer: inotify
+[server.py:load_component()] - Component (file_manager) loaded
+[database.py:register_table()] - Found registered table authorized_users
+[authorization.py:__init__()] - Authorization Configuration Loaded
+Trusted Clients:
+0.0.0.0/0
+CORS Domains:
+.*
+[server.py:load_component()] - Component (authorization) loaded
+[server.py:load_component()] - Component (klippy_apis) loaded
+[machine.py:_check_inside_container()] - Container detected via sched: docker
+[server.py:add_log_rollover_item()] - 
+System Info:
+
+***python***
+  version: (3, 12, 3, 'final', 0)
+  version_string: 3.12.3 (main, Mar  3 2026, 12:15:18) [GCC 13.3.0]
+
+***cpu_info***
+  cpu_count: 16
+  bits: 64bit
+  processor: x86_64
+  cpu_desc: 12th Gen Intel(R) Core(TM) i5-12600K
+  serial_number: 
+  hardware_desc: 
+  model: 
+  total_memory: 6066360
+  memory_units: kB
+
+***sd_info***
+
+***distribution***
+  name: Ubuntu 24.04.4 LTS
+  id: ubuntu
+  version: 24.04
+  version_parts: {'major': '24', 'minor': '04', 'build_number': ''}
+  like: debian
+  codename: noble
+  release_info: {}
+  kernel_version: 6.6.87.2-microsoft-standard-WSL2
+
+***virtualization***
+  virt_type: container
+  virt_identifier: docker
+
+***network***
+
+***canbus***
+
+***Allowed Services***
+  klipper_mcu
+  webcamd
+  MoonCord
+  KlipperScreen
+  moonraker-telegram-bot
+  moonraker-obico
+  sonar
+  crowsnest
+  octoeverywhere
+  ratos-configurator
+[server.py:load_component()] - Component (shell_command) loaded
+[machine.py:__init__()] - Using System Provider: none
+[server.py:add_log_rollover_item()] - Module libcamera unavailable, import failed
+[server.py:load_component()] - Component (machine) loaded
+[server.py:load_component()] - Component (data_store) loaded
+[proc_stats.py:__init__()] - Unable to find 'vcgencmd', throttle checking disabled
+[proc_stats.py:_get_cpu_thermal_file()] - Monitoring temperature using default thermal zone
+[server.py:load_component()] - Component (proc_stats) loaded
+[server.py:load_component()] - Component (job_state) loaded
+[server.py:load_component()] - Component (job_queue) loaded
+[database.py:register_table()] - Found registered table job_history
+[database.py:register_table()] - Found registered table job_totals
+[server.py:load_component()] - Component (history) loaded
+[server.py:load_component()] - Component (http_client) loaded
+[server.py:load_component()] - Component (announcements) loaded
+[server.py:load_component()] - Component (webcam) loaded
+[server.py:load_component()] - Component (extensions) loaded
+[server.py:load_component()] - Component (octoprint_compat) loaded
+[server.py:_initialize_component()] - Performing Component Post Init: [database]
+[server.py:_initialize_component()] - Performing Component Post Init: [dbus_manager]
+[dbus_manager.py:component_init()] - Unable to Connect to D-Bus
+[server.py:_initialize_component()] - Performing Component Post Init: [authorization]
+[server.py:_initialize_component()] - Performing Component Post Init: [machine]
+[machine.py:validation_init()] - Installation version in database up to date
+[machine.py:_find_public_ip()] - Detected Local IP: 172.18.0.2
+[server.py:_initialize_component()] - Performing Component Post Init: [proc_stats]
+[server.py:_initialize_component()] - Performing Component Post Init: [history]
+[webcam.py:_set_default_host_ip()] - Default public webcam address set: http://172.18.0.2
+[server.py:_initialize_component()] - Performing Component Post Init: [announcements]
+[server.py:_initialize_component()] - Performing Component Post Init: [webcam]
+[webcam.py:_set_default_host_ip()] - Default public webcam address set: http://172.18.0.2
+[server.py:_initialize_component()] - Performing Component Post Init: [klippy_connection]
+[extensions.py:start_unix_server()] - Creating Unix Domain Socket at '/home/klippy/printer_data/comms/moonraker.sock'
+[server.py:start_server()] - Starting Moonraker on (0.0.0.0, 7125), Hostname: 9d6f1357da96
+[application.py:listen()] - SSL Certificate/Key not configured, aborting HTTPS Server startup
+[klippy_connection.py:_do_connect()] - Klippy Connection Established
+[server.py:add_log_rollover_item()] - Klipper Version: v0.13.0-573-g644cda5ec-dirty
+[klippy_connection.py:_request_initial_subscriptions()] - Webhooks Subscribed
+[klippy_connection.py:_request_initial_subscriptions()] - GCode Output Subscribed
+[job_state.py:_handle_started()] - Job state initialized: standby
+[klippy_connection.py:_check_ready()] - Klippy ready
+[authorization.py:_check_trusted_connection()] - Trusted Connection Detected, IP: 172.18.0.1
+[application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 0.63ms
+[websockets.py:open()] - Websocket Opened: ID: 129619090155536, Proxied: False, User Agent: , Host Name: 127.0.0.1
+[data_store.py:_init_sensors()] - Configuring available sensors: ['extruder']
+[authorization.py:_check_trusted_connection()] - Trusted Connection Detected, IP: 127.0.0.1
+[application.py:log_request()] - 101 GET /websocket (127.0.0.1) [_TRUSTED_USER_] 0.65ms
+[websockets.py:open()] - Websocket Opened: ID: 129619083759680, Proxied: False, User Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:148.0) Gecko/20100101 Firefox/148.0, Host Name: localhost
+[websockets.py:_handle_identify()] - Websocket 129619083759680 Client Identified - Name: mainsail, Version: 2.17.0, Type: web
+[klippy_apis.py:start_print()] - Requesting Job Start, filename = toolhead_test.gcode
+[job_state.py:_send_job_event()] - Job Started: toolhead_test.gcode
+[websockets.py:on_close()] - Websocket Closed: ID: 129619090155536 Close Code: 1000, Close Reason: None, Pong Time Elapsed: 4.46
+[klippy_apis.py:cancel_print()] - Requesting job cancel...
+[application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 1.16ms
+[websockets.py:open()] - Websocket Opened: ID: 129619083768320, Proxied: False, User Agent: , Host Name: 127.0.0.1
+[websockets.py:on_close()] - Websocket Closed: ID: 129619083768320 Close Code: 1000, Close Reason: None, Pong Time Elapsed: 5.39
+[application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 0.32ms
+[websockets.py:open()] - Websocket Opened: ID: 129619083756080, Proxied: False, User Agent: , Host Name: 127.0.0.1
+[websockets.py:on_close()] - Websocket Closed: ID: 129619083756080 Close Code: 1000, Close Reason: None, Pong Time Elapsed: 3.38
+[application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 0.97ms
+[websockets.py:open()] - Websocket Opened: ID: 129619083765200, Proxied: False, User Agent: , Host Name: 127.0.0.1
+[klippy_apis.py:start_print()] - Requesting Job Start, filename = toolhead_test.gcode
+[job_state.py:_send_job_event()] - Job Started: toolhead_test.gcode
+[websockets.py:on_close()] - Websocket Closed: ID: 129619083765200 Close Code: 1000, Close Reason: None, Pong Time Elapsed: 4.13
+[klippy_apis.py:pause_print()] - Requesting job pause...
+[klippy_apis.py:cancel_print()] - Requesting job cancel...
+[application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 0.40ms
+[websockets.py:open()] - Websocket Opened: ID: 129619083770624, Proxied: False, User Agent: , Host Name: 127.0.0.1
+[klippy_apis.py:start_print()] - Requesting Job Start, filename = toolhead_test.gcode
+[job_state.py:_send_job_event()] - Job Started: toolhead_test.gcode
+[klippy_connection.py:_process_status_update()] - Klippy has shutdown
+[proc_stats.py:_handle_shutdown()] - 
+Moonraker System Usage Statistics:
+System Time: 1773338883.442467, Usage: 1.2%, Memory: 48708 kB
+System Time: 1773338884.443966, Usage: 1.02%, Memory: 48708 kB
+System Time: 1773338885.443852, Usage: 1.11%, Memory: 48708 kB
+System Time: 1773338886.444182, Usage: 1.0%, Memory: 48708 kB
+System Time: 1773338887.442881, Usage: 1.09%, Memory: 48708 kB
+System Time: 1773338888.443292, Usage: 1.14%, Memory: 48708 kB
+System Time: 1773338889.443999, Usage: 1.04%, Memory: 48708 kB
+System Time: 1773338890.445170, Usage: 1.1%, Memory: 48708 kB
+System Time: 1773338891.446907, Usage: 1.06%, Memory: 48708 kB
+System Time: 1773338892.448243, Usage: 1.04%, Memory: 48708 kB
+System Time: 1773338893.448505, Usage: 1.26%, Memory: 48708 kB
+System Time: 1773338894.448725, Usage: 1.05%, Memory: 48708 kB
+System Time: 1773338895.450250, Usage: 1.03%, Memory: 48708 kB
+System Time: 1773338896.450321, Usage: 1.03%, Memory: 48708 kB
+System Time: 1773338897.450444, Usage: 1.06%, Memory: 48708 kB
+System Time: 1773338898.450995, Usage: 1.06%, Memory: 48708 kB
+System Time: 1773338899.451194, Usage: 1.07%, Memory: 48708 kB
+System Time: 1773338900.451894, Usage: 1.04%, Memory: 48708 kB
+System Time: 1773338901.452994, Usage: 1.06%, Memory: 48708 kB
+System Time: 1773338902.453098, Usage: 1.07%, Memory: 48708 kB
+System Time: 1773338903.454442, Usage: 1.04%, Memory: 48708 kB
+System Time: 1773338904.455203, Usage: 1.11%, Memory: 48708 kB
+System Time: 1773338905.455802, Usage: 1.05%, Memory: 48708 kB
+System Time: 1773338906.457911, Usage: 1.08%, Memory: 48708 kB
+System Time: 1773338907.459821, Usage: 1.22%, Memory: 48708 kB
+System Time: 1773338908.459933, Usage: 1.22%, Memory: 48708 kB
+System Time: 1773338909.461070, Usage: 1.1%, Memory: 48708 kB
+System Time: 1773338910.461812, Usage: 1.19%, Memory: 48708 kB
+System Time: 1773338911.462531, Usage: 1.03%, Memory: 48708 kB
+System Time: 1773338912.463314, Usage: 1.01%, Memory: 48708 kB
+CPU Temperature: None
+[klippy_connection.py:close()] - Error closing Klippy Unix Socket
+Traceback (most recent call last):
+  File "/home/klippy/moonraker/moonraker/components/klippy_connection.py", line 805, in close
+    await self.writer.wait_closed()
+  File "/usr/lib/python3.12/asyncio/streams.py", line 364, in wait_closed
+    await self._protocol._get_close_waiter(self)
+  File "/usr/lib/python3.12/asyncio/selector_events.py", line 1013, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ConnectionResetError: [Errno 104] Connection reset by peer
+[klippy_connection.py:_on_connection_closed()] - Klippy Connection Removed
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Disconnected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Disconnected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Disconnected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Disconnected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Disconnected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[klippy_connection.py:_do_connect()] - Klippy Connection Established
+[klippy_connection.py:_request_initial_subscriptions()] - Webhooks Subscribed
+[klippy_connection.py:_request_initial_subscriptions()] - GCode Output Subscribed
+[job_state.py:_handle_started()] - Job state initialized: standby
+[klippy_connection.py:_check_ready()] - Klippy ready
+[data_store.py:_init_sensors()] - Configuring available sensors: ['extruder']
+[websockets.py:on_close()] - Websocket Closed: ID: 129619083770624 Close Code: 1000, Close Reason: None, Pong Time Elapsed: 5.54
+[application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 1.38ms
+[websockets.py:open()] - Websocket Opened: ID: 129619083768368, Proxied: False, User Agent: , Host Name: 127.0.0.1
+[klippy_apis.py:start_print()] - Requesting Job Start, filename = AI3M_3DBenchy.gcode
+[job_state.py:_send_job_event()] - Job Started: AI3M_3DBenchy.gcode
+[klippy_connection.py:_process_status_update()] - Klippy has shutdown
+[proc_stats.py:_handle_shutdown()] - 
+Moonraker System Usage Statistics:
+System Time: 1773340340.821977, Usage: 0.24%, Memory: 49168 kB
+System Time: 1773340341.822796, Usage: 0.28%, Memory: 49168 kB
+System Time: 1773340342.823737, Usage: 0.24%, Memory: 49168 kB
+System Time: 1773340343.824470, Usage: 1.01%, Memory: 49172 kB
+System Time: 1773340344.825247, Usage: 1.06%, Memory: 49172 kB
+System Time: 1773340345.825442, Usage: 1.21%, Memory: 49172 kB
+System Time: 1773340346.826577, Usage: 1.08%, Memory: 49172 kB
+System Time: 1773340347.828117, Usage: 1.11%, Memory: 49172 kB
+System Time: 1773340348.829172, Usage: 1.06%, Memory: 49172 kB
+System Time: 1773340349.830872, Usage: 1.13%, Memory: 49172 kB
+System Time: 1773340350.831187, Usage: 1.21%, Memory: 49172 kB
+System Time: 1773340351.831582, Usage: 1.06%, Memory: 49172 kB
+System Time: 1773340352.832453, Usage: 1.19%, Memory: 49172 kB
+System Time: 1773340353.832680, Usage: 1.13%, Memory: 49172 kB
+System Time: 1773340354.833119, Usage: 1.68%, Memory: 49172 kB
+System Time: 1773340355.833893, Usage: 1.05%, Memory: 49172 kB
+System Time: 1773340356.834104, Usage: 1.0%, Memory: 49176 kB
+System Time: 1773340357.833189, Usage: 1.11%, Memory: 49180 kB
+System Time: 1773340358.834229, Usage: 0.97%, Memory: 49180 kB
+System Time: 1773340359.835198, Usage: 1.06%, Memory: 49180 kB
+System Time: 1773340360.836717, Usage: 1.13%, Memory: 49180 kB
+System Time: 1773340361.837392, Usage: 1.06%, Memory: 49180 kB
+System Time: 1773340362.838305, Usage: 1.07%, Memory: 49184 kB
+System Time: 1773340363.838630, Usage: 1.15%, Memory: 49184 kB
+System Time: 1773340364.839337, Usage: 1.05%, Memory: 49184 kB
+System Time: 1773340365.839541, Usage: 1.1%, Memory: 49184 kB
+System Time: 1773340366.839838, Usage: 1.11%, Memory: 49184 kB
+System Time: 1773340367.840222, Usage: 1.22%, Memory: 49184 kB
+System Time: 1773340368.841117, Usage: 1.12%, Memory: 49184 kB
+System Time: 1773340369.842104, Usage: 1.13%, Memory: 49184 kB
+CPU Temperature: None
+[websockets.py:on_close()] - Websocket Closed: ID: 129619083768368 Close Code: 1000, Close Reason: None, Pong Time Elapsed: 0.29
+[klippy_connection.py:_on_connection_closed()] - Klippy Connection Removed
+[klippy_connection.py:_do_connect()] - Klippy Connection Established
+[klippy_connection.py:_request_initial_subscriptions()] - Webhooks Subscribed
+[klippy_connection.py:_request_initial_subscriptions()] - GCode Output Subscribed
+[job_state.py:_handle_started()] - Job state initialized: standby
+[klippy_connection.py:_check_ready()] - Klippy ready
+[data_store.py:_init_sensors()] - Configuring available sensors: ['extruder']
+[klippy_connection.py:_on_connection_closed()] - Klippy Connection Removed
+[klippy_connection.py:_do_connect()] - Klippy Connection Established
+[klippy_connection.py:_request_initial_subscriptions()] - Webhooks Subscribed
+[klippy_connection.py:_request_initial_subscriptions()] - GCode Output Subscribed
+[klippy_connection.py:_check_ready()] - 
+Option 'buffer_time_high' is not valid in section 'printer'
+
+Once the underlying issue is corrected, use the "RESTART"
+command to reload the config and restart the host software.
+Printer is halted
+
+[klippy_connection.py:_on_connection_closed()] - Klippy Connection Removed
+[klippy_connection.py:_do_connect()] - Klippy Connection Established
+[klippy_connection.py:_request_initial_subscriptions()] - Webhooks Subscribed
+[klippy_connection.py:_request_initial_subscriptions()] - GCode Output Subscribed
+[klippy_connection.py:_check_ready()] - 
+Option 'buffer_time_high' is not valid in section 'mcu'
+
+Once the underlying issue is corrected, use the "RESTART"
+command to reload the config and restart the host software.
+Printer is halted
+
+[klippy_connection.py:_on_connection_closed()] - Klippy Connection Removed
+[klippy_connection.py:_do_connect()] - Klippy Connection Established
+[klippy_connection.py:_request_initial_subscriptions()] - Webhooks Subscribed
+[klippy_connection.py:_request_initial_subscriptions()] - GCode Output Subscribed
+[job_state.py:_handle_started()] - Job state initialized: standby
+[klippy_connection.py:_check_ready()] - Klippy ready
+[data_store.py:_init_sensors()] - Configuring available sensors: ['extruder']
+[application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 1.38ms
+[websockets.py:open()] - Websocket Opened: ID: 129619083771536, Proxied: False, User Agent: , Host Name: 127.0.0.1
+[klippy_apis.py:start_print()] - Requesting Job Start, filename = AI3M_3DBenchy.gcode
+[job_state.py:_send_job_event()] - Job Started: AI3M_3DBenchy.gcode
+[klippy_connection.py:_process_status_update()] - Klippy has shutdown
+[proc_stats.py:_handle_shutdown()] - 
+Moonraker System Usage Statistics:
+System Time: 1773341638.053657, Usage: 0.27%, Memory: 49296 kB
+System Time: 1773341639.054725, Usage: 0.28%, Memory: 49296 kB
+System Time: 1773341640.055807, Usage: 0.24%, Memory: 49296 kB
+System Time: 1773341641.056195, Usage: 0.31%, Memory: 49296 kB
+System Time: 1773341642.057008, Usage: 0.26%, Memory: 49296 kB
+System Time: 1773341643.058103, Usage: 0.3%, Memory: 49296 kB
+System Time: 1773341644.058737, Usage: 0.24%, Memory: 49296 kB
+System Time: 1773341645.059688, Usage: 0.28%, Memory: 49296 kB
+System Time: 1773341646.060488, Usage: 0.26%, Memory: 49296 kB
+System Time: 1773341647.061669, Usage: 0.27%, Memory: 49296 kB
+System Time: 1773341648.061321, Usage: 0.32%, Memory: 49296 kB
+System Time: 1773341649.061945, Usage: 0.96%, Memory: 49304 kB
+System Time: 1773341650.062480, Usage: 0.95%, Memory: 49304 kB
+System Time: 1773341651.062846, Usage: 1.15%, Memory: 49304 kB
+System Time: 1773341652.064801, Usage: 1.0%, Memory: 49304 kB
+System Time: 1773341653.066056, Usage: 1.19%, Memory: 49304 kB
+System Time: 1773341654.067816, Usage: 1.82%, Memory: 49304 kB
+System Time: 1773341655.068269, Usage: 1.1%, Memory: 49304 kB
+System Time: 1773341656.069222, Usage: 1.09%, Memory: 49304 kB
+System Time: 1773341657.070043, Usage: 0.99%, Memory: 49304 kB
+System Time: 1773341658.070351, Usage: 1.05%, Memory: 49304 kB
+System Time: 1773341659.074152, Usage: 1.12%, Memory: 49304 kB
+System Time: 1773341660.072698, Usage: 1.0%, Memory: 49304 kB
+System Time: 1773341661.072997, Usage: 1.13%, Memory: 49304 kB
+System Time: 1773341662.073588, Usage: 1.01%, Memory: 49304 kB
+System Time: 1773341663.074781, Usage: 1.07%, Memory: 49304 kB
+System Time: 1773341664.075263, Usage: 1.07%, Memory: 49304 kB
+System Time: 1773341665.076000, Usage: 1.09%, Memory: 49304 kB
+System Time: 1773341666.076519, Usage: 1.07%, Memory: 49304 kB
+System Time: 1773341667.077377, Usage: 1.12%, Memory: 49304 kB
+CPU Temperature: None
+[websockets.py:on_close()] - Websocket Closed: ID: 129619083771536 Close Code: 1000, Close Reason: None, Pong Time Elapsed: 4.85
+[authorization.py:_prune_conn_handler()] - Trusted Connection Expired, IP: 127.0.0.1
+[klippy_connection.py:_on_connection_closed()] - Klippy Connection Removed
+[klippy_connection.py:_do_connect()] - Klippy Connection Established
+[klippy_connection.py:_request_initial_subscriptions()] - Webhooks Subscribed
+[klippy_connection.py:_request_initial_subscriptions()] - GCode Output Subscribed
+[klippy_connection.py:_check_ready()] - 
+Can not update MCU 'mcu' config as it is shutdown
+Once the underlying issue is corrected, use the
+"FIRMWARE_RESTART" command to reset the firmware, reload the
+config, and restart the host software.
+Error configuring printer
+
+[klippy_connection.py:_on_connection_closed()] - Klippy Connection Removed
+[klippy_connection.py:_do_connect()] - Klippy Connection Established
+[klippy_connection.py:_request_initial_subscriptions()] - Webhooks Subscribed
+[klippy_connection.py:_request_initial_subscriptions()] - GCode Output Subscribed
+[job_state.py:_handle_started()] - Job state initialized: standby
+[klippy_connection.py:_check_ready()] - Klippy ready
+[data_store.py:_init_sensors()] - Configuring available sensors: ['extruder']
+[websockets.py:on_close()] - Websocket Closed: ID: 129619083759680 Close Code: None, Close Reason: None, Pong Time Elapsed: 3.11
+[server.py:_handle_term_signal()] - Exiting with signal SIGTERM
+[klippy_connection.py:_on_connection_closed()] - Klippy Connection Removed
+[server.py:main()] - Server Shutdown
+
+Application Info:
+platform: Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39
+data_path: /home/klippy/printer_data
+is_default_data_path: False
+config_file: /home/klippy/printer_data/config/moonraker.conf
+backup_config: /home/klippy/printer_data/config/.moonraker.conf.bkp
+startup_warnings: []
+verbose: False
+debug: False
+asyncio_debug: False
+is_backup_config: False
+is_python_package: False
+instance_uuid: 9b300b36b1a44af9ac655aafb3a15147
+unix_socket_path: /home/klippy/printer_data/comms/moonraker.sock
+structured_logging: False
+software_version: v0.10.0-10-gfb257f8
+git_branch: master
+git_remote: origin
+git_repo_url: https://github.com/Arksine/moonraker.git
+modified_files: []
+unofficial_components: []
+log_file: /home/klippy/printer_data/logs/moonraker.log
+python_version: 3.12.3 (main, Mar  3 2026, 12:15:18) [GCC 13.3.0]
+launch_args: /home/klippy/moonraker-env/bin/python /home/klippy/moonraker/moonraker/moonraker.py -d /home/klippy/printer_data
+msgspec_enabled: False
+uvloop_enabled: False
+[confighelper.py:read_file()] - Configuration File '/home/klippy/printer_data/config/moonraker.conf' parsed, total size: 240 B
+[server.py:add_log_rollover_item()] - 
+#################### Moonraker Configuration ####################
+
+[server]
+host = 0.0.0.0
+port = 7125
+klippy_uds_address = /tmp/klippy_uds
+
+[authorization]
+trusted_clients = 
+	0.0.0.0/0
+cors_domains = 
+	*
+
+[octoprint_compat]
+
+[history]
+
+[file_manager]
+enable_object_processing = True
+
+[machine]
+provider = none
+
+#################################################################
+All Configuration Files:
+/home/klippy/printer_data/config/moonraker.conf
+#################################################################
+[server.py:load_component()] - Component (secrets) loaded
+[server.py:load_component()] - Component (template) loaded
+[server.py:load_component()] - Component (klippy_connection) loaded
+[application.py:__init__()] - Detected Tornado Version 6.5.4
+[server.py:load_component()] - Component (application) loaded
+[server.py:load_component()] - Component (websockets) loaded
+[server.py:add_log_rollover_item()] - Loading Sqlite database provider. Sqlite Version: 3.45.1
+[server.py:add_log_rollover_item()] - Unsafe Shutdown Count: 0
+[server.py:load_component()] - Component (database) loaded
+[server.py:load_component()] - Component (dbus_manager) loaded
+[file_manager.py:__init__()] - Using File System Observer: inotify
+[server.py:load_component()] - Component (file_manager) loaded
+[database.py:register_table()] - Found registered table authorized_users
+[authorization.py:__init__()] - Authorization Configuration Loaded
+Trusted Clients:
+0.0.0.0/0
+CORS Domains:
+.*
+[server.py:load_component()] - Component (authorization) loaded
+[server.py:load_component()] - Component (klippy_apis) loaded
+[machine.py:_check_inside_container()] - Container detected via sched: docker
+[server.py:add_log_rollover_item()] - 
+System Info:
+
+***python***
+  version: (3, 12, 3, 'final', 0)
+  version_string: 3.12.3 (main, Mar  3 2026, 12:15:18) [GCC 13.3.0]
+
+***cpu_info***
+  cpu_count: 16
+  bits: 64bit
+  processor: x86_64
+  cpu_desc: 12th Gen Intel(R) Core(TM) i5-12600K
+  serial_number: 
+  hardware_desc: 
+  model: 
+  total_memory: 6066360
+  memory_units: kB
+
+***sd_info***
+
+***distribution***
+  name: Ubuntu 24.04.4 LTS
+  id: ubuntu
+  version: 24.04
+  version_parts: {'major': '24', 'minor': '04', 'build_number': ''}
+  like: debian
+  codename: noble
+  release_info: {}
+  kernel_version: 6.6.87.2-microsoft-standard-WSL2
+
+***virtualization***
+  virt_type: container
+  virt_identifier: docker
+
+***network***
+
+***canbus***
+
+***Allowed Services***
+  klipper_mcu
+  webcamd
+  MoonCord
+  KlipperScreen
+  moonraker-telegram-bot
+  moonraker-obico
+  sonar
+  crowsnest
+  octoeverywhere
+  ratos-configurator
+[server.py:load_component()] - Component (shell_command) loaded
+[machine.py:__init__()] - Using System Provider: none
+[server.py:add_log_rollover_item()] - Module libcamera unavailable, import failed
+[server.py:load_component()] - Component (machine) loaded
+[server.py:load_component()] - Component (data_store) loaded
+[proc_stats.py:__init__()] - Unable to find 'vcgencmd', throttle checking disabled
+[proc_stats.py:_get_cpu_thermal_file()] - Monitoring temperature using default thermal zone
+[server.py:load_component()] - Component (proc_stats) loaded
+[server.py:load_component()] - Component (job_state) loaded
+[server.py:load_component()] - Component (job_queue) loaded
+[database.py:register_table()] - Found registered table job_history
+[database.py:register_table()] - Found registered table job_totals
+[server.py:load_component()] - Component (history) loaded
+[server.py:load_component()] - Component (http_client) loaded
+[server.py:load_component()] - Component (announcements) loaded
+[server.py:load_component()] - Component (webcam) loaded
+[server.py:load_component()] - Component (extensions) loaded
+[server.py:load_component()] - Component (octoprint_compat) loaded
+[server.py:_initialize_component()] - Performing Component Post Init: [database]
+[server.py:_initialize_component()] - Performing Component Post Init: [dbus_manager]
+[dbus_manager.py:component_init()] - Unable to Connect to D-Bus
+[server.py:_initialize_component()] - Performing Component Post Init: [authorization]
+[server.py:_initialize_component()] - Performing Component Post Init: [machine]
+[machine.py:validation_init()] - Installation version in database up to date
+[machine.py:_find_public_ip()] - Detected Local IP: 172.18.0.2
+[server.py:_initialize_component()] - Performing Component Post Init: [proc_stats]
+[server.py:_initialize_component()] - Performing Component Post Init: [history]
+[webcam.py:_set_default_host_ip()] - Default public webcam address set: http://172.18.0.2
+[server.py:_initialize_component()] - Performing Component Post Init: [announcements]
+[server.py:_initialize_component()] - Performing Component Post Init: [webcam]
+[webcam.py:_set_default_host_ip()] - Default public webcam address set: http://172.18.0.2
+[server.py:_initialize_component()] - Performing Component Post Init: [klippy_connection]
+[extensions.py:start_unix_server()] - Creating Unix Domain Socket at '/home/klippy/printer_data/comms/moonraker.sock'
+[server.py:start_server()] - Starting Moonraker on (0.0.0.0, 7125), Hostname: 9d6f1357da96
+[application.py:listen()] - SSL Certificate/Key not configured, aborting HTTPS Server startup
+[klippy_connection.py:_do_connect()] - Klippy Connection Established
+[server.py:add_log_rollover_item()] - Klipper Version: v0.13.0-573-g644cda5ec-dirty
+[klippy_connection.py:_request_initial_subscriptions()] - Webhooks Subscribed
+[klippy_connection.py:_request_initial_subscriptions()] - GCode Output Subscribed
+[job_state.py:_handle_started()] - Job state initialized: standby
+[klippy_connection.py:_check_ready()] - Klippy ready
+[authorization.py:_check_trusted_connection()] - Trusted Connection Detected, IP: 127.0.0.1
+[application.py:log_request()] - 101 GET /websocket (127.0.0.1) [_TRUSTED_USER_] 0.71ms
+[websockets.py:open()] - Websocket Opened: ID: 139408193550816, Proxied: False, User Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:148.0) Gecko/20100101 Firefox/148.0, Host Name: localhost
+[websockets.py:_handle_identify()] - Websocket 139408193550816 Client Identified - Name: mainsail, Version: 2.17.0, Type: web
+[data_store.py:_init_sensors()] - Configuring available sensors: ['extruder']
+[authorization.py:_check_trusted_connection()] - Trusted Connection Detected, IP: 172.18.0.1
+[application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 0.56ms
+[websockets.py:open()] - Websocket Opened: ID: 139408193765456, Proxied: False, User Agent: , Host Name: 127.0.0.1
+[klippy_apis.py:start_print()] - Requesting Job Start, filename = AI3M_3DBenchy.gcode
+[job_state.py:_send_job_event()] - Job Started: AI3M_3DBenchy.gcode
+[websockets.py:on_close()] - Websocket Closed: ID: 139408193765456 Close Code: 1000, Close Reason: None, Pong Time Elapsed: 6.06
+[application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 0.94ms
+[websockets.py:open()] - Websocket Opened: ID: 139408193779040, Proxied: False, User Agent: , Host Name: 127.0.0.1
+[klippy_connection.py:_on_connection_closed()] - Klippy Connection Removed
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Disconnected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[klippy_connection.py:_do_connect()] - Klippy Connection Established
+[klippy_connection.py:_request_initial_subscriptions()] - Webhooks Subscribed
+[klippy_connection.py:_request_initial_subscriptions()] - GCode Output Subscribed
+[job_state.py:_handle_started()] - Job state initialized: standby
+[klippy_connection.py:_check_ready()] - Klippy ready
+[data_store.py:_init_sensors()] - Configuring available sensors: ['extruder']
+[klippy_apis.py:start_print()] - Requesting Job Start, filename = AI3M_3DBenchy.gcode
+[job_state.py:_send_job_event()] - Job Started: AI3M_3DBenchy.gcode
+[klippy_connection.py:_process_status_update()] - Klippy has shutdown
+[proc_stats.py:_handle_shutdown()] - 
+Moonraker System Usage Statistics:
+System Time: 1773341999.378926, Usage: 1.09%, Memory: 48496 kB
+System Time: 1773342000.380203, Usage: 1.13%, Memory: 48496 kB
+System Time: 1773342001.381081, Usage: 1.12%, Memory: 48496 kB
+System Time: 1773342002.382285, Usage: 1.0%, Memory: 48496 kB
+System Time: 1773342003.383641, Usage: 1.05%, Memory: 48496 kB
+System Time: 1773342004.384429, Usage: 1.06%, Memory: 48496 kB
+System Time: 1773342005.385312, Usage: 1.67%, Memory: 48496 kB
+System Time: 1773342006.386081, Usage: 1.13%, Memory: 48496 kB
+System Time: 1773342007.386633, Usage: 1.1%, Memory: 48496 kB
+System Time: 1773342008.385630, Usage: 1.09%, Memory: 48496 kB
+System Time: 1773342009.385958, Usage: 1.48%, Memory: 48500 kB
+System Time: 1773342010.386886, Usage: 1.44%, Memory: 48500 kB
+System Time: 1773342011.388026, Usage: 1.73%, Memory: 48520 kB
+System Time: 1773342012.388362, Usage: 1.32%, Memory: 48520 kB
+System Time: 1773342013.389163, Usage: 1.13%, Memory: 48520 kB
+System Time: 1773342014.390002, Usage: 1.26%, Memory: 48520 kB
+System Time: 1773342015.390773, Usage: 1.52%, Memory: 48520 kB
+System Time: 1773342016.391720, Usage: 1.03%, Memory: 48520 kB
+System Time: 1773342017.397857, Usage: 0.97%, Memory: 48520 kB
+System Time: 1773342018.395234, Usage: 1.03%, Memory: 48520 kB
+System Time: 1773342019.395433, Usage: 1.03%, Memory: 48520 kB
+System Time: 1773342020.396673, Usage: 1.0%, Memory: 48520 kB
+System Time: 1773342021.396829, Usage: 1.01%, Memory: 48520 kB
+System Time: 1773342022.397055, Usage: 1.04%, Memory: 48520 kB
+System Time: 1773342023.398346, Usage: 1.03%, Memory: 48520 kB
+System Time: 1773342024.399131, Usage: 1.08%, Memory: 48520 kB
+System Time: 1773342025.400449, Usage: 1.0%, Memory: 48520 kB
+System Time: 1773342026.400928, Usage: 1.05%, Memory: 48528 kB
+System Time: 1773342027.402907, Usage: 0.97%, Memory: 48528 kB
+System Time: 1773342028.403922, Usage: 1.02%, Memory: 48528 kB
+CPU Temperature: None
+[klippy_connection.py:_on_connection_closed()] - Klippy Connection Removed
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Disconnected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Disconnected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Disconnected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Disconnected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[klippy_connection.py:_do_connect()] - Klippy Connection Established
+[klippy_connection.py:_request_initial_subscriptions()] - Webhooks Subscribed
+[klippy_connection.py:_request_initial_subscriptions()] - GCode Output Subscribed
+[job_state.py:_handle_started()] - Job state initialized: standby
+[klippy_connection.py:_check_ready()] - Klippy ready
+[data_store.py:_init_sensors()] - Configuring available sensors: ['extruder']
+[klippy_apis.py:start_print()] - Requesting Job Start, filename = AI3M_3DBenchy.gcode
+[job_state.py:_send_job_event()] - Job Started: AI3M_3DBenchy.gcode
+[websockets.py:on_close()] - Websocket Closed: ID: 139408193779040 Close Code: 1000, Close Reason: None, Pong Time Elapsed: 4.31
+[klippy_apis.py:pause_print()] - Requesting job pause...
+[klippy_apis.py:pause_print()] - Requesting job pause...
+[klippy_apis.py:pause_print()] - Requesting job pause...
+[klippy_apis.py:pause_print()] - Requesting job pause...
+[klippy_apis.py:pause_print()] - Requesting job pause...
+[klippy_apis.py:pause_print()] - Requesting job pause...
+[klippy_connection.py:_process_status_update()] - Klippy has shutdown
+[proc_stats.py:_handle_shutdown()] - 
+Moonraker System Usage Statistics:
+System Time: 1773342032.407909, Usage: 1.04%, Memory: 48532 kB
+System Time: 1773342033.408703, Usage: 1.11%, Memory: 48532 kB
+System Time: 1773342034.409527, Usage: 1.01%, Memory: 48532 kB
+System Time: 1773342035.410224, Usage: 1.04%, Memory: 48532 kB
+System Time: 1773342036.410498, Usage: 1.35%, Memory: 48532 kB
+System Time: 1773342037.411054, Usage: 1.39%, Memory: 48532 kB
+System Time: 1773342038.410540, Usage: 1.6%, Memory: 48552 kB
+System Time: 1773342039.412887, Usage: 1.51%, Memory: 48584 kB
+System Time: 1773342040.414336, Usage: 1.42%, Memory: 48584 kB
+System Time: 1773342041.414524, Usage: 1.11%, Memory: 48584 kB
+System Time: 1773342042.414822, Usage: 1.03%, Memory: 48584 kB
+System Time: 1773342043.415914, Usage: 1.1%, Memory: 48584 kB
+System Time: 1773342044.416392, Usage: 1.09%, Memory: 48584 kB
+System Time: 1773342045.417343, Usage: 1.02%, Memory: 48584 kB
+System Time: 1773342046.418489, Usage: 1.7%, Memory: 48584 kB
+System Time: 1773342047.418856, Usage: 1.12%, Memory: 48584 kB
+System Time: 1773342048.420181, Usage: 0.59%, Memory: 48584 kB
+System Time: 1773342049.421173, Usage: 0.38%, Memory: 48584 kB
+System Time: 1773342050.423172, Usage: 0.28%, Memory: 48584 kB
+System Time: 1773342051.425313, Usage: 0.32%, Memory: 48584 kB
+System Time: 1773342052.426283, Usage: 0.26%, Memory: 48584 kB
+System Time: 1773342053.427465, Usage: 0.28%, Memory: 48584 kB
+System Time: 1773342054.428440, Usage: 0.26%, Memory: 48584 kB
+System Time: 1773342055.429323, Usage: 0.25%, Memory: 48584 kB
+System Time: 1773342056.431346, Usage: 0.41%, Memory: 48584 kB
+System Time: 1773342057.431878, Usage: 0.62%, Memory: 48584 kB
+System Time: 1773342058.432324, Usage: 0.43%, Memory: 48584 kB
+System Time: 1773342059.433254, Usage: 0.49%, Memory: 48584 kB
+System Time: 1773342060.435119, Usage: 0.41%, Memory: 48584 kB
+System Time: 1773342061.435129, Usage: 0.57%, Memory: 48584 kB
+CPU Temperature: None
+[klippy_connection.py:_on_connection_closed()] - Klippy Connection Removed
+[klippy_connection.py:_do_connect()] - Klippy Connection Established
+[klippy_connection.py:_request_initial_subscriptions()] - Webhooks Subscribed
+[klippy_connection.py:_request_initial_subscriptions()] - GCode Output Subscribed
+[job_state.py:_handle_started()] - Job state initialized: standby
+[klippy_connection.py:_check_ready()] - Klippy ready
+[application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 0.95ms
+[websockets.py:open()] - Websocket Opened: ID: 139408193769392, Proxied: False, User Agent: , Host Name: 127.0.0.1
+[data_store.py:_init_sensors()] - Configuring available sensors: ['extruder']
+[websockets.py:on_close()] - Websocket Closed: ID: 139408193769392 Close Code: 1000, Close Reason: None, Pong Time Elapsed: 6.37
+[application.py:log_request()] - 101 GET /websocket (172.18.0.1) [_TRUSTED_USER_] 0.39ms
+[websockets.py:open()] - Websocket Opened: ID: 139408193769824, Proxied: False, User Agent: , Host Name: 127.0.0.1
+[klippy_apis.py:start_print()] - Requesting Job Start, filename = AI3M_3DBenchy.gcode
+[job_state.py:_send_job_event()] - Job Started: AI3M_3DBenchy.gcode
+[klippy_connection.py:_process_status_update()] - Klippy has shutdown
+[proc_stats.py:_handle_shutdown()] - 
+Moonraker System Usage Statistics:
+System Time: 1773342069.439538, Usage: 1.06%, Memory: 48596 kB
+System Time: 1773342070.440331, Usage: 1.08%, Memory: 48596 kB
+System Time: 1773342071.440906, Usage: 1.05%, Memory: 48596 kB
+System Time: 1773342072.442003, Usage: 1.05%, Memory: 48596 kB
+System Time: 1773342073.442441, Usage: 0.57%, Memory: 48596 kB
+System Time: 1773342074.443207, Usage: 0.78%, Memory: 48600 kB
+System Time: 1773342075.445260, Usage: 0.98%, Memory: 48600 kB
+System Time: 1773342076.445574, Usage: 1.04%, Memory: 48600 kB
+System Time: 1773342077.446544, Usage: 1.03%, Memory: 48600 kB
+System Time: 1773342078.446962, Usage: 1.55%, Memory: 48600 kB
+System Time: 1773342079.447256, Usage: 1.04%, Memory: 48600 kB
+System Time: 1773342080.448461, Usage: 1.01%, Memory: 48604 kB
+System Time: 1773342081.449531, Usage: 1.0%, Memory: 48604 kB
+System Time: 1773342082.449715, Usage: 1.12%, Memory: 48604 kB
+System Time: 1773342083.450827, Usage: 1.0%, Memory: 48604 kB
+System Time: 1773342084.451650, Usage: 1.05%, Memory: 48604 kB
+System Time: 1773342085.452049, Usage: 1.0%, Memory: 48604 kB
+System Time: 1773342086.452404, Usage: 1.05%, Memory: 48604 kB
+System Time: 1773342087.453109, Usage: 1.07%, Memory: 48604 kB
+System Time: 1773342088.453439, Usage: 1.03%, Memory: 48604 kB
+System Time: 1773342089.454205, Usage: 1.12%, Memory: 48604 kB
+System Time: 1773342090.455073, Usage: 1.08%, Memory: 48608 kB
+System Time: 1773342091.455682, Usage: 1.04%, Memory: 48608 kB
+System Time: 1773342092.455818, Usage: 1.1%, Memory: 48608 kB
+System Time: 1773342093.456706, Usage: 1.05%, Memory: 48608 kB
+System Time: 1773342094.458720, Usage: 1.33%, Memory: 48608 kB
+System Time: 1773342095.458800, Usage: 1.44%, Memory: 48608 kB
+System Time: 1773342096.459165, Usage: 1.17%, Memory: 48608 kB
+System Time: 1773342097.456803, Usage: 1.08%, Memory: 48608 kB
+System Time: 1773342098.457345, Usage: 1.12%, Memory: 48608 kB
+CPU Temperature: None
+[klippy_connection.py:_on_connection_closed()] - Klippy Connection Removed
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Disconnected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Disconnected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[common.py:build_error()] - JSON-RPC Request Error - Requested Method: printer.objects.query, Code: 503, Message: Klippy Host not connected
+[klippy_connection.py:_do_connect()] - Klippy Connection Established
+[klippy_connection.py:_request_initial_subscriptions()] - Webhooks Subscribed
+[klippy_connection.py:_request_initial_subscriptions()] - GCode Output Subscribed
+[job_state.py:_handle_started()] - Job state initialized: standby
+[klippy_connection.py:_check_ready()] - Klippy ready
+[data_store.py:_init_sensors()] - Configuring available sensors: ['extruder']
+[websockets.py:on_close()] - Websocket Closed: ID: 139408193769824 Close Code: 1000, Close Reason: None, Pong Time Elapsed: 7.41
+[proc_stats.py:_watchdog_callback()] - EVENT LOOP BLOCKED: 4.26 seconds, total blocked count: 1
+[proc_stats.py:log_last_stats()] - 
+System Time: 1773342378.719271, Usage: 0.25%, Memory: 48628 kB
+System Time: 1773342379.720225, Usage: 0.32%, Memory: 48628 kB
+System Time: 1773342380.721488, Usage: 0.16%, Memory: 48628 kB
+System Time: 1773342382.031846, Usage: 0.17%, Memory: 48628 kB
+System Time: 1773342384.755243, Usage: 100.01%, Memory: 48628 kB
+[klippy_connection.py:_process_status_update()] - Klippy has shutdown
+[proc_stats.py:_handle_shutdown()] - 
+Moonraker System Usage Statistics:
+System Time: 1773342353.697199, Usage: 0.23%, Memory: 48628 kB
+System Time: 1773342354.698372, Usage: 0.25%, Memory: 48628 kB
+System Time: 1773342355.699098, Usage: 0.25%, Memory: 48628 kB
+System Time: 1773342356.700286, Usage: 0.26%, Memory: 48628 kB
+System Time: 1773342357.702097, Usage: 0.24%, Memory: 48628 kB
+System Time: 1773342358.704048, Usage: 0.26%, Memory: 48628 kB
+System Time: 1773342359.704689, Usage: 0.38%, Memory: 48628 kB
+System Time: 1773342360.704945, Usage: 0.27%, Memory: 48628 kB
+System Time: 1773342361.705455, Usage: 0.23%, Memory: 48628 kB
+System Time: 1773342362.705738, Usage: 0.26%, Memory: 48628 kB
+System Time: 1773342363.706470, Usage: 0.24%, Memory: 48628 kB
+System Time: 1773342364.707257, Usage: 0.26%, Memory: 48628 kB
+System Time: 1773342365.708396, Usage: 0.24%, Memory: 48628 kB
+System Time: 1773342366.708807, Usage: 0.25%, Memory: 48628 kB
+System Time: 1773342367.708431, Usage: 0.24%, Memory: 48628 kB
+System Time: 1773342368.709000, Usage: 0.26%, Memory: 48628 kB
+System Time: 1773342369.709746, Usage: 0.34%, Memory: 48628 kB
+System Time: 1773342370.710759, Usage: 0.25%, Memory: 48628 kB
+System Time: 1773342371.712054, Usage: 0.23%, Memory: 48628 kB
+System Time: 1773342372.712545, Usage: 0.26%, Memory: 48628 kB
+System Time: 1773342373.712910, Usage: 0.23%, Memory: 48628 kB
+System Time: 1773342374.714412, Usage: 0.24%, Memory: 48628 kB
+System Time: 1773342375.715083, Usage: 0.24%, Memory: 48628 kB
+System Time: 1773342376.716268, Usage: 0.26%, Memory: 48628 kB
+System Time: 1773342377.717362, Usage: 0.28%, Memory: 48628 kB
+System Time: 1773342378.719271, Usage: 0.25%, Memory: 48628 kB
+System Time: 1773342379.720225, Usage: 0.32%, Memory: 48628 kB
+System Time: 1773342380.721488, Usage: 0.16%, Memory: 48628 kB
+System Time: 1773342382.031846, Usage: 0.17%, Memory: 48628 kB
+System Time: 1773342384.755243, Usage: 100.01%, Memory: 48628 kB
+CPU Temperature: None

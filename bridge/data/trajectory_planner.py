@@ -2,21 +2,19 @@ from __future__ import annotations
 # trajectory_planner.py — Plan-Queue und Sample-Interpolation
 #
 # CLOCK-FIX: Nutzt bridge_now() statt time.monotonic()
-# ESTIMATOR: klipper_time_now() nutzt adaptiven Lookahead aus
-#   LatencyEstimator statt fixem offset_s (wenn Estimator gesetzt).
+# LOOKAHEAD: next_sample() bekommt lookahead_s als Parameter.
+#   Bridge ruft: planner.next_sample(bt, sync.get_lookahead())
+#   Der Planner weiß nichts über den Estimator — saubere Trennung.
 
 import math
 import logging
 import threading
 from dataclasses import dataclass, field
 from collections import deque
-from typing import Optional, TYPE_CHECKING
+from typing import Optional
 
 from .clock import bridge_now
 from .segment_source import TrapezSegment
-
-if TYPE_CHECKING:
-    from .latency_estimator import LatencyEstimator
 
 logger = logging.getLogger("egm.planner")
 
@@ -59,14 +57,12 @@ class TrajectoryPlanner:
                  max_queue_size: int = 2000,
                  correction_max_mm: float = 3.0,
                  correction_rate_limit: float = 10.0,
-                 offset_s: float = 0.0,
-                 estimator: Optional["LatencyEstimator"] = None):
+                 offset_s: float = 0.0):
         self.cycle_s = cycle_s
         self.max_queue_size = max_queue_size
         self.correction_max_mm = correction_max_mm
         self.correction_rate_limit = correction_rate_limit
-        self.offset_s = offset_s        # Fallback wenn Estimator disabled/None
-        self._estimator = estimator     # Adaptiver Latenz-Estimator (optional)
+        self.offset_s = offset_s        # Fixer Fallback-Lookahead (Config)
 
         self._queue: deque[TrapezSegment] = deque(maxlen=max_queue_size)
         self._lock = threading.Lock()
@@ -101,21 +97,19 @@ class TrajectoryPlanner:
                      "t0_bridge=%.3f t0_klipper=%.3f offset=%.3fs",
                      bridge_time, klipper_time, self.offset_s)
 
-    def klipper_time_now(self, bridge_time: float) -> float:
+    def klipper_time_now(self, bridge_time: float,
+                         lookahead_s: float) -> float:
         """
         Berechnet die aktuelle Klipper-Zeit aus der Bridge-Zeit.
 
-        Lookahead-Quelle:
-          - Estimator aktiv + enabled: LatencyEstimator.get_lookahead()
-            (adaptiv, lernt tatsächliche Controller-Latenz)
-          - Sonst: fixer offset_s aus Config (SyncConfig.time_offset_ms)
+        Parameters:
+            bridge_time:  Aktuelle Bridge-Zeit (bridge_now())
+            lookahead_s:  Zeitoffset in Sekunden — wie weit in die
+                          Zukunft schauen. Wird von der Bridge übergeben:
+                          - sync.get_lookahead() wenn Estimator aktiv
+                          - self.offset_s als Fallback
         """
-        if (self._estimator is not None
-                and self._estimator.enabled):
-            lookahead = self._estimator.get_lookahead()
-        else:
-            lookahead = self.offset_s
-        return (bridge_time - self._t0_bridge) + self._t0_klipper + lookahead
+        return (bridge_time - self._t0_bridge) + self._t0_klipper + lookahead_s
 
     @property
     def time_synced(self) -> bool:
@@ -155,13 +149,21 @@ class TrajectoryPlanner:
 
     # ── Sample-Erzeugung (TIME-INDEXED) ──────────────────────
 
-    def next_sample(self, bridge_time: float) -> Optional[EgmSample]:
-        """Erzeugt den nächsten EGM-Sollwert."""
+    def next_sample(self, bridge_time: float,
+                    lookahead_s: float = 0.0) -> Optional[EgmSample]:
+        """
+        Erzeugt den nächsten EGM-Sollwert.
+
+        Parameters:
+            bridge_time:  Aktuelle Bridge-Zeit (bridge_now())
+            lookahead_s:  Adaptiver Lookahead (Sekunden).
+                          Bridge ruft: planner.next_sample(bt, sync.get_lookahead())
+        """
         if not self._time_synced:
             self._underflows += 1
             return None
 
-        t_klipper_now = self.klipper_time_now(bridge_time)
+        t_klipper_now = self.klipper_time_now(bridge_time, lookahead_s)
         seg = self._find_segment_for_time(t_klipper_now)
 
         if seg is None:
@@ -318,17 +320,12 @@ class TrajectoryPlanner:
 
     def snapshot(self) -> dict:
         seg = self._current_segment
-        est = self._estimator
         return {
             "queue_depth": len(self._queue),
             "queue_time_s": round(self.queue_time_s, 3),
             "current_segment": seg.nr if seg else None,
             "time_synced": self._time_synced,
             "offset_s": self.offset_s,
-            "lookahead_ms": round(
-                (est.get_lookahead() if est and est.enabled
-                 else self.offset_s) * 1000.0, 2),
-            "estimator_active": est is not None and est.enabled,
             "t0_bridge": (round(self._t0_bridge, 3)
                           if self._time_synced else None),
             "t0_klipper": (round(self._t0_klipper, 3)

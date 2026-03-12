@@ -1,2 +1,5 @@
 /logs/
 /bridge/logs/
+/analyse/tx.csv
+/analyse/rx.csv
+/analyse/data.csv

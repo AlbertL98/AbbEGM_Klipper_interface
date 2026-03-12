@@ -16,8 +16,7 @@ import os
 import csv
 import json
 import logging
-from dataclasses import dataclass
-from pathlib import Path
+from datetime import datetime
 from typing import Optional, IO
 
 from .clock import bridge_now
@@ -39,7 +38,7 @@ class TelemetryWriter:
 
     def __init__(self, log_dir: str, job_id: Optional[str] = None):
         self.log_dir = log_dir
-        self.job_id = job_id or f"job_{int(bridge_now())}"
+        self.job_id = self.job_id = job_id or f"job_{datetime.now().strftime('%y%m%d_%H%M%S')}"
         self._job_dir = os.path.join(log_dir, self.job_id)
 
         self._files: dict[str, IO] = {}
@@ -67,6 +66,7 @@ class TelemetryWriter:
             "lookahead_ms",      # Aktiver Lookahead beim Senden (Estimator-Output)
         ])
 
+
         # RX Stream (vom Roboter empfangene Werte)
         self._open_stream("rx", [
             "timestamp", "seq_id", "robot_time",
@@ -76,13 +76,11 @@ class TelemetryWriter:
 
         # SYNC Stream
         self._open_stream("sync", [
-            "timestamp", "tracking_error_mm",
-            "tracking_x", "tracking_y", "tracking_z",
-            "lag_ms", "jitter_p99_ms",
+            "timestamp", "error_tcp_pos",
+            "error_tcp_speed", "tang_error", "norm_error",
+            "t_delay_ms", "t_delay_output_ms",
             "buffer_depth", "buffer_time_s",
-            "sync_level",
-            "t_delay_ms",        # Aktives T_delay aus Estimator (ms)
-            "estimator_weight",  # Letztes Update-Gewicht [0..1]
+            "sync_level"
         ])
 
         # EVENT Stream
@@ -93,18 +91,17 @@ class TelemetryWriter:
         # ESTIMATOR Stream — Closed-Loop-Latenz-Debug (pro RX-Packet)
         self._open_stream("estimator", [
             "timestamp",
-            "t_delay_raw_ms",     # T_delay nach EMA-Update (vor Fading)
-            "t_delay_output_ms",  # Geglätteter Lookahead-Wert (aktiv im Planner)
-            "tang_err_mm",        # Tangentialfehler am Matchpunkt
-            "norm_err_mm",        # Normalfehler (Bahnabweichung)
-            "weight",             # Update-Gewicht [0..1] — klein an Ecken
-            "correction_ms",      # Angewandte Zeitkorrektur (ms)
-            "ema_rate",           # Verwendete EMA-Rate (slow/fast)
-            "match_found",        # TX-Matchpunkt gefunden (0/1)
-            "match_dist_mm",      # XY-Distanz zum Matchpunkt
-            "match_age_ms",       # Alter des Matchpunkts ≈ gemessenes Delay
-            "skip_reason",        # Warum kein EMA-Update (leer = Update OK)
+            "t_delay_ms",
+            "t_delay_output_ms",
+            "tang_err_mm",
+            "norm_err_mm",
+            "weight",
+            "accel_detected",
+            "ema_rate_used",
+            "correction_ms"
         ])
+
+
 
         self._active = True
 
@@ -180,9 +177,7 @@ class TelemetryWriter:
             f"{seg.end_v:.4f}",
         ])
 
-    def log_tx(self, sample, e_value: float = 0.0,
-               extruder_age_ms: float = -1.0,
-               lookahead_ms: float = 0.0):
+    def log_tx(self, sample):
         """Loggt einen gesendeten Sollwert (TX Stream)."""
         self._write("tx", [
             f"{sample.timestamp:.6f}",
@@ -191,14 +186,10 @@ class TelemetryWriter:
             f"{sample.velocity:.3f}",
             sample.segment_nr,
             f"{sample.segment_progress:.4f}",
-            f"{sample.t_klipper:.6f}",
-            f"{e_value:.6f}",
-            f"{extruder_age_ms:.1f}",
-            f"{lookahead_ms:.2f}",
+            f"{sample.t_klipper:.6f}"
         ])
 
-    def log_rx(self, feedback, e_value: float = 0.0,
-               extruder_age_ms: float = -1.0):
+    def log_rx(self, feedback):
         """Loggt empfangenes Feedback (RX Stream)."""
         self._write("rx", [
             f"{feedback.timestamp:.6f}",
@@ -207,51 +198,39 @@ class TelemetryWriter:
             f"{feedback.x:.3f}", f"{feedback.y:.3f}",
             f"{feedback.z:.3f}",
             f"{feedback.q0:.6f}", f"{feedback.q1:.6f}",
-            f"{feedback.q2:.6f}", f"{feedback.q3:.6f}",
-            f"{e_value:.6f}",
-            f"{extruder_age_ms:.1f}",
+            f"{feedback.q2:.6f}", f"{feedback.q3:.6f}"
         ])
 
     def log_sync(self, metrics):
         """Loggt Sync-Metriken (SYNC Stream)."""
         self._write("sync", [
             f"{metrics.timestamp:.6f}",
-            f"{metrics.tracking_error_mm:.3f}",
-            f"{metrics.tracking_error_x:.3f}",
-            f"{metrics.tracking_error_y:.3f}",
-            f"{metrics.tracking_error_z:.3f}",
-            f"{metrics.lag_ms:.2f}",
-            f"{metrics.jitter_p99_ms:.2f}",
+            f"{metrics.error_tcp_pos:.3f}",
+            f"{metrics.error_tcp_speed:.3f}",
+            f"{metrics.tang_error:.3f}",
+            f"{metrics.norm_error:.3f}",
+            f"{metrics.t_delay_ms:.2f}",
+            f"{metrics.t_delay_output_ms:.2f}",
             metrics.buffer_depth,
             f"{metrics.buffer_time_s:.3f}",
-            metrics.sync_level.value,
-            f"{metrics.t_delay_ms:.2f}",
-            f"{metrics.estimator_weight:.3f}",
+            metrics.sync_level.value
         ])
 
     def log_estimator(self, debug) -> None:
         """
-        Loggt einen Estimator-Debug-Snapshot (ESTIMATOR Stream).
-
-        Wird pro RX-Packet aufgerufen (~250Hz bei EGM).
-        Ermöglicht Post-hoc-Analyse: Wann/Wo konvergiert T_delay?
-        Wo bleibt weight < 0.2 (Ecken korrekt erkannt)?
-
+        Loggt einen Estimator-Debug-Snapshot
         Parameter: debug — EstimatorDebug Dataclass
         """
         self._write("estimator", [
             f"{debug.timestamp:.6f}",
-            f"{debug.t_delay_raw_ms:.3f}",
+            f"{debug.t_delay_ms:.3f}",
             f"{debug.t_delay_output_ms:.3f}",
             f"{debug.tang_err_mm:.3f}",
             f"{debug.norm_err_mm:.3f}",
             f"{debug.weight:.4f}",
-            f"{debug.correction_ms:.3f}",
-            f"{debug.ema_rate_used:.3f}",
-            "1" if debug.match_found else "0",
-            f"{debug.match_dist_mm:.3f}",
-            f"{debug.match_age_ms:.2f}",
-            debug.skip_reason,
+            debug.accel_detected,
+            f"{debug.ema_used:.3f}",
+            f"{debug.correction_ms:.2f}"
         ])
 
     def log_event(self, event_type: str, severity: str,

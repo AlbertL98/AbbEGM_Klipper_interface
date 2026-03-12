@@ -69,13 +69,19 @@ def sync_printer_data():
 
                 # 2. WERTE AUSLESEN
                 rx_x, rx_y, rx_z = float(rx_row['x']), float(rx_row['y']), float(rx_row['z'])
-                rx_e = float(rx_row['e_value'])
 
                 tx_x, tx_y, tx_z = float(current_tx['x']), float(current_tx['y']), float(current_tx['z'])
                 tx_v_soll = float(current_tx['velocity'])
 
                 robo_t = float(rx_row['robot_time'])
-                ext_t = float(rx_row['extruder_age_ms'])
+                if rx_row['e_value'] is not None:
+                    exclude_extruder = False
+                    rx_e = float(rx_row['e_value'])
+                    ext_t = float(rx_row['extruder_age_ms'])
+                else:
+                    exclude_extruder = True
+                    rx_e = 0
+                    ext_t = 0
 
                 # 3. GESCHWINDIGKEITEN BERECHNEN TCP
                 v_tcp_ist = 0.0
@@ -111,10 +117,11 @@ def sync_printer_data():
                 # 5. RATIO SCORE BERECHNEN log(v_tcp * k / v_ext)
                 # Sicherheit gegen Division durch 0 oder Logarithmus von 0 / negativen Zahlen (z.B. bei Retracts)
                 ratio_score = 0.0
-                try:
-                    ratio_score = (v_ext_ist-(v_tcp_ist * K)) / (abs(v_ext_ist) + abs(v_tcp_ist * K) + 0.0000001)
-                except ValueError:
-                    pass
+                if not exclude_extruder:
+                    try:
+                        ratio_score = (v_ext_ist-(v_tcp_ist * K)) / (abs(v_ext_ist) + abs(v_tcp_ist * K) + 0.0000001)
+                    except ValueError:
+                        pass
 
                 # 6. IN CSV SCHREIBEN
                 writer.writerow({

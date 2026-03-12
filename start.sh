@@ -135,7 +135,7 @@ sleep 1
 echo ">> Starte simulierte Linux-MCU..."
 rm -f /tmp/klipper_host_mcu
 su -s /bin/bash klippy -c \
-    'socat PTY,link=/tmp/klipper_host_mcu,rawer EXEC:/usr/local/bin/klipper_mcu,pty,rawer &'
+    'socat PTY,link=/tmp/klipper_host_mcu,rawer EXEC:"nice -n -10 /usr/local/bin/klipper_mcu",pty,rawer &'
 sleep 2
 
 if [ -e /tmp/klipper_host_mcu ]; then

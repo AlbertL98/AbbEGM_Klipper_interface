@@ -47,7 +47,13 @@
     "correction_enabled": true,
     "time_offset_ms": 0.0,
     "offset_kv": 0.0,
-    "offset_ka": 0.0
+    "offset_ka": 0.0,
+    "offset_warn_ms": 350.0,
+    "offset_degrade_ms": 500.0,
+    "offset_stop_ms": 800.0,
+    "offset_rate_warn_ms_per_s": 200.0,
+    "norm_error_warn_mm": 5.0,
+    "norm_error_degrade_mm": 15.0
   },
   "klipper": {
     "tcp_host": "127.0.0.1",
