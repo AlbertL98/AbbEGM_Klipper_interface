@@ -103,6 +103,7 @@ class TelemetryWriter:
             "match_found",        # TX-Matchpunkt gefunden (0/1)
             "match_dist_mm",      # XY-Distanz zum Matchpunkt
             "match_age_ms",       # Alter des Matchpunkts ≈ gemessenes Delay
+            "skip_reason",        # Warum kein EMA-Update (leer = Update OK)
         ])
 
         self._active = True
@@ -146,7 +147,10 @@ class TelemetryWriter:
         self._counts[name] = 0
 
     # Low-volume Streams die sofort geflusht werden
-    _FLUSH_ALWAYS = {"plan", "event", "sync", "estimator"}
+    # Low-volume Streams die sofort geflusht werden.
+    # estimator ist NICHT hier drin — bei ~250Hz RX wären das 250 flushes/sec,
+    # was den RX-Thread ausbremsen kann. Stattdessen: flush alle 50 Rows.
+    _FLUSH_ALWAYS = {"plan", "event", "sync"}
 
     def _write(self, stream: str, row: list):
         if not self._active or stream not in self._writers:
@@ -247,6 +251,7 @@ class TelemetryWriter:
             "1" if debug.match_found else "0",
             f"{debug.match_dist_mm:.3f}",
             f"{debug.match_age_ms:.2f}",
+            debug.skip_reason,
         ])
 
     def log_event(self, event_type: str, severity: str,

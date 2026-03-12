@@ -532,6 +532,14 @@ class EgmBridge:
                     )
                     self.egm.send_target(target)
 
+                    # TX auch bei velocity=0 aufzeichnen —
+                    # sonst bleibt der Buffer leer während Holds/Gaps
+                    self.estimator.record_tx(
+                        timestamp=sample.timestamp,
+                        x=sample.x, y=sample.y, z=sample.z,
+                        velocity=0.0,
+                    )
+
                 else:
                     # ── Starvation ───────────────────────────────
                     if not starvation_logged:
@@ -558,9 +566,6 @@ class EgmBridge:
                         break
 
                     if self._last_sample:
-                        # Hold — keine Envelope-Prüfung nötig,
-                        # Position wurde beim letzten echten Sample
-                        # bereits geprüft
                         hold = EgmTarget(
                             sequence_id=self._loop_count,
                             timestamp=bt,
@@ -573,6 +578,15 @@ class EgmBridge:
                             q3=self.cfg.connection.default_q3,
                         )
                         self.egm.send_target(hold)
+
+                        # TX auch bei Starvation-Hold aufzeichnen
+                        self.estimator.record_tx(
+                            timestamp=bt,
+                            x=self._last_sample.x,
+                            y=self._last_sample.y,
+                            z=self._last_sample.z,
+                            velocity=0.0,
+                        )
 
             except Exception as e:
                 logger.error("BRIDGE: Loop-Fehler: %s", e, exc_info=True)

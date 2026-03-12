@@ -1,102 +1,114 @@
 from __future__ import annotations
-# latency_estimator.py — Adaptiver Latenz-Estimator für Closed-Loop-Korrektur
+# latency_estimator.py — Adaptiver Latenz-Estimator (v5 — absolute Delay-Messung)
 #
-# Schätzt laufend die Gesamtlatenz T_delay (TX-Senden → physische Ankunft)
-# und passt den Lookahead der TrajectoryPlanner automatisch an.
+# METHODIK (wie in EGM_Error_Test.py bewährt):
+#   1. Suchfenster ±40ms um erwarteten Match-Zeitpunkt
+#   2. XY-Matching: nächster TX-Punkt im Zeitfenster
+#   3. Tangentialvektor via asymmetrischer Zentraldifferenz
+#   4. Fehlerzerlegung: tang_err → Zeitversatz, norm_err → Pfadabw.
+#   5. ABSOLUTE Delay-Messung: T_d_raw = t_actual - tx_time
+#      Verfeinert: T_d_refined = T_d_raw - (tang_err / speed)
+#   6. Gewichtung: weight = tang_mag / (tang_mag + alpha * norm_err)
+#   7. EMA konvergiert auf T_d_refined (Zielwert), nicht blinde Integration
+#   8. Output-Fading
 #
-# Methodik (aus EGM_Error_Test.py):
-#   1. XY-Matching: Für jedes RX-Paket wird im TX-Log der räumlich
-#      nächstgelegene Punkt innerhalb eines ±SEARCH_WINDOW_MS Fensters
-#      gesucht. Z wird ignoriert (3D-Druck: hauptsächlich XY-Bewegung).
-#   2. Tangentialvektor via Zentraldifferenz ±TANGENT_HALF_SPAN Punkte.
-#   3. Fehlerzerlegung am Matchpunkt:
-#      - Tangentialfehler → Zeitversatz (starkes Signal für Delay-Update)
-#      - Normalfehler     → Bahnabweichung / Controller-Blending (schwach)
-#   4. Gewichtung: weight = tang_mag / (tang_mag + alpha * norm_err)
-#      Verhindert dass Ecken/Kurven den Offset springen lassen.
-#   5. EMA-Update: EMA_SLOW (~0.04) im Normalbetrieb,
-#                  EMA_FAST (~0.25) bei erkannter "Beschleunigung"
-#   6. Output-Fading: separater geglätteter T_delay_output, damit
-#      Sprünge im Lookahead gedämpft werden.
-#
-# Aufruf-Reihenfolge:
-#   # Im TX-Pfad (egm-loop Thread):
-#   estimator.record_tx(sample.timestamp, sample.x, sample.y, sample.z,
-#                       sample.velocity)
-#
-#   # Im RX-Callback (egm-rx Thread):
-#   debug = estimator.update(feedback.x, feedback.y, feedback.z,
-#                            feedback.timestamp)
-#   telemetry.log_estimator(debug)
+# FIXES (v5, gegenüber v4):
+#   - KERNFIX: EMA-Update konvergiert auf absoluten Messwert T_d_refined
+#     statt blinder Integration von tang_err/velocity. Ohne diesen Anker
+#     driftet T_delay in einen Positive-Feedback-Loop (→ MIN oder MAX).
+#   - alpha_weight: 10 → 5 (konsistent mit EGM_Error_Test._ALPHA_NORMAL)
+#   - MIN_TANG_MM: Neuer Filter — tang_err < 0.5mm wird übersprungen
+#     (Rauschen bei Stillstand/Ecken, kein brauchbares Timing-Signal)
+#   - Plausibilitäts-Obergrenze: T_DELAY_MAX_S statt T_DELAY_MAX_S * 1.5
+#   - norm_err: Pythagoras statt Kreuzprodukt (immer positiv, wie EGM_Error_Test)
+#   - Neue Debug-Felder: t_d_raw_ms, t_d_refined_ms für Diagnose
+#   - Boundary-Bug-Fix aus v4 beibehalten
 
 import math
 import logging
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional, NamedTuple
 
 from .clock import bridge_now
 
 logger = logging.getLogger("egm.latency")
 
+# Skip-Gründe für CSV-Logging
+SKIP_NONE          = ""           # Update durchgeführt
+SKIP_DISABLED      = "disabled"
+SKIP_TX_EMPTY      = "tx_empty"   # TX-Buffer noch zu dünn
+SKIP_NO_MATCH      = "no_match"   # Kein TX-Punkt im Zeitfenster
+SKIP_TANGENT_SHORT = "tang_short" # Tangentialvektor < 0.1mm (Stillstand/Kurve)
+SKIP_TANG_SMALL    = "tang_small" # |tang_err| < MIN_TANG_MM (Rauschen)
+SKIP_VELOCITY_LOW  = "vel_low"    # velocity am Matchpunkt < MIN_VELOCITY
+SKIP_PLAUSIBILITY  = "implausibel"# Gemessener Delay ausserhalb [MIN,MAX]
 
-# ── TX-Log Entry ─────────────────────────────────────────────
 
 class TxEntry(NamedTuple):
-    """Eintrag im TX-Log des Estimators."""
-    bridge_time: float   # bridge_now() beim Senden
+    bridge_time: float
     x: float
     y: float
     z: float
-    velocity: float      # mm/s (aus EgmSample, für tang→zeit-Umrechnung)
+    velocity: float
 
-
-# ── Debug-Snapshot ───────────────────────────────────────────
 
 @dataclass
 class EstimatorDebug:
     """
-    Vollständige Debug-Informationen nach einem update()-Aufruf.
-    Wird in estimator.csv geloggt, ermöglicht Post-hoc-Analyse.
+    Pro-RX-Packet Debug-Snapshot → estimator.csv
+
+    Lese-Anleitung:
+      skip_reason != ""   → warum kein EMA-Update (kein match, tang_short, etc.)
+      match_found = 0     → kein TX-Punkt im Suchfenster
+      match_found = 1     → Match OK; wenn weight=0: skip_reason erklärt warum
+      match_dist_mm       → XY-Abstand zum Matchpunkt (gut: < 5mm)
+      match_age_ms        → Zeit seit dem TX dieses Punkts = grobe Delay-Messung
+      t_d_raw_ms          → Absolut gemessener Delay (rx_time - offset_back - tx_time)
+      t_d_refined_ms      → Verfeinert um Tangential-Zeitoffset
+      tang_err_mm         → Tangentialfehler (Zeitversatz-Signal)
+      norm_err_mm         → Normalfehler (Pfadabweichung, kein Delay-Signal)
+      weight              → Einfluss auf EMA [0..1] (0 = eingefroren)
+      correction_ms       → Korrektur die auf T_delay angewandt wurde
+      t_delay_raw_ms      → T_delay nach EMA (vor Fading)
+      t_delay_output_ms   → aktiver Lookahead im Planner
     """
-    timestamp: float = 0.0           # bridge_now() des RX-Packets
-    t_delay_raw_ms: float = 0.0      # T_delay nach EMA-Update (vor Fading)
-    t_delay_output_ms: float = 0.0   # Geglätteter Output → aktiver Lookahead
-    tang_err_mm: float = 0.0         # Tangentialfehler am Matchpunkt (mm)
-    norm_err_mm: float = 0.0         # Normalfehler am Matchpunkt (mm)
-    weight: float = 0.0              # Update-Gewicht [0..1]
-    correction_ms: float = 0.0       # Angewandte Zeitkorrektur (ms)
-    ema_rate_used: float = 0.0       # Verwendete EMA-Rate (slow/fast)
-    match_found: bool = False        # TX-Matchpunkt gefunden
-    match_dist_mm: float = 0.0       # XY-Distanz zum Matchpunkt (mm)
-    match_age_ms: float = 0.0        # Alter des Matchpunkts = aktuell gemessenes Delay
+    timestamp: float = 0.0
+    t_delay_raw_ms: float = 0.0
+    t_delay_output_ms: float = 0.0
+    t_d_raw_ms: float = 0.0         # NEU: absolute Messung
+    t_d_refined_ms: float = 0.0     # NEU: verfeinerte Messung
+    tang_err_mm: float = 0.0
+    norm_err_mm: float = 0.0
+    weight: float = 0.0
+    correction_ms: float = 0.0
+    ema_rate_used: float = 0.0
+    match_found: bool = False
+    match_dist_mm: float = 0.0
+    match_age_ms: float = 0.0
+    skip_reason: str = SKIP_NONE   # Leerstring = Update wurde durchgeführt
 
 
 class LatencyEstimator:
     """
-    Adaptiver Latenz-Estimator für Closed-Loop-Lookahead-Korrektur.
+    Adaptiver Latenz-Estimator — absolute Delay-Messung + tang/norm-Gewichtung.
 
-    Der Estimator lernt die tatsächliche Controller-Latenz T_delay und stellt
-    get_lookahead() bereit, das in TrajectoryPlanner.klipper_time_now()
-    den fixen offset_s ersetzt.
+    Konvergiert auf den absolut gemessenen Delay T_d_refined (wie EGM_Error_Test.py),
+    NICHT auf blinde Integration von Tangentialfehlern.
 
     Thread-Sicherheit:
-        record_tx()  → wird aus dem egm-loop Thread aufgerufen
-        update()     → wird aus dem egm-rx Thread aufgerufen
-        get_lookahead() → wird aus egm-loop aufgerufen
-
-        _T_delay_output ist ein einzelner Python-float. Unter CPython
-        sind atomare Float-Reads durch den GIL geschützt (ausreichend
-        für diesen nicht-sicherheitskritischen Pfad).
+        record_tx()     → egm-loop Thread (bei JEDEM send_target)
+        update()        → egm-rx Thread
+        get_lookahead() → egm-loop Thread
     """
 
-    # Unveränderliche Konstanten
-    SEARCH_WINDOW_S: float = 0.040   # ±40ms Suchfenster um erwarteten Match
-    TANGENT_HALF_SPAN: int = 3       # Zentraldifferenz über ±3 Punkte
-    MIN_VELOCITY_MM_S: float = 1.0   # Darunter kein Update (Stillstand)
-    T_DELAY_MIN_S: float = 0.005     # Clamp-Untergrenze (5ms)
-    T_DELAY_MAX_S: float = 0.500     # Clamp-Obergrenze (500ms)
-    FAST_TRIGGER_MM: float = 5.0     # Schwellwert für EMA_FAST-Aktivierung
+    SEARCH_WINDOW_S:   float = 0.040   # ±40ms Suchfenster
+    TANGENT_HALF_SPAN: int   = 3       # Zentraldifferenz ±3 Punkte
+    MIN_VELOCITY_MM_S: float = 1.0     # Kein Update bei Stillstand
+    MIN_TANG_MM:       float = 0.5     # Mindest-Tangentialfehler für Update
+    T_DELAY_MIN_S:     float = 0.005
+    T_DELAY_MAX_S:     float = 0.500
+    FAST_TRIGGER_MM:   float = 5.0     # Tang-Fehler-Schwelle für EMA_FAST
 
     def __init__(self,
                  t_delay_init_ms: float = 50.0,
@@ -104,32 +116,9 @@ class LatencyEstimator:
                  ema_fast: float = 0.25,
                  ema_output: float = 0.08,
                  offset_back_ms: float = 5.0,
-                 alpha_weight: float = 10.0,
+                 alpha_weight: float = 5.0,
                  tx_buffer_size: int = 500,
                  enabled: bool = True):
-        """
-        Parameters
-        ----------
-        t_delay_init_ms : float
-            Initialwert für T_delay in ms (z.B. aus time_offset_ms Config).
-        ema_slow : float
-            EMA-Lernrate im Normalbetrieb (~0.04 ≈ 25-Sample-Halbwertszeit).
-        ema_fast : float
-            EMA-Lernrate bei erkannter Beschleunigung (~0.25 ≈ 3-Sample).
-        ema_output : float
-            EMA-Rate für Output-Fading (~0.08). Dämpft Sprünge im Lookahead.
-        offset_back_ms : float
-            Geschätzte Netzwerklatenz RX-Paket → Python (fix, ~5ms).
-            Wird beim Suchfenster-Zentrum abgezogen.
-        alpha_weight : float
-            Gewichtungsfaktor α. Höher = stärkere Unterdrückung bei Normal-
-            fehler. Standard: 10.
-        tx_buffer_size : int
-            Anzahl TX-Einträge im Ringbuffer (~500 bei 50Hz = 10s).
-        enabled : bool
-            Estimator aktiv. Bei False gibt get_lookahead() immer 0.0 zurück
-            und der TrajectoryPlanner fällt auf seinen fixen offset_s zurück.
-        """
         self.enabled = enabled
         self.ema_slow = ema_slow
         self.ema_fast = ema_fast
@@ -137,85 +126,77 @@ class LatencyEstimator:
         self.offset_back_s = offset_back_ms / 1000.0
         self.alpha_weight = alpha_weight
 
-        # Interner Zustand
         self._T_delay: float = t_delay_init_ms / 1000.0
         self._T_delay_output: float = t_delay_init_ms / 1000.0
 
-        # TX-Ringbuffer (zeitlich sortiert — deque.append = rechts)
         self._tx_log: deque[TxEntry] = deque(maxlen=tx_buffer_size)
 
-        # Letzter Debug-Snapshot (threadsicher genug für Logging)
         self._last_debug = EstimatorDebug(
             t_delay_raw_ms=t_delay_init_ms,
             t_delay_output_ms=t_delay_init_ms,
+            skip_reason=SKIP_TX_EMPTY,
         )
 
-        # Statistik
         self._update_count: int = 0
         self._match_count: int = 0
         self._skip_count: int = 0
+        self._skip_reasons: dict[str, int] = {}
 
         logger.info(
-            "LATENCY-EST: Initialisiert — T_delay_init=%.0fms, "
-            "EMA slow=%.3f fast=%.3f output=%.3f, "
-            "offset_back=%.0fms, alpha=%.1f, buf=%d, enabled=%s",
+            "LATENCY-EST: Init — T_delay_init=%.0fms "
+            "ema slow=%.3f fast=%.3f output=%.3f "
+            "offset_back=%.0fms alpha=%.1f buf=%d enabled=%s",
             t_delay_init_ms, ema_slow, ema_fast, ema_output,
             offset_back_ms, alpha_weight, tx_buffer_size, enabled)
 
-    # ── TX-Aufzeichnung (egm-loop Thread) ────────────────────
+    # ── TX-Aufzeichnung ──────────────────────────────────────
 
     def record_tx(self, timestamp: float, x: float, y: float,
                   z: float, velocity: float):
         """
-        Speichert ein gesendetes Sample im TX-Ringbuffer.
-
-        Muss für jeden gesendeten EGM-Sample aufgerufen werden —
-        direkt nach egm.send_target(), bevor der RX-Callback
-        verarbeitet werden kann.
+        Im egm-loop-Thread bei JEDEM send_target() aufrufen —
+        auch bei velocity=0 (Hold/Gap). Sonst bleibt der TX-Buffer
+        während Pausen leer und das Suchfenster findet keinen Match.
         """
         self._tx_log.append(TxEntry(
-            bridge_time=timestamp,
-            x=x, y=y, z=z,
-            velocity=velocity,
-        ))
+            bridge_time=timestamp, x=x, y=y, z=z, velocity=velocity))
 
-    # ── Update (egm-rx Thread) ───────────────────────────────
+    # ── Update ───────────────────────────────────────────────
 
     def update(self, rx_x: float, rx_y: float, rx_z: float,
                rx_timestamp: float) -> EstimatorDebug:
         """
-        Verarbeitet einen neuen RX-Feedback-Wert, aktualisiert T_delay.
-
-        Wird im egm-rx-Thread aus bridge._on_feedback() aufgerufen.
-
-        Parameters
-        ----------
-        rx_x, rx_y, rx_z  : Ist-Position vom Roboter (mm)
-        rx_timestamp       : Empfangszeit (bridge_now(), gleiche Clock wie TX)
-
-        Returns
-        -------
-        EstimatorDebug : Debug-Daten für Telemetrie-Logging
+        Verarbeitet einen RX-Feedback-Wert.
+        Gibt immer einen vollständigen EstimatorDebug zurück —
+        skip_reason erklärt warum kein Update stattfand.
         """
         self._update_count += 1
         debug = EstimatorDebug(timestamp=rx_timestamp)
-
-        # Immer aktuellen Wert setzen, auch wenn kein Update
         debug.t_delay_raw_ms = self._T_delay * 1000.0
         debug.t_delay_output_ms = self._T_delay_output * 1000.0
 
-        if not self.enabled:
+        def _skip(reason: str) -> EstimatorDebug:
+            debug.skip_reason = reason
+            self._skip_count += 1
+            self._skip_reasons[reason] = self._skip_reasons.get(reason, 0) + 1
+            # Output-Fading läuft weiter
+            self._T_delay_output += self.ema_output * (
+                self._T_delay - self._T_delay_output)
+            debug.t_delay_output_ms = self._T_delay_output * 1000.0
             self._last_debug = debug
             return debug
+
+        if not self.enabled:
+            return _skip(SKIP_DISABLED)
 
         min_entries = self.TANGENT_HALF_SPAN * 2 + 2
         if len(self._tx_log) < min_entries:
-            self._skip_count += 1
-            self._last_debug = debug
-            return debug
+            return _skip(SKIP_TX_EMPTY)
+
+        # Einmaliger Snapshot — konsistente Indizes für alle Zugriffe
+        log_snapshot = list(self._tx_log)
 
         # ── 1. Suchfenster ────────────────────────────────────
-        # Erwarteter Match-Zeitpunkt: RX-Zeit minus geschätzte Latenz
         expected_tx_time = (rx_timestamp
                             - self._T_delay
                             - self.offset_back_s)
@@ -223,122 +204,128 @@ class LatencyEstimator:
         t_max = expected_tx_time + self.SEARCH_WINDOW_S
 
         # ── 2. XY-Matching ────────────────────────────────────
-        match_idx, match_entry, match_dist_sq = self._find_xy_match(
-            rx_x, rx_y, t_min, t_max)
+        match_result = self._find_xy_match(rx_x, rx_y, t_min, t_max,
+                                           log_snapshot)
+        if match_result is None:
+            return _skip(SKIP_NO_MATCH)
 
-        if match_idx is None:
-            # Kein passender TX-Punkt in Fenster
-            self._skip_count += 1
-            self._last_debug = debug
-            return debug
-
-        self._match_count += 1
+        match_idx, match_entry, match_dist = match_result
         debug.match_found = True
-        debug.match_dist_mm = math.sqrt(match_dist_sq)
+        debug.match_dist_mm = match_dist
         debug.match_age_ms = (rx_timestamp - match_entry.bridge_time) * 1000.0
 
-        # ── 3. Tangentialvektor (Zentraldifferenz ±3 Punkte) ──
-        tangent = self._compute_tangent(match_idx)
+        # ── 3. Tangentialvektor ────────────────────────────────
+        tangent = self._compute_tangent(match_idx, log_snapshot)
         if tangent is None:
-            # Nicht genug Nachbarn oder Punkt auf Stillstand
-            self._skip_count += 1
-            self._last_debug = debug
-            return debug
-        tang_x, tang_y = tangent   # XY-Einheitsvektor
+            return _skip(SKIP_TANGENT_SHORT)
+
+        tang_x, tang_y = tangent
 
         # ── 4. Fehlerzerlegung ────────────────────────────────
-        # Vektor vom TX-Matchpunkt zur aktuellen Ist-Position
         err_x = rx_x - match_entry.x
         err_y = rx_y - match_entry.y
 
-        # Tangentialprojektion: positiv = Roboter hinkt hinter TX her
+        # Tangentialfehler (vorzeichenbehaftet):
+        # positiv = Roboter ist dem Soll voraus (entlang Fahrtrichtung)
+        # negativ = Roboter hinkt hinterher
         tang_err = err_x * tang_x + err_y * tang_y
 
-        # Normalprojektion: Bahnabweichung (Normalvektor = tangent rotiert 90°)
-        norm_err = err_x * (-tang_y) + err_y * tang_x
+        # Normalfehler (immer positiv): Pythagoras-Zerlegung
+        norm_sq = max(0.0, err_x * err_x + err_y * err_y - tang_err * tang_err)
+        norm_err = math.sqrt(norm_sq)
 
         tang_mag = abs(tang_err)
-        norm_mag = abs(norm_err)
 
         debug.tang_err_mm = tang_err
         debug.norm_err_mm = norm_err
 
-        # ── 5. Gewichtung ─────────────────────────────────────
-        # Große Normalfehler (Ecken/Blending) → weight → 0 → Estimator einfrieren
-        denom = tang_mag + self.alpha_weight * norm_mag
+        # ── 5. Mindest-Tangentialfehler ────────────────────────
+        # Zu kleine Tangentialfehler sind Rauschen, kein Timing-Signal
+        if tang_mag < self.MIN_TANG_MM:
+            debug.weight = 0.0
+            return _skip(SKIP_TANG_SMALL)
+
+        # ── 6. Gewichtung ─────────────────────────────────────
+        denom = tang_mag + self.alpha_weight * norm_err
         weight = tang_mag / denom if denom > 1e-9 else 0.0
         debug.weight = weight
 
-        # ── 6. Geschwindigkeit prüfen ─────────────────────────
-        velocity = match_entry.velocity
-        if velocity < self.MIN_VELOCITY_MM_S:
-            # Stillstand: kein sinnvolles Delay-Signal
-            self._last_debug = debug
-            return debug
+        # ── 7. Geschwindigkeit ────────────────────────────────
+        if match_entry.velocity < self.MIN_VELOCITY_MM_S:
+            return _skip(SKIP_VELOCITY_LOW)
 
-        # ── 7. Korrektur ──────────────────────────────────────
-        # tang_err (mm) / velocity (mm/s) = Zeitversatz (s)
-        # Positiv: Roboter ist hinter TX → T_delay wird erhöht
-        correction_s = tang_err / velocity
-        debug.correction_ms = correction_s * 1000.0
+        # ── 8. Absolute Delay-Messung (KERNFIX v5) ────────────
+        # t_actual: wann der Roboter physisch an der RX-Position war
+        t_actual = rx_timestamp - self.offset_back_s
 
-        # ── 8. EMA-Rate bestimmen ─────────────────────────────
-        # "Beschleunigung" = großer gewichteter Tang-Fehler → schnelle Anpassung
+        # T_d_raw: grobe Delay-Messung = (Roboter-Zeitpunkt - TX-Sendezeit)
+        T_d_raw = t_actual - match_entry.bridge_time
+
+        # Tangential-Zeitoffset: Roboter ist tang_err mm vor/hinter Soll
+        # bei speed mm/s → das sind tang_err/speed Sekunden Versatz
+        tang_time_s = tang_err / match_entry.velocity
+
+        # T_d_refined: verfeinerte Delay-Schätzung
+        # Wenn Roboter voraus ist (tang_err > 0), ist der wahre Delay kleiner
+        T_d_refined = T_d_raw - tang_time_s
+        T_d_refined = max(self.T_DELAY_MIN_S,
+                          min(self.T_DELAY_MAX_S, T_d_refined))
+
+        debug.t_d_raw_ms = T_d_raw * 1000.0
+        debug.t_d_refined_ms = T_d_refined * 1000.0
+
+        # ── 9. Plausibilitätscheck ─────────────────────────────
+        # Prüfe ob die Messung im plausiblen Bereich liegt
+        if T_d_refined <= self.T_DELAY_MIN_S or T_d_refined >= self.T_DELAY_MAX_S:
+            return _skip(SKIP_PLAUSIBILITY)
+
+        # ── 10. EMA-Rate ──────────────────────────────────────
         fast_trigger = (tang_mag * weight) > self.FAST_TRIGGER_MM
         ema_rate = self.ema_fast if fast_trigger else self.ema_slow
         debug.ema_rate_used = ema_rate
 
-        # ── 9. T_delay EMA-Update ─────────────────────────────
+        # ── 11. T_delay EMA-Update — konvergiert auf Messwert ─
+        # correction = Differenz zum ZIEL (T_d_refined), nicht blinde Integration
         old_delay = self._T_delay
+        correction_s = T_d_refined - self._T_delay
         self._T_delay += weight * ema_rate * correction_s
-
-        # Plausibilitätsgrenzen
         self._T_delay = max(self.T_DELAY_MIN_S,
                             min(self.T_DELAY_MAX_S, self._T_delay))
 
-        # ── 10. Output-Fading ─────────────────────────────────
-        # Separater geglätteter Ausgabewert — verhindert Sprünge > 10ms/Zyklus
-        self._T_delay_output = (
-            self.ema_output * self._T_delay_output
-            + (1.0 - self.ema_output) * self._T_delay
-        )
+        debug.correction_ms = correction_s * 1000.0
 
-        # Debug aktualisieren (nach Update)
+        # ── 12. Output-Fading ─────────────────────────────────
+        self._T_delay_output += self.ema_output * (
+            self._T_delay - self._T_delay_output)
+
         debug.t_delay_raw_ms = self._T_delay * 1000.0
         debug.t_delay_output_ms = self._T_delay_output * 1000.0
+        debug.skip_reason = SKIP_NONE
+        self._match_count += 1
 
         if (self._update_count <= 5
                 or self._update_count % 500 == 0
-                or abs(correction_s * 1000) > 10.0):
-            logger.debug(
+                or abs(correction_s * 1000) > 20.0):
+            logger.info(
                 "LATENCY-EST: #%d T_delay %.1f→%.1fms "
-                "(output=%.1fms, w=%.2f, tang=%.1fmm, norm=%.1fmm, "
-                "corr=%+.1fms, %s)",
+                "(out=%.1fms w=%.3f tang=%+.1fmm norm=%.1fmm "
+                "T_d_raw=%.1fms T_d_ref=%.1fms corr=%+.1fms "
+                "age=%.0fms dist=%.1fmm %s)",
                 self._update_count,
                 old_delay * 1000.0, self._T_delay * 1000.0,
                 self._T_delay_output * 1000.0,
                 weight, tang_err, norm_err,
-                correction_s * 1000.0,
+                T_d_raw * 1000.0, T_d_refined * 1000.0,
+                correction_s * 1000.0, debug.match_age_ms,
+                debug.match_dist_mm,
                 "FAST" if fast_trigger else "slow")
 
         self._last_debug = debug
         return debug
 
-    # ── Lookahead-Ausgabe (egm-loop Thread) ──────────────────
+    # ── Lookahead ────────────────────────────────────────────
 
     def get_lookahead(self) -> float:
-        """
-        Aktueller Lookahead-Wert in Sekunden (positiv).
-
-        Ersetzt den fixen offset_s im TrajectoryPlanner:
-            klipper_time_now = bridge_time + lookahead + t0_offset
-
-        Je größer T_delay, desto weiter voraus wird im geplanten
-        Pfad nachgeschaut → kompensiert die Controller-Latenz.
-
-        Bei enabled=False: gibt 0.0 zurück → Planner fällt auf
-        seinen eigenen offset_s zurück.
-        """
         if not self.enabled:
             return 0.0
         return self._T_delay_output
@@ -346,70 +333,61 @@ class LatencyEstimator:
     # ── Hilfsmethoden ────────────────────────────────────────
 
     def _find_xy_match(self, rx_x: float, rx_y: float,
-                       t_min: float, t_max: float
-                       ) -> tuple[Optional[int], Optional[TxEntry], float]:
+                       t_min: float, t_max: float,
+                       log_snapshot: list
+                       ) -> Optional[tuple[int, TxEntry, float]]:
         """
-        Sucht im TX-Log den Eintrag mit geringstem XY-Abstand
-        zur RX-Position, mit bridge_time im Fenster [t_min, t_max].
-
-        Der TX-Log ist zeitlich aufsteigend sortiert (deque, append rechts).
-        Wir scannen vorwärts und brechen ab sobald t_max überschritten.
-
-        Returns
-        -------
-        (list_index, TxEntry, dist_sq)  oder  (None, None, inf)
+        Nächster TX-Punkt (XY) im Zeitfenster [t_min, t_max].
+        Gibt (idx, entry, dist_mm) oder None zurück.
         """
-        log_list = list(self._tx_log)  # Snapshot für stabilen Indexzugriff
-
-        best_idx: Optional[int] = None
-        best_entry: Optional[TxEntry] = None
+        best_idx = None
+        best_entry = None
         best_dist_sq = float('inf')
 
-        for i, entry in enumerate(log_list):
+        for i, entry in enumerate(log_snapshot):
             if entry.bridge_time < t_min:
                 continue
             if entry.bridge_time > t_max:
-                break   # Zeitlich sortiert → kein Match mehr möglich
-
+                break
             dx = entry.x - rx_x
             dy = entry.y - rx_y
             dist_sq = dx * dx + dy * dy
-
             if dist_sq < best_dist_sq:
                 best_dist_sq = dist_sq
                 best_idx = i
                 best_entry = entry
 
-        return best_idx, best_entry, best_dist_sq
+        if best_idx is None:
+            return None
+        return best_idx, best_entry, math.sqrt(best_dist_sq)
 
-    def _compute_tangent(self, idx: int) -> Optional[tuple[float, float]]:
+    def _compute_tangent(self, idx: int,
+                         log_snapshot: list
+                         ) -> Optional[tuple[float, float]]:
         """
-        Berechnet den XY-Einheitstangentialvektor am Index idx
-        via Zentraldifferenz: tangent = p[idx+span] - p[idx-span].
+        XY-Einheitstangentialvektor am Index idx via Zentraldifferenz.
 
-        Returns
-        -------
-        (tx, ty) Einheitsvektor, oder None wenn:
-          - nicht genug Nachbarn vorhanden
-          - Segmentlänge < 0.1mm (Stillstand, keine Richtung bestimmbar)
+        Asymmetrisches Clamping an Puffergrenzen (v4 Bugfix beibehalten).
+        Gibt None nur zurück wenn der resultierende Vektor < 0.1mm ist
+        (echter Stillstand, keine Richtung bestimmbar).
         """
-        log_list = list(self._tx_log)
+        n = len(log_snapshot)
         span = self.TANGENT_HALF_SPAN
 
-        i_back = idx - span
-        i_fwd = idx + span
+        i_back = max(0, idx - span)
+        i_fwd = min(n - 1, idx + span)
 
-        if i_back < 0 or i_fwd >= len(log_list):
+        if i_back == i_fwd:
             return None
 
-        p_back = log_list[i_back]
-        p_fwd = log_list[i_fwd]
+        p_back = log_snapshot[i_back]
+        p_fwd = log_snapshot[i_fwd]
 
         dx = p_fwd.x - p_back.x
         dy = p_fwd.y - p_back.y
         mag = math.sqrt(dx * dx + dy * dy)
 
-        if mag < 0.1:   # < 0.1mm → Stillstand, keine Richtung
+        if mag < 0.1:
             return None
 
         return (dx / mag, dy / mag)
@@ -418,12 +396,10 @@ class LatencyEstimator:
 
     @property
     def T_delay_ms(self) -> float:
-        """Aktuelles T_delay in ms (vor Output-Fading)."""
         return self._T_delay * 1000.0
 
     @property
     def T_delay_output_ms(self) -> float:
-        """Geglätteter Output-Wert in ms (=aktiver Lookahead)."""
         return self._T_delay_output * 1000.0
 
     @property
@@ -440,11 +416,15 @@ class LatencyEstimator:
             "update_count": self._update_count,
             "match_count": self._match_count,
             "skip_count": self._skip_count,
+            "skip_reasons": dict(self._skip_reasons),
             "match_rate_pct": round(
                 100.0 * self._match_count / max(1, self._update_count), 1),
+            "last_skip_reason": d.skip_reason,
             "last_weight": round(d.weight, 3),
             "last_tang_err_mm": round(d.tang_err_mm, 3),
             "last_norm_err_mm": round(d.norm_err_mm, 3),
             "last_correction_ms": round(d.correction_ms, 3),
+            "last_t_d_raw_ms": round(d.t_d_raw_ms, 3),
+            "last_t_d_refined_ms": round(d.t_d_refined_ms, 3),
             "tx_log_size": len(self._tx_log),
         }
