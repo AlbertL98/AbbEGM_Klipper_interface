@@ -2,15 +2,13 @@ from __future__ import annotations
 # telemetry.py — Einheitliches Logging und Telemetrie
 #
 # CodingPlan §B7: Telemetrie und Logging (Pflicht)
-#   - Einheitliches Logschema mit Job-ID und Move-ID
-#   - Streams: Planned, TX, RX, Extruder, Sync, Fault
-#   - Präfixe für schnelle Filterung
-#   - Export in CSV
 #
-# CLOCK-FIX: Alle Streams nutzen jetzt bridge_now() als Zeitquelle.
-#   Vorher nutzte log_event() time.monotonic() während alle anderen
-#   Streams time.perf_counter() verwendeten — die Timestamps waren
-#   dadurch nicht vergleichbar.
+# CLOCK-FIX: Alle Streams nutzen bridge_now() als Zeitquelle.
+#
+# FIX: TX- und RX-CSV-Header auf tatsächlich geschriebene Felder
+#   reduziert. e_value, extruder_age_ms, lookahead_ms sind in TODO.py
+#   vorbereitet, aber noch nicht in log_tx()/log_rx() integriert —
+#   daher aus dem Header entfernt um malformed CSVs zu verhindern.
 
 import os
 import csv
@@ -28,17 +26,21 @@ class TelemetryWriter:
     """
     Schreibt Telemetrie-Streams in CSV-Dateien.
 
-    Streams (§B7):
-      PLAN  — Geplante Trajektorie (Segmente aus Klipper)
-      TX    — Gesendete EGM-Sollwerte (inkl. t_klipper + E-Wert)
-      RX    — Empfangene Ist-Werte vom Roboter (inkl. E-Wert)
-      SYNC  — Tracking-Error, Lag, Jitter, Buffer-Metriken
-      EVENT — Zustandswechsel, Warnungen, Fehler
+    Streams:
+      PLAN      — Geplante Trajektorie (Segmente aus Klipper)
+      TX        — Gesendete EGM-Sollwerte (seq, pos, velocity, seg-info, t_klipper)
+      RX        — Empfangene Ist-Werte vom Roboter (seq, robot_time, pos, quaternion)
+      SYNC      — Offset, Normal/Tangential-Error, TCP-Error, Buffer-Metriken
+      EVENT     — Zustandswechsel, Warnungen, Fehler
+      ESTIMATOR — Closed-Loop-Latenz-Debug (pro RX-Packet, ~250Hz)
+
+    Noch nicht integriert (vorbereitet in TODO.py):
+      TX/RX e_value, extruder_age_ms, TX lookahead_ms
     """
 
     def __init__(self, log_dir: str, job_id: Optional[str] = None):
         self.log_dir = log_dir
-        self.job_id = self.job_id = job_id or f"job_{datetime.now().strftime('%y%m%d_%H%M%S')}"
+        self.job_id = job_id or f"job_{datetime.now().strftime('%y%m%d_%H%M%S')}"
         self._job_dir = os.path.join(log_dir, self.job_id)
 
         self._files: dict[str, IO] = {}
@@ -58,20 +60,18 @@ class TelemetryWriter:
             "distance", "start_v", "cruise_v", "end_v",
         ])
 
-        # TX Stream (an Roboter gesendete Samples)
+        # TX Stream — gesendete Sollwerte
+        # Felder die noch fehlen (TODO.py): e_value, extruder_age_ms, lookahead_ms
         self._open_stream("tx", [
             "timestamp", "seq_id", "x", "y", "z",
             "velocity", "seg_nr", "seg_progress", "t_klipper",
-            "e_value", "extruder_age_ms",
-            "lookahead_ms",      # Aktiver Lookahead beim Senden (Estimator-Output)
         ])
 
-
-        # RX Stream (vom Roboter empfangene Werte)
+        # RX Stream — empfangene Ist-Werte
+        # Felder die noch fehlen (TODO.py): e_value, extruder_age_ms
         self._open_stream("rx", [
             "timestamp", "seq_id", "robot_time",
             "x", "y", "z", "q0", "q1", "q2", "q3",
-            "e_value", "extruder_age_ms",
         ])
 
         # SYNC Stream
@@ -101,11 +101,8 @@ class TelemetryWriter:
             "correction_ms"
         ])
 
-
-
         self._active = True
 
-        # Konfig-Snapshot speichern
         self.log_event("JOB_START", "INFO",
                        f"Job {self.job_id} gestartet")
         logger.info("TELEMETRY: Streams geöffnet in %s", self._job_dir)
@@ -138,15 +135,13 @@ class TelemetryWriter:
         f = open(path, "w", newline="")
         writer = csv.writer(f)
         writer.writerow(headers)
-        f.flush()  # Headers sofort auf Disk
+        f.flush()
         self._files[name] = f
         self._writers[name] = writer
         self._counts[name] = 0
 
-    # Low-volume Streams die sofort geflusht werden
-    # Low-volume Streams die sofort geflusht werden.
-    # estimator ist NICHT hier drin — bei ~250Hz RX wären das 250 flushes/sec,
-    # was den RX-Thread ausbremsen kann. Stattdessen: flush alle 50 Rows.
+    # Low-volume Streams: sofort flushen.
+    # ESTIMATOR ist NICHT hier drin — bei ~250Hz wären das 250 flushes/sec.
     _FLUSH_ALWAYS = {"plan", "event", "sync"}
 
     def _write(self, stream: str, row: list):
@@ -155,8 +150,6 @@ class TelemetryWriter:
         self._writers[stream].writerow(row)
         self._counts[stream] = self._counts.get(stream, 0) + 1
 
-        # Low-volume Streams: sofort flushen
-        # High-volume (TX/RX): alle 50 Zeilen
         if stream in self._FLUSH_ALWAYS:
             self._files[stream].flush()
         elif self._counts[stream] % 50 == 0:
@@ -178,7 +171,11 @@ class TelemetryWriter:
         ])
 
     def log_tx(self, sample):
-        """Loggt einen gesendeten Sollwert (TX Stream)."""
+        """Loggt einen gesendeten Sollwert (TX Stream).
+
+        9 Felder — passend zum TX-Header.
+        Für e_value / extruder_age_ms / lookahead_ms: siehe TODO.py.
+        """
         self._write("tx", [
             f"{sample.timestamp:.6f}",
             sample.sequence_id,
@@ -186,11 +183,15 @@ class TelemetryWriter:
             f"{sample.velocity:.3f}",
             sample.segment_nr,
             f"{sample.segment_progress:.4f}",
-            f"{sample.t_klipper:.6f}"
+            f"{sample.t_klipper:.6f}",
         ])
 
     def log_rx(self, feedback):
-        """Loggt empfangenes Feedback (RX Stream)."""
+        """Loggt empfangenes Feedback (RX Stream).
+
+        10 Felder — passend zum RX-Header.
+        Für e_value / extruder_age_ms: siehe TODO.py.
+        """
         self._write("rx", [
             f"{feedback.timestamp:.6f}",
             feedback.sequence_id,
@@ -198,7 +199,7 @@ class TelemetryWriter:
             f"{feedback.x:.3f}", f"{feedback.y:.3f}",
             f"{feedback.z:.3f}",
             f"{feedback.q0:.6f}", f"{feedback.q1:.6f}",
-            f"{feedback.q2:.6f}", f"{feedback.q3:.6f}"
+            f"{feedback.q2:.6f}", f"{feedback.q3:.6f}",
         ])
 
     def log_sync(self, metrics):
@@ -217,10 +218,7 @@ class TelemetryWriter:
         ])
 
     def log_estimator(self, debug) -> None:
-        """
-        Loggt einen Estimator-Debug-Snapshot
-        Parameter: debug — EstimatorDebug Dataclass
-        """
+        """Loggt einen Estimator-Debug-Snapshot (ESTIMATOR Stream)."""
         self._write("estimator", [
             f"{debug.timestamp:.6f}",
             f"{debug.t_delay_ms:.3f}",
@@ -235,11 +233,9 @@ class TelemetryWriter:
 
     def log_event(self, event_type: str, severity: str,
                   message: str, details: Optional[dict] = None):
-        """
-        Loggt ein Event (EVENT Stream).
+        """Loggt ein Event (EVENT Stream).
 
-        FIX: Nutzt jetzt bridge_now() statt time.monotonic(),
-        damit Event-Timestamps mit TX/RX/SYNC vergleichbar sind.
+        Nutzt bridge_now() damit Event-Timestamps mit TX/RX/SYNC vergleichbar sind.
         """
         self._write("event", [
             f"{bridge_now():.6f}",

@@ -1,10 +1,12 @@
 # Robotergestütztes FDM/FFF-Drucksystem — Klipper + ABB EGM Integration
 
-Dieses Repository enthält die Software für ein robotergestütztes 3D-Druck-System, das einen **ABB IRB 1100** Industrieroboter mit einem **Klipper**-gesteuerten Extruder (Smart Orbiter SO3) verbindet. Der Kern ist eine **EGM-Bridge**, die Klippers Bahnplanung in Echtzeit-Sollwerte für den Roboter übersetzt und über das ABB Externally Guided Motion (EGM) Protokoll überträgt.
+Dieses Repository enthält die Software für ein robotergestütztes 3D-Druck-System, das einen **ABB IRB 1100** Industrieroboter mit einem **Klipper**-gesteuerten Extruder (Smart Orbiter SO3) verbindet. Der Kern ist eine **EGM-Bridge** (v0.4.0), die Klippers Bahnplanung in Echtzeit-Sollwerte für den Roboter übersetzt und über das ABB Externally Guided Motion (EGM) Protokoll überträgt.
 
 Das System läuft in einem **Docker-Container**, der Klipper, Moonraker und Mainsail als simulierte Umgebung bereitstellt — ohne echte Hardware. Der Container nutzt eine gepatchte Linux-MCU, sodass Klipper vollständig in Docker/WSL2 funktioniert.
 
 Zwischen Bridge und Klipper besteht ein **bidirektionaler Sicherheitsmechanismus**: Die Bridge sendet Heartbeats an Klipper und kann bei erkannten Problemen (Sync-Fehler, Watchdog) den Print stoppen. Umgekehrt erkennt Klipper wenn die Bridge ausfällt und pausiert eigenständig.
+
+Die Bridge enthält einen **adaptiven Latenz-Estimator (Closed Loop)**: Er lernt laufend die tatsächliche Controller-Latenz (TX → physische Ankunft am Roboter) durch positionsbasiertes Matching von Soll- und Istpositionen und passt den Lookahead des TrajectoryPlanners automatisch an — ohne manuelle Kalibrierung.
 
 ---
 
@@ -32,20 +34,21 @@ Zwischen Bridge und Klipper besteht ein **bidirektionaler Sicherheitsmechanismus
 │   ├── bridge_config.json      Konfigurationsprofil (JSON)
 │   ├── data/                   Kernmodule
 │   │   ├── __init__.py
-│   │   ├── bridge.py           Orchestrator (Hauptloop)
-│   │   ├── config.py           Konfiguration / Validierung
+│   │   ├── bridge.py           Orchestrator (Hauptloop, Workspace-Check)
+│   │   ├── clock.py            Einheitliche Zeitquelle (bridge_now)
+│   │   ├── config.py           Konfiguration / Validierung (inkl. WorkspaceEnvelope, Estimator)
 │   │   ├── egm_client.py       UDP-Kommunikation mit ABB (Protobuf + JSON)
 │   │   ├── egm_pb2.py          Generierter Protobuf-Code (ABB EGM)
 │   │   ├── klipper_command.py  Heartbeat + Stop/Pause-Befehle an Klipper
 │   │   ├── moonraker_client.py Websocket-Client für Extruder-E-Wert
-│   │   ├── segment_source.py   TCP-Empfang der Trapez-Segmente + CSV-Replay
+│   │   ├── segment_source.py   TCP-Empfang der Trapez-Segmente + Validierung + CSV-Replay
 │   │   ├── state_machine.py    Zustandsmaschine (INIT→READY→RUN→STOP/FAULT)
-│   │   ├── sync_monitor.py     Tracking-Error, Lag, Jitter Überwachung
-│   │   ├── telemetry.py        CSV-Logging (TX/RX/PLAN/SYNC/EVENT Streams)
-│   │   └── trajectory_planner.py  Trapez-Interpolation → EGM-Samples
+│   │   ├── sync_monitor.py     Closed-Loop Offset-Estimator + Tracking-Überwachung
+│   │   ├── telemetry.py        CSV-Logging (TX/RX/PLAN/SYNC/EVENT/ESTIMATOR Streams)
+│   │   └── trajectory_planner.py  Trapez-Interpolation → EGM-Samples (time-indexed)
 │   └── tests/
-│       ├── test_core.py        Smoke-Tests (State Machine, Planner, Config, Sync)
-│       ├── test_egm_direct.py  EGM-Kreisbahn-Test (Vergleich mit workingEGM.py)
+│       ├── test_core.py        Smoke-Tests (State Machine, Planner, Config, Sync, Clock)
+│       ├── test_egm_direct.py  EGM-Kreisbahn-Test (braucht RobotStudio)
 │       └── test_watchdog.py    Watchdog-/Command-Tests
 │
 ├── watchdog/
@@ -99,11 +102,13 @@ python run_bridge.py --config bridge_config.json
 
 ## Sicherheitsmechanismen
 
-Das System hat zwei Schutzrichtungen die ohne G-Code-Änderungen funktionieren — der Slicer-Output bleibt unverändert:
+Das System hat zwei Schutzrichtungen, die ohne G-Code-Änderungen funktionieren — der Slicer-Output bleibt unverändert:
 
-**Bridge → Klipper (aktiv):** Wenn die Bridge einen Sync-Fehler erkennt (Tracking-Error zu hoch, Lag zu groß, EGM-Watchdog), sendet sie einen Stop-Befehl an Klipper. Primär über den dedizierten TCP-Kanal (Port 7201), Fallback über die Moonraker HTTP-API.
+**Bridge → Klipper (aktiv):** Wenn die Bridge einen Sync-Fehler erkennt (Tracking-Error zu hoch, Offset zu groß, EGM-Watchdog, Workspace-Verletzung), sendet sie einen Stop-Befehl an Klipper. Primär über den dedizierten TCP-Kanal (Port 7201), Fallback über die Moonraker HTTP-API.
 
-**Klipper → sich selbst (passiv):** Die Bridge sendet alle 1s einen Heartbeat. Wenn 5s lang kein Heartbeat kommt (Bridge crashed, Netzwerk unterbrochen), pausiert Klipper den Print eigenständig.
+**Klipper → sich selbst (passiv):** Die Bridge sendet alle 1s einen Heartbeat. Wenn 2s lang kein Heartbeat kommt (Bridge crashed, Netzwerk unterbrochen), pausiert Klipper den Print eigenständig.
+
+**Workspace Envelope:** Jede Zielposition wird vor dem Senden an den Roboter gegen eine konfigurierbare Begrenzungsbox geprüft. Liegt sie außerhalb → sofortiger FAULT + Klipper-Stop.
 
 In der Mainsail-Konsole:
 ```
@@ -115,7 +120,7 @@ BRIDGE_WATCHDOG_RESET      # Setzt Watchdog nach Trigger zurück
 
 Die Klipper-Konfiguration liegt in `config/printer.cfg`. Dort sind das `[move_export]`-Modul (TCP-Stream an Port 7200) und das `[bridge_watchdog]`-Modul (Heartbeat-Empfang auf Port 7201) konfiguriert.
 
-Die Bridge-Konfiguration liegt in `bridge/bridge_config.json` und enthält EGM-Verbindungsparameter, Queue-Einstellungen, Sync-Grenzwerte, Watchdog-Einstellungen und Telemetrie-Optionen. Details dazu in `BRIDGE.md`.
+Die Bridge-Konfiguration liegt in `bridge/bridge_config.json` (Profil v1.4) und enthält EGM-Verbindungsparameter, Workspace-Envelope, Queue-Einstellungen, Sync-Grenzwerte, Estimator-Parameter, Watchdog-Einstellungen und Telemetrie-Optionen. Details in `BRIDGE.md`.
 
 ## Tests
 
@@ -134,3 +139,4 @@ python test_egm_direct.py    # EGM-Kreisbahn (braucht RobotStudio)
 
 - **[BRIDGE.md](BRIDGE.md)** — Detaillierte Architektur und Modul-Referenz der EGM-Bridge
 - **[WATCHDOG_INTEGRATION.md](WATCHDOG_INTEGRATION.md)** — Beschreibung der Watchdog-Integration (Heartbeat + Stop)
+- **[bridge/CHANGES.md](bridge/CHANGES.md)** — Changelog (v0.3.0 / v0.4.0)

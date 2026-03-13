@@ -15,11 +15,14 @@
 #      → TrajectoryPlanner nutzt Lookahead für nächstes Sample
 #   4. EGM-Loop ruft update() → Sync-Level + Cycle-Log
 #
-# Offset-Aufteilung:
-#   - T_delay (adaptiv):       TX-Senden → Roboter erreicht Position
-#   - OFFSET_BACK (fix, 5ms):  Position erreicht → Feedback empfangen
+# FIX: Consecutive-Counter (_consecutive_warn/degrade/stop) starten
+#   jetzt bei 0 statt bei den Schwellenwerten. Vorher konnte ein
+#   DEGRADE kurz vor Job-Ende den Zähler erhöht stehen lassen, sodass
+#   der nächste Job sofort in DEGRADE startete. reset() setzt die
+#   Zähler jetzt explizit zurück.
 #
-# Der Klipper-Bridge-Offset ist NICHT Teil dieser Regelung (separater konstanter Wert).
+# FIX: update()-Parameter sample ist reserviert (Matching passiert
+#   in on_feedback_received() bei 250Hz), jetzt entsprechend dokumentiert.
 #
 # CLOCK-FIX: Alle Timestamps nutzen bridge_now() aus clock.py.
 
@@ -141,8 +144,6 @@ class SyncMonitor:
     Roboter-Feedback. Berechnet einen adaptiven Zeitoffset (T_delay),
     der als Lookahead für das EGM-Senden verwendet wird.
 
-    Ersetzt den bisherigen separaten LatencyEstimator und SyncMonitor.
-
     Thread-Sicherheit:
       - on_feedback_received() wird im RX-Thread aufgerufen (250Hz)
       - get_lookahead() wird im EGM-Loop aufgerufen (50Hz)
@@ -153,13 +154,6 @@ class SyncMonitor:
     def __init__(self, config: SyncConfig,
                  estimator_config: LatencyEstimatorConfig,
                  evaluate_direction: bool = True):
-        """
-        Parameters:
-            config:             Sync-Grenzwerte (Tracking, Offset-Levels)
-            estimator_config:   Estimator-Parameter (EMA-Raten, Buffer, etc.)
-            evaluate_direction: True = Tangential/Normal-Zerlegung aktiv
-                                False = nur Gesamtfehler, Gewichtung = 1.0
-        """
         self.cfg = config
         self.est_cfg = estimator_config
         self.evaluate_direction = evaluate_direction
@@ -172,7 +166,7 @@ class SyncMonitor:
         self._ALPHA_NORMAL = estimator_config.alpha_weight
         self._TX_BUFFER_SIZE = estimator_config.tx_buffer_size
 
-        # Konstanten (selten geändert)
+        # Konstanten
         self._EPS: float = 1e-9
         self._SEARCH_WIN_S: float = 0.120        # ±60ms Suchfenster
         self._ACCEL_THR_MMS2: float = 8.0        # mm/s² → Fast-Modus
@@ -218,9 +212,14 @@ class SyncMonitor:
         self._warn_count = 0
         self._degrade_count = 0
         self._warmup_cycles = 100  # ~2s bei 50Hz
-        self._consecutive_warn = 5
-        self._consecutive_degrade = 3
-        self._consecutive_stop = 1
+
+        # FIX: Consecutive-Counter starten bei 0, nicht bei den
+        # Schwellenwerten. Vorher konnte ein DEGRADE kurz vor Job-Ende
+        # den Zähler erhöht stehen lassen → nächster Job startete
+        # sofort in DEGRADE. reset() setzt sie ebenfalls auf 0.
+        self._consecutive_warn: int = 0
+        self._consecutive_degrade: int = 0
+        self._consecutive_stop: int = 0
 
         # ── Callbacks ────────────────────────────────────────────────
         self._on_level_change: Optional[Callable] = None
@@ -246,9 +245,6 @@ class SyncMonitor:
 
         Wird vom TrajectoryPlanner verwendet:
             query_time = elapsed + sync_monitor.get_lookahead()
-
-        Der Output bewegt sich sanft auf den Roh-Offset zu
-        (EMA_OUTPUT pro Aufruf) → kein Ruckeln beim Senden.
         """
         with self._lock:
             self._t_delay_output += self._EMA_OUTPUT * (
@@ -275,9 +271,6 @@ class SyncMonitor:
         """
         Speichert ein gesendetes Sample im TX-Ringbuffer.
         Wird im EGM-Loop NACH dem Senden aufgerufen.
-
-        Ersetzt sowohl den alten SyncMonitor.record_sent_sample()
-        als auch LatencyEstimator.record_tx().
         """
         t = bridge_now()
         self._tx_times.append(t)
@@ -287,7 +280,6 @@ class SyncMonitor:
         vel = getattr(sample, 'velocity', 0.0) or 0.0
         self._tx_vel.append(vel)
 
-        # Ringbuffer begrenzen
         if len(self._tx_times) > self._TX_BUFFER_SIZE:
             excess = len(self._tx_times) - self._TX_BUFFER_SIZE
             del self._tx_times[:excess]
@@ -303,12 +295,7 @@ class SyncMonitor:
     def on_feedback_received(self, feedback: EgmFeedback) -> Optional[EstimatorDebug]:
         """
         Wird im RX-Thread bei jedem empfangenen Feedback aufgerufen (~250Hz).
-
         Macht das Position-Matching und aktualisiert T_delay.
-        Gibt EstimatorDebug zurück (oder None wenn kein Update).
-
-        Diese Methode ist der Kern des Closed Loop — sie läuft mit der
-        vollen Feedback-Rate für bestmögliches Matching.
         """
         if not self.est_cfg.enabled:
             return None
@@ -335,8 +322,8 @@ class SyncMonitor:
         with self._lock:
             T_d = self._t_delay
 
-        t_actual = t_rx - self._OFFSET_BACK_S   # Wann war der Roboter dort
-        t_tx_guess = t_actual - T_d              # Erwartete TX-Zeit
+        t_actual = t_rx - self._OFFSET_BACK_S
+        t_tx_guess = t_actual - T_d
 
         # ── Suchfenster im TX-Ringbuffer (bisect) ────────────────────
         t_lo = t_tx_guess - self._SEARCH_WIN_S / 2
@@ -393,17 +380,9 @@ class SyncMonitor:
 
             if tang_len > self._EPS:
                 tang = (dtx / tang_len, dty / tang_len)
-
-                # Tangentialfehler (vorzeichenbehaftet):
-                #   positiv = Roboter ist Soll voraus
-                #   negativ = Roboter hinkt hinterher
                 tang_err = err_x * tang[0] + err_y * tang[1]
-
-                # Normalfehler (immer >= 0)
                 norm_sq = max(0.0, err_x**2 + err_y**2 - tang_err**2)
                 norm_err = math.sqrt(norm_sq)
-
-                # Gewichtung: gutes Timing-Signal → weight ≈ 1
                 tang_mag = abs(tang_err)
                 weight = tang_mag / (
                     tang_mag + self._ALPHA_NORMAL * norm_err + self._EPS
@@ -411,7 +390,6 @@ class SyncMonitor:
                 if tang_mag < self._MIN_TANG_MM:
                     weight = 0.0
             else:
-                # Roboter steht fast still → kein Update
                 weight = 0.0
 
         m.tang_error = tang_err
@@ -490,8 +468,9 @@ class SyncMonitor:
         Bewertet den Sync-Zustand und erzeugt Cycle-Log.
         Wird im EGM-Loop aufgerufen (~50Hz).
 
-        Die schwere Arbeit (Offset-Matching) passiert bereits in
-        on_feedback_received() bei 250Hz. Hier wird nur bewertet
+        Parameter sample ist reserviert für zukünftige direkte
+        Nutzung. Das eigentliche Position-Matching passiert bereits
+        in on_feedback_received() bei 250Hz — hier wird nur bewertet
         und geloggt.
         """
         now = bridge_now()
@@ -503,12 +482,10 @@ class SyncMonitor:
         m.buffer_time_s = buffer_time_s
         m.total_updates = self._total_updates
 
-        # Aktuellen Output-Offset in Metriken synchronisieren
         with self._lock:
             m.t_delay_ms = self._t_delay * 1000.0
             m.t_delay_output_ms = self._t_delay_output * 1000.0
 
-        # Sync-Level bewerten
         old_level = m.sync_level
         self._evaluate_sync_level()
 
@@ -518,11 +495,10 @@ class SyncMonitor:
             if self._on_level_change:
                 self._on_level_change(m.sync_level, m.sync_reason)
 
-        # Cycle-Log ausgeben
         if self._on_cycle_log:
             self._emit_cycle_log()
 
-    # ── Sync-Level-Bewertung ──────────────────────────────────────────────────────
+    # ── Sync-Level-Bewertung ──────────────────────────────────────────────────
 
     def _evaluate_sync_level(self):
         if self._total_updates < self._warmup_cycles:
@@ -544,12 +520,11 @@ class SyncMonitor:
         norm_error_degrade_mm = getattr(c, 'norm_error_degrade_mm', 15.0)
         tracking_stop_mm = getattr(c, 'tracking_stop_mm', 50.0)
 
-        # Wie viele aufeinanderfolgende Bad-Cycles nötig, bevor eskaliert wird
-        stop_confirm = getattr(c, 'stop_confirm_cycles', 1)  # sofort – STOP bleibt hart
+        stop_confirm = getattr(c, 'stop_confirm_cycles', 1)
         degrade_confirm = getattr(c, 'degrade_confirm_cycles', 3)
         warn_confirm = getattr(c, 'warn_confirm_cycles', 5)
 
-        # ── STOP ─────────────────────────────────────────────────────────────────
+        # ── STOP ─────────────────────────────────────────────────────
         if m.t_delay_ms > offset_stop_ms:
             reasons.append(f"Offset {m.t_delay_ms:.0f}ms > Stop {offset_stop_ms:.0f}ms")
         if m.error_tcp_pos > tracking_stop_mm:
@@ -566,7 +541,7 @@ class SyncMonitor:
         else:
             self._consecutive_stop = 0
 
-        # ── DEGRADE ───────────────────────────────────────────────────────────────
+        # ── DEGRADE ──────────────────────────────────────────────────
         if m.t_delay_ms > offset_degrade_ms:
             reasons.append(f"Offset {m.t_delay_ms:.0f}ms > Degrade {offset_degrade_ms:.0f}ms")
         if m.norm_error > norm_error_degrade_mm:
@@ -584,7 +559,7 @@ class SyncMonitor:
         else:
             self._consecutive_degrade = 0
 
-        # ── WARN ──────────────────────────────────────────────────────────────────
+        # ── WARN ─────────────────────────────────────────────────────
         if m.t_delay_ms > offset_warn_ms:
             reasons.append(f"Offset {m.t_delay_ms:.0f}ms > Warn {offset_warn_ms:.0f}ms")
         if abs(m.offset_rate_ms_per_s) > offset_rate_warn:
@@ -603,7 +578,7 @@ class SyncMonitor:
         else:
             self._consecutive_warn = 0
 
-        # ── OK ────────────────────────────────────────────────────────────────────
+        # ── OK ───────────────────────────────────────────────────────
         m.sync_level = SyncLevel.OK
         m.sync_reason = ""
 
@@ -694,6 +669,12 @@ class SyncMonitor:
         self._degrade_count = 0
         self._n_estimator_updates = 0
         self._last_est_debug = None
+
+        # FIX: Consecutive-Counter explizit auf 0 zurücksetzen —
+        # sie könnten vom vorherigen Job erhöht sein.
+        self._consecutive_warn = 0
+        self._consecutive_degrade = 0
+        self._consecutive_stop = 0
 
         logger.info("SYNC: Reset (T_delay_init=%.0fms, Estimator=%s)",
                      init_delay * 1000,
