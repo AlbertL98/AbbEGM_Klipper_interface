@@ -106,15 +106,15 @@ def main():
     # Auto-Start: Sobald erstes Segment da ist
     try:
         while True:
-            if bridge.sm.state.value == "READY" and bridge.planner.queue_depth > 0:
+            if bridge.state_cont.state_cont.value == "READY" and bridge.planner.queue_depth > 0:
                 logger.info("Erstes Segment empfangen (Queue: %d) — starte Job...", bridge.planner.queue_depth)
                 bridge.run_job()
 
-            elif bridge.sm.state.value == "FAULT":
+            elif bridge.state_cont.state_cont.value == "FAULT":
                 logger.error("Bridge im FAULT-Zustand!")
                 break
 
-            elif bridge.sm.state.value == "STOP":
+            elif bridge.state_cont.state_cont.value == "STOP":
                 logger.info("Job abgeschlossen!")
                 snap = bridge.planner.snapshot()
                 logger.info("  Samples: %d | Segmente: %d | Overruns: %d",
@@ -124,7 +124,7 @@ def main():
                 break
 
             # Periodischer Status im Betrieb
-            elif bridge.sm.state.value in ("RUN", "DEGRADED"):
+            elif bridge.state_cont.state_cont.value in ("RUN", "DEGRADED"):
                 snap = bridge.planner.snapshot()
                 logger.debug(
                     "Loop: Queue=%d Samples=%d Seg=%s",

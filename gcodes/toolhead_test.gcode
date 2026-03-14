@@ -4,11 +4,14 @@
 ; =============================================================================
 
 ; Position setzen ohne Homing (keine Endstops in Simulation)
-SET_KINEMATIC_POSITION X=50 Y=50 Z=10
+SET_KINEMATIC_POSITION X=0 Y=0 Z=100
 
 ; Extruder vorbereiten
 M83                    ; Relative Extrusion
 M302 S0               ; Cold Extrusion erlauben
+
+; Erste bewegung um Bridge startup nicht zu überfordern
+G1 X0 Y0 Z10 F10
 
 ; --- Einfaches Quadrat mit Extrusion (simuliert eine Print-Layer) ---
 ; Geschwindigkeit F1800 = 30mm/s
@@ -41,10 +44,6 @@ G1 X250 Y50  Z10.9 E1.5 F600  ; Langsam (10mm/s)
 G1 X250 Y250 Z10.9 E3.0 F1800 ; Mittel (30mm/s)
 G1 X50  Y250 Z10.9 E3.0 F6000 ; Schnell (100mm/s)
 G1 X50  Y50  Z10.9 E3.0 F9000 ; Sehr schnell (150mm/s)
-
-; --- 3D-Bewegung (XYZ gleichzeitig) ---
-G1 X200 Y200 Z50  E5.0 F3000  ; Diagonal + Z aufwärts
-G1 X100 Y100 Z10  E5.0 F3000  ; Diagonal + Z abwärts
 
 ; Fertig
 M400                           ; Warten bis Queue leer

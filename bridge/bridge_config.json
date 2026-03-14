@@ -7,9 +7,8 @@
     "recv_port": 6510,
     "local_send_port": 6512,
     "cycle_ms": 20,
-    "timeout_ms": 100,
-    "watchdog_cycles": 250,
-    "protocol": "protobuf",
+    "recv_timeout_ms": 100,
+    "send_timeout_ms": 250,
     "default_q0": 0.0,
     "default_q1": -0.707106,
     "default_q2": 0.707106,
@@ -34,6 +33,16 @@
     "starvation_timeout_s": 3.0
   },
   "sync": {
+    "t_delay_init_ms": 50.0,
+    "evaluate_direction": true,
+
+
+    "ema_slow": 0.04,
+    "ema_fast": 0.25,
+    "ema_output": 0.08,
+    "offset_back_ms": 5.0,
+    "alpha_weight": 10.0,
+    "tx_buffer_size": 500,
     "tracking_warn_mm": 10.0,
     "tracking_degrade_mm": 25.0,
     "tracking_stop_mm": 50.0,
@@ -55,45 +64,17 @@
     "norm_error_warn_mm": 5.0,
     "norm_error_degrade_mm": 15.0
   },
-  "klipper": {
+  "klipper_client": {
     "tcp_host": "127.0.0.1",
-    "tcp_port": 7200,
+    "tcp_port_segment": 7200,
+    "tcp_port_watchdog": 7201,
     "reconnect_interval_s": 2.0,
-    "receive_timeout_s": 5.0
-  },
-  "moonraker": {
-    "enabled": true,
-    "host": "127.0.0.1",
-    "port": 7125,
-    "reconnect_interval_s": 3.0,
-    "poll_interval_ms": 50,
-    "stale_threshold_ms": 500.0
-  },
-  "watchdog": {
-    "enabled": true,
-    "tcp_host": "127.0.0.1",
-    "tcp_port": 7201,
-    "heartbeat_interval_s": 1.0,
-    "reconnect_interval_s": 2.0,
-    "stop_on_fault": true,
-    "pause_on_degrade": false,
-    "moonraker_fallback": true
+    "receive_timeout_s": 5.0,
+    "watchdog_heartbeat_s": 1.0,
+    "watchdog_stop_on_fault": true,
+    "watchdog_pause_on_degrade": false
   },
   "telemetry": {
-    "log_dir": "./logs",
-    "log_level": "INFO",
-    "csv_export": true,
-    "metric_interval_s": 1.0,
-    "max_log_size_mb": 100
-  },
-  "estimator": {
-    "enabled": true,
-    "t_delay_init_ms": 50.0,
-    "ema_slow": 0.04,
-    "ema_fast": 0.25,
-    "ema_output": 0.08,
-    "offset_back_ms": 5.0,
-    "alpha_weight": 10.0,
-    "tx_buffer_size": 500
+    "log_dir": "./logs"
   }
 }

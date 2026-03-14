@@ -21,8 +21,8 @@ from .trajectory_planner import TrajectoryPlanner
 from .egm_client import EgmClient
 from .sync_monitor import SyncMonitor, SyncLevel
 from .telemetry import TelemetryWriter
-from .segment_source import (TrapezSegment, TcpSegmentReceiver,
-                             CsvSegmentSource, SegmentValidationError)
+from .path_segment import (TrapezSegment, TcpSegmentReceiver,
+                           CsvSegmentSource, SegmentValidationError)
 from .klipper_command import KlipperCommandClient
 
 __all__ = [

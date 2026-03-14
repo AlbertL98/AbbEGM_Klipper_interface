@@ -14,7 +14,7 @@ from collections import deque
 from typing import Optional
 
 from .clock import bridge_now
-from .segment_source import TrapezSegment
+from .path_segment import TrapezSegment
 
 logger = logging.getLogger("egm.planner")
 
@@ -53,16 +53,8 @@ class TrajectoryPlanner:
       t_klipper_now = (bridge_time - t0_bridge) + t0_klipper + offset_s
     """
 
-    def __init__(self, cycle_s: float,
-                 max_queue_size: int = 2000,
-                 correction_max_mm: float = 3.0,
-                 correction_rate_limit: float = 10.0,
-                 offset_s: float = 0.0):
-        self.cycle_s = cycle_s
+    def __init__(self, max_queue_size: int = 2000):
         self.max_queue_size = max_queue_size
-        self.correction_max_mm = correction_max_mm
-        self.correction_rate_limit = correction_rate_limit
-        self.offset_s = offset_s        # Fixer Fallback-Lookahead (Config)
 
         self._queue: deque[TrapezSegment] = deque(maxlen=max_queue_size)
         self._lock = threading.Lock()
@@ -149,8 +141,7 @@ class TrajectoryPlanner:
 
     # ── Sample-Erzeugung (TIME-INDEXED) ──────────────────────
 
-    def next_sample(self, bridge_time: float,
-                    lookahead_s: float = 0.0) -> Optional[EgmSample]:
+    def next_sample(self, bridge_time: float, lookahead_s: float = 0.0) -> Optional[EgmSample]:
         """
         Erzeugt den nächsten EGM-Sollwert.
 
@@ -188,11 +179,6 @@ class TrajectoryPlanner:
         x, y, z = seg.position_at(local_t)
         velocity = seg.velocity_at(local_t)
         progress = local_t / seg.duration if seg.duration > 0 else 1.0
-
-        cx, cy, cz = self._get_smoothed_correction()
-        x += cx
-        y += cy
-        z += cz
 
         self._sequence_id += 1
         self._samples_generated += 1
@@ -258,49 +244,6 @@ class TrajectoryPlanner:
     def peek_ahead(self, n: int = 5) -> list[TrapezSegment]:
         with self._lock:
             return list(self._queue)[:n]
-
-    # ── Rolling-Horizon-Korrektur (§B4) ──────────────────────
-
-    def apply_correction(self, dx: float, dy: float, dz: float):
-        mag = math.sqrt(dx*dx + dy*dy + dz*dz)
-        if mag > self.correction_max_mm:
-            scale = self.correction_max_mm / mag
-            dx *= scale
-            dy *= scale
-            dz *= scale
-            logger.warning("PLANNER: Korrektur geclampt: "
-                           "%.2f mm → %.2f mm", mag,
-                           self.correction_max_mm)
-        self._target_correction = CorrectionState(
-            offset_x=dx, offset_y=dy, offset_z=dz,
-            applied_at=bridge_now()
-        )
-
-    def _get_smoothed_correction(self) -> tuple[float, float, float]:
-        max_step = self.correction_rate_limit * self.cycle_s
-        target = self._target_correction
-        current = self._correction
-
-        def step_towards(current_val, target_val, max_delta):
-            diff = target_val - current_val
-            if abs(diff) <= max_delta:
-                return target_val
-            return current_val + math.copysign(max_delta, diff)
-
-        self._correction.offset_x = step_towards(
-            current.offset_x, target.offset_x, max_step)
-        self._correction.offset_y = step_towards(
-            current.offset_y, target.offset_y, max_step)
-        self._correction.offset_z = step_towards(
-            current.offset_z, target.offset_z, max_step)
-
-        return (self._correction.offset_x,
-                self._correction.offset_y,
-                self._correction.offset_z)
-
-    def reset_correction(self):
-        self._correction = CorrectionState()
-        self._target_correction = CorrectionState()
 
     # ── Reset ────────────────────────────────────────────────
 

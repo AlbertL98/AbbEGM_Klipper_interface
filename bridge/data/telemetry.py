@@ -72,6 +72,7 @@ class TelemetryWriter:
         self._open_stream("rx", [
             "timestamp", "seq_id", "robot_time",
             "x", "y", "z", "q0", "q1", "q2", "q3",
+            "ext_value", "ext_age"
         ])
 
         # SYNC Stream
@@ -200,6 +201,7 @@ class TelemetryWriter:
             f"{feedback.z:.3f}",
             f"{feedback.q0:.6f}", f"{feedback.q1:.6f}",
             f"{feedback.q2:.6f}", f"{feedback.q3:.6f}",
+            f"{feedback.e:.3f}",f"{feedback.e_age:.3f}"
         ])
 
     def log_sync(self, metrics):

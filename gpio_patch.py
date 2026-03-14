@@ -178,43 +178,5 @@ for filename, content in patches.items():
     else:
         print(f'  SKIP: {filename} (not found)')
 
-# ── Targeted patch: stepper.c (timing tolerance for Docker/WSL2) ──
-# The "Stepper too far in past" shutdown is hardcoded with a ~1ms tolerance.
-# In Docker/WSL2 scheduling jitter easily exceeds this. Since this is a
-# simulation (the bridge handles real timing independently), we replace
-# the shutdown with a no-op so Klipper keeps running instead of crashing.
-STEPPER_C = '/home/klippy/klipper/src/stepper.c'
-if os.path.exists(STEPPER_C):
-    with open(STEPPER_C, 'r') as f:
-        content = f.read()
-
-    original = content
-
-    # Klipper versions use slightly different formulations — patch all known variants
-    replacements = [
-        # Variant A (common in recent Klipper)
-        ('shutdown("Stepper too far in past");',
-         '/* shutdown("Stepper too far in past"); */ /* Docker/WSL2 sim patch */'),
-        # Variant B (older formulation)
-        ('shutdown("Stepper too far in past")',
-         '/* shutdown("Stepper too far in past") */ (void)0'),
-    ]
-
-    for old, new in replacements:
-        content = content.replace(old, new)
-
-    if content != original:
-        with open(STEPPER_C, 'w') as f:
-            f.write(content)
-        print(f'  OK: stepper.c (timing shutdown disabled)')
-    else:
-        print(f'  WARN: stepper.c found but shutdown string not matched — check Klipper version')
-        # Fallback: print the lines containing 'too far' so the user can inspect
-        for i, line in enumerate(original.splitlines(), 1):
-            if 'too far' in line or 'far in past' in line.lower():
-                print(f'       Line {i}: {line.strip()}')
-else:
-    print(f'  SKIP: stepper.c (not found at {STEPPER_C})')
-
 print(f'\nPatched {patched}/{len(patches)} files.')
 print('Now run: make clean && make -j4')

@@ -31,14 +31,14 @@ import bisect
 import logging
 import enum
 import threading
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from collections import deque
 from typing import Optional, Callable, List, NamedTuple
 
 from .clock import bridge_now
 from .egm_client import EgmFeedback
 from .trajectory_planner import EgmSample
-from .config import SyncConfig, LatencyEstimatorConfig
+from .config import SyncConfig
 
 logger = logging.getLogger("egm.sync")
 
@@ -151,20 +151,16 @@ class SyncMonitor:
       Alle drei greifen auf _t_delay/_t_delay_output zu → Lock.
     """
 
-    def __init__(self, config: SyncConfig,
-                 estimator_config: LatencyEstimatorConfig,
-                 evaluate_direction: bool = True):
+    def __init__(self, config: SyncConfig,evaluate_direction: bool = True):
         self.cfg = config
-        self.est_cfg = estimator_config
-        self.evaluate_direction = evaluate_direction
 
         # ── Estimator-Parameter aus Config ───────────────────────────
-        self._OFFSET_BACK_S = estimator_config.offset_back_ms / 1000.0
-        self._EMA_SLOW = estimator_config.ema_slow
-        self._EMA_FAST = estimator_config.ema_fast
-        self._EMA_OUTPUT = estimator_config.ema_output
-        self._ALPHA_NORMAL = estimator_config.alpha_weight
-        self._TX_BUFFER_SIZE = estimator_config.tx_buffer_size
+        self._OFFSET_BACK_S = config.delay_backend_ms / 1000.0
+        self._EMA_SLOW = 0.04
+        self._EMA_FAST = 0.25
+        self._EMA_OUTPUT = 0.08
+        self._ALPHA_NORMAL = 10.0
+        self._TX_BUFFER_SIZE = 500
 
         # Konstanten
         self._EPS: float = 1e-9
@@ -176,7 +172,7 @@ class SyncMonitor:
         self._T_DELAY_MAX: float = 0.800          # 800ms Obergrenze
 
         # ── Offset-Estimator-State ───────────────────────────────────
-        init_delay = estimator_config.t_delay_init_ms / 1000.0
+        init_delay = config.delay_frontend_init_ms / 1000.0
         self._t_delay = init_delay
         self._t_delay_output = init_delay
         self._lock = threading.Lock()
@@ -227,6 +223,7 @@ class SyncMonitor:
 
     # ── Callbacks ────────────────────────────────────────────────────
 
+    # TODO: delete diese funktion
     def set_level_change_callback(self, callback: Callable):
         """Callback wenn sich das Sync-Level ändert: fn(level, reason)"""
         self._on_level_change = callback
@@ -257,11 +254,6 @@ class SyncMonitor:
         """Aktueller geglätteter Offset in ms."""
         with self._lock:
             return self._t_delay_output * 1000.0
-
-    @property
-    def enabled(self) -> bool:
-        """Ist der Estimator aktiv?"""
-        return self.est_cfg.enabled
 
     # ═════════════════════════════════════════════════════════════════
     # TX-Aufzeichnung (EGM-Loop, 50Hz)
@@ -297,9 +289,6 @@ class SyncMonitor:
         Wird im RX-Thread bei jedem empfangenen Feedback aufgerufen (~250Hz).
         Macht das Position-Matching und aktualisiert T_delay.
         """
-        if not self.est_cfg.enabled:
-            return None
-
         n = len(self._tx_times)
         if n < 6:
             return None
@@ -371,7 +360,7 @@ class SyncMonitor:
         weight = 1.0
         speed = max(m.soll_v, self._EPS)
 
-        if self.evaluate_direction:
+        if self.cfg.evaluate_direction:
             lo_t = max(idx_lo, best_idx - self._TANG_SPAN)
             hi_t = min(idx_hi, best_idx + self._TANG_SPAN)
             dtx = self._tx_x[hi_t] - self._tx_x[lo_t]
@@ -397,7 +386,7 @@ class SyncMonitor:
         m.estimator_weight = weight
 
         # ── Delay-Schätzung ──────────────────────────────────────────
-        if self.evaluate_direction and abs(tang_err) >= self._MIN_TANG_MM:
+        if self.cfg.evaluate_direction and abs(tang_err) >= self._MIN_TANG_MM:
             tang_time = tang_err / speed
             T_d_raw = t_actual - self._tx_times[best_idx]
             T_d_refined = T_d_raw - tang_time
@@ -643,7 +632,7 @@ class SyncMonitor:
 
     def reset(self):
         """Metriken und Estimator zurücksetzen (z.B. bei Jobstart)."""
-        init_delay = self.est_cfg.t_delay_init_ms / 1000.0
+        init_delay = self.cfg.delay_frontend_init_ms / 1000.0
 
         self._metrics = SyncMetrics()
         self._error_history.clear()
@@ -677,8 +666,7 @@ class SyncMonitor:
         self._consecutive_stop = 0
 
         logger.info("SYNC: Reset (T_delay_init=%.0fms, Estimator=%s)",
-                     init_delay * 1000,
-                     "aktiv" if self.est_cfg.enabled else "aus")
+                     init_delay * 1000)
 
     # ── Snapshot ─────────────────────────────────────────────────────
 
@@ -702,6 +690,5 @@ class SyncMonitor:
             "warn_count": m.warn_count,
             "degrade_count": m.degrade_count,
             "total_updates": m.total_updates,
-            "estimator_updates": self._n_estimator_updates,
-            "estimator_enabled": self.est_cfg.enabled,
+            "estimator_updates": self._n_estimator_updates
         }

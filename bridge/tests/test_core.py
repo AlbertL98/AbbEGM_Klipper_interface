@@ -4,10 +4,12 @@
 #   Vorher: mon = SyncMonitor(cfg)  → TypeError beim Ausführen
 #   Jetzt:  mon = SyncMonitor(cfg, est_cfg)
 
-import math
-import time
 import pytest
+import sys
+from pathlib import Path
 
+# Projekt imports
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from data.sync_monitor import SyncMonitor, SyncLevel
 from data.trajectory_planner import TrajectoryPlanner, EgmSample
 from data.config import (

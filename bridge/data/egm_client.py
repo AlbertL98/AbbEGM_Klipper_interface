@@ -16,7 +16,7 @@ import socket
 import time
 import logging
 import threading
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional, Callable
 
 from .clock import bridge_now
@@ -54,6 +54,8 @@ class EgmFeedback:
     q1: float = 0.0
     q2: float = 0.0
     q3: float = 0.0
+    e: float = 0.0
+    e_age: float = 0.0
 
 
 @dataclass
@@ -86,7 +88,6 @@ class EgmClient:
                  local_send_port: int = 6512,
                  timeout_ms: int = 100,
                  watchdog_cycles: int = 50,
-                 protocol: str = "auto",
                  default_q0: float = 0.0,
                  default_q1: float = -0.707106,
                  default_q2: float = 0.707106,
@@ -121,18 +122,12 @@ class EgmClient:
         self._send_times_max = 200  # Älteste Einträge aufräumen
 
         self._pb2 = None
-        self._use_protobuf = False
-        self._try_load_protobuf(protocol)
+        self._try_load_protobuf()
 
-    def _try_load_protobuf(self, protocol: str = "auto"):
-        if protocol == "json":
-            self._use_protobuf = False
-            logger.info("EGM: JSON-Modus erzwungen")
-            return
-
+    def _try_load_protobuf(self):
         try:
             try:
-                from . import egm_pb2
+                from ..lib import egm_pb2
             except ImportError:
                 import sys
                 from pathlib import Path
@@ -142,16 +137,12 @@ class EgmClient:
                     sys.path.insert(0, package_root)
 
                 from data import egm_pb2
-
             self._pb2 = egm_pb2
-            self._use_protobuf = True
             logger.info("EGM: Protobuf geladen")
 
         except ImportError as e:
-            if protocol == "protobuf":
-                raise RuntimeError(f"egm_pb2 nicht gefunden: {e}")
-            self._use_protobuf = False
-            logger.info("EGM: Kein Protobuf — JSON-Fallback")
+            raise RuntimeError(f"egm_pb2 nicht gefunden: {e}")
+            logger.info("EGM: Kein Protobuf")
 
     # ── Lifecycle ────────────────────────────────────────────
 
@@ -192,8 +183,7 @@ class EgmClient:
             )
             self._rx_thread.start()
 
-            logger.info("EGM: Verbunden (proto: %s)",
-                        "protobuf" if self._use_protobuf else "json")
+            logger.info("EGM: Verbunden")
             return True
 
         except OSError as e:
@@ -301,15 +291,19 @@ class EgmClient:
     # ── Protobuf (exakt wie workingEGM.py) ───────────────────
 
     def _encode_target(self, target: EgmTarget) -> bytes:
-        if self._use_protobuf and self._pb2:
+        try:
             return self._encode_protobuf(target)
-        return self._encode_json(target)
+        except Exception as e:
+            logger.warning("EGM: Encode-Fehler: %s", e)
+            return None
 
-    def _decode_feedback(self, data: bytes,
-                         rx_time: float) -> Optional[EgmFeedback]:
-        if self._use_protobuf and self._pb2:
+
+    def _decode_feedback(self, data: bytes, rx_time: float) -> Optional[EgmFeedback]:
+        try:
             return self._decode_protobuf(data, rx_time)
-        return self._decode_json(data, rx_time)
+        except Exception as e:
+            logger.warning("EGM: Encode-Fehler: %s", e)
+            return None
 
     def _encode_protobuf(self, target: EgmTarget) -> bytes:
         """
@@ -363,39 +357,6 @@ class EgmClient:
             logger.warning("EGM: Decode-Fehler: %s", e)
             return None
 
-    # ── JSON Fallback ────────────────────────────────────────
-
-    def _encode_json(self, target: EgmTarget) -> bytes:
-        import json
-        msg = {
-            "type": "egm_target",
-            "seq": target.sequence_id,
-            "ts": round(time.time() - self._t0, 6),
-            "pos": [round(target.x, 3), round(target.y, 3),
-                    round(target.z, 3)],
-            "orient": [target.q0, target.q1, target.q2, target.q3],
-        }
-        return json.dumps(msg).encode("utf-8")
-
-    def _decode_json(self, data: bytes,
-                     rx_time: float) -> Optional[EgmFeedback]:
-        try:
-            import json
-            msg = json.loads(data.decode("utf-8"))
-            pos = msg.get("pos", [0, 0, 0])
-            orient = msg.get("orient", [0, 0, 0, 0])
-            return EgmFeedback(
-                sequence_id=msg.get("seq", 0),
-                timestamp=rx_time,
-                robot_time=msg.get("ts", 0),
-                x=pos[0], y=pos[1], z=pos[2],
-                q0=orient[0], q1=orient[1],
-                q2=orient[2], q3=orient[3],
-            )
-        except Exception as e:
-            logger.warning("EGM: JSON-Decode-Fehler: %s", e)
-            return None
-
     # ── Status ───────────────────────────────────────────────
 
     @property
@@ -410,7 +371,6 @@ class EgmClient:
         s = self._stats
         return {
             "connected": self._connected,
-            "protocol": "protobuf" if self._use_protobuf else "json",
             "tx_target": f"{self.robot_ip}:{self.send_port}",
             "tx_source": f"{self.robot_ip}:{self.local_send_port}",
             "rx_listen": f"0.0.0.0:{self.recv_port}",
@@ -421,3 +381,55 @@ class EgmClient:
             "cycles_without_response": s.cycles_without_response,
             "rtt_avg_ms": round(s.rtt_avg_ms, 2),
         }
+
+
+
+# TODO:
+#     def _check_workspace_envelope(self, x: float, y: float,
+#                                    z: float) -> bool:
+#         """
+#         Prüft ob die Zielposition innerhalb der erlaubten
+#         Begrenzungsbox liegt.
+#
+#         Returns True wenn OK, False wenn Verletzung.
+#         Bei Verletzung: FAULT + Klipper-Stop + Telemetrie-Event.
+#
+#         WICHTIG: Wird VOR jedem send_target() aufgerufen.
+#         Verhindert dass der Roboter in eine Kollision fährt
+#         wenn Segmente oder Interpolation fehlerhafte Positionen
+#         erzeugen.
+#         """
+#         ws = self.cfg.workspace
+#         if not ws.enabled:
+#             return True
+#
+#         if ws.contains(x, y, z):
+#             return True
+#
+#         # ── VERLETZUNG! ──────────────────────────────────────
+#         self._envelope_violations += 1
+#         reason = ws.violation_reason(x, y, z)
+#
+#         logger.critical(
+#             "BRIDGE: WORKSPACE-VERLETZUNG! Position (%.2f, %.2f, %.2f) "
+#             "außerhalb der erlaubten Box! %s",
+#             x, y, z, reason)
+#
+#         self.telemetry.log_event(
+#             "WORKSPACE_VIOLATION", "CRITICAL",
+#             f"Position ({x:.2f}, {y:.2f}, {z:.2f}) außerhalb "
+#             f"Workspace-Envelope: {reason}",
+#             {
+#                 "x": x, "y": y, "z": z,
+#                 "envelope": {
+#                     "min": [ws.min_x, ws.min_y, ws.min_z],
+#                     "max": [ws.max_x, ws.max_y, ws.max_z],
+#                 },
+#                 "violation_count": self._envelope_violations,
+#             })
+#
+#         self.state.to_fault(
+#             f"Workspace-Verletzung: ({x:.2f}, {y:.2f}, {z:.2f}) "
+#             f"— {reason}")
+#
+#         return False

@@ -1,72 +1,21 @@
 # bridge.py — EGM-Bridge-Core Orchestrator
-#
-# ÄNDERUNGEN:
-#   - Einheitliche Clock via bridge_now() statt time.perf_counter()
-#   - WORKSPACE ENVELOPE: Zielposition wird vor jedem Senden geprüft.
-#     Liegt sie außerhalb der erlaubten Box → FAULT + Klipper-Stop.
-#     Schützt vor Kollisionen bei falschen Segmenten/Interpolation.
-#   - starvation_timeout_s aus Config statt hardcoded 3s
-#
-# EXTRUDER-LOGGING (v2):
-#   E-Wert wird in BEIDEN Streams geloggt:
-#   - TX (50Hz): Soll-Position + E → "Bridge sendet X, Extruder ist bei E"
-#   - RX (250Hz): Ist-Position + E → "Roboter ist bei X, Extruder ist bei E"
 
 import time
 import logging
 import threading
-import signal
-import sys
 from typing import Optional
 
 from .clock import bridge_now
 from .state_machine import BridgeStateMachine, State, StateChangeEvent
 from .config import BridgeConfig, validate_config
-from .segment_source import TrapezSegment, TcpSegmentReceiver
+from .path_segment import TrapezSegment
 from .trajectory_planner import TrajectoryPlanner, EgmSample
 from .egm_client import EgmClient, EgmTarget, EgmFeedback
-from .sync_monitor import SyncMonitor, SyncLevel, EstimatorDebug
+from .sync_monitor import SyncMonitor, SyncLevel
 from .telemetry import TelemetryWriter
-from .moonraker_client import MoonrakerClient
-from .klipper_command import KlipperCommandClient, MoonrakerEmergencyStop
+from .klipper_client import KlipperClient, MoonrakerEmergencyStop
 
 logger = logging.getLogger("egm.bridge")
-
-
-# ── Windows High-Resolution Timer ───────────────────────────
-
-_win_timer_active = False
-
-
-def _enable_win_hires_timer():
-    """Aktiviert 1ms Timer-Auflösung auf Windows."""
-    global _win_timer_active
-    if sys.platform != "win32" or _win_timer_active:
-        return
-    try:
-        import ctypes
-        winmm = ctypes.windll.winmm
-        winmm.timeBeginPeriod(1)
-        _win_timer_active = True
-        logger.info("BRIDGE: Windows High-Res Timer aktiviert (1ms)")
-    except Exception as e:
-        logger.warning("BRIDGE: Windows Timer-Setup fehlgeschlagen: %s "
-                        "— sleep-Auflösung bleibt ~15ms", e)
-
-
-def _disable_win_hires_timer():
-    """Gibt die Timer-Auflösung wieder frei."""
-    global _win_timer_active
-    if sys.platform != "win32" or not _win_timer_active:
-        return
-    try:
-        import ctypes
-        winmm = ctypes.windll.winmm
-        winmm.timeEndPeriod(1)
-        _win_timer_active = False
-        logger.info("BRIDGE: Windows High-Res Timer deaktiviert")
-    except Exception:
-        pass
 
 
 class EgmBridge:
@@ -82,32 +31,21 @@ class EgmBridge:
 
     def __init__(self, config: BridgeConfig):
         self.cfg = config
-        self.sm = BridgeStateMachine()
 
-        # Zykluszeit
-        self._cycle_s = config.connection.cycle_ms / 1000.0
+        #State Machine
+        self.state_cont = BridgeStateMachine()
 
-        # time_offset_ms aus SyncConfig → Sekunden für den Planner (Fallback)
-        offset_s = config.sync.time_offset_ms / 1000.0
-
-        # SyncMonitor (Closed-Loop) — integriert den Offset-Estimator.
-        # Vor dem Planner erstellen, damit der Planner die Referenz bekommt.
+        #Sync Monitor
         self.sync = SyncMonitor(
-            config=config.sync,
-            estimator_config=config.estimator,
+            config=config.sync
         )
-        self.sync.set_level_change_callback(self._on_sync_level_change)
 
-        # Komponenten — Planner bekommt self.sync als lor-Interface
-        # (Duck-Typing: hat get_lookahead() und enabled Property)
+        # Trajectory Planner
         self.planner = TrajectoryPlanner(
-            cycle_s=self._cycle_s,
-            max_queue_size=config.queues.plan_queue_size,
-            correction_max_mm=config.sync.correction_max_mm,
-            correction_rate_limit=config.sync.correction_rate_limit_mm_per_s,
-            offset_s=offset_s
+            max_queue_size=config.queues.plan_queue_size
         )
 
+        # EGM Client
         self.egm = EgmClient(
             robot_ip=config.connection.robot_ip,
             send_port=config.connection.send_port,
@@ -115,43 +53,25 @@ class EgmBridge:
             local_send_port=config.connection.local_send_port,
             timeout_ms=config.connection.timeout_ms,
             watchdog_cycles=config.connection.watchdog_cycles,
-            protocol=config.connection.protocol,
             default_q0=config.connection.default_q0,
             default_q1=config.connection.default_q1,
             default_q2=config.connection.default_q2,
             default_q3=config.connection.default_q3,
             on_feedback=self._on_feedback,
-            on_timeout=self._on_egm_timeout,
+            on_timeout=self._on_egm_timeout
         )
 
+        # Telemetry
         self.telemetry = TelemetryWriter(
-            log_dir=config.telemetry.log_dir,
+            log_dir=config.telemetry.log_dir
         )
 
-        self.receiver: Optional[TcpSegmentReceiver] = None
-
-        # Moonraker-Client für Extruder-E-Wert
-        self.moonraker: Optional[MoonrakerClient] = None
-        if config.moonraker.enabled:
-            self.moonraker = MoonrakerClient(
-                host=config.moonraker.host,
-                port=config.moonraker.port,
-                reconnect_interval_s=config.moonraker.reconnect_interval_s,
-                poll_interval_ms=config.moonraker.poll_interval_ms,
-            )
-
-        # Klipper-Watchdog-Client (Heartbeat + Stop-Befehle)
-        self.klipper_cmd: Optional[KlipperCommandClient] = None
-        if config.watchdog.enabled:
-            self.klipper_cmd = KlipperCommandClient(
-                host=config.watchdog.tcp_host,
-                port=config.watchdog.tcp_port,
-                heartbeat_interval_s=config.watchdog.heartbeat_interval_s,
-                reconnect_interval_s=config.watchdog.reconnect_interval_s,
-            )
+        # Klipper Communication
+        self.klipper_client = KlipperClient(config=config.klipper)
+        self.MoonrakerEmergencyStop = MoonrakerEmergencyStop()
 
         # State-Machine-Listener für Watchdog
-        self.sm.add_listener(self._on_state_change)
+        self.state_cont.add_listener(self._on_state_change)
 
         # Interner Zustand
         self._loop_thread: Optional[threading.Thread] = None
@@ -159,6 +79,7 @@ class EgmBridge:
         self._last_sample: Optional[EgmSample] = None
         self._last_feedback: Optional[EgmFeedback] = None
         self._feedback_lock = threading.Lock()
+        self._cycle_s = self.cfg.connection.cycle_ms
 
         # End-of-Job-Erkennung (jetzt konfigurierbar)
         self._last_segment_time: float = 0.0
@@ -174,59 +95,6 @@ class EgmBridge:
         self._loop_count = 0
         self._loop_overruns = 0
 
-    # ── Workspace Envelope Check ─────────────────────────────
-
-    def _check_workspace_envelope(self, x: float, y: float,
-                                   z: float) -> bool:
-        """
-        Prüft ob die Zielposition innerhalb der erlaubten
-        Begrenzungsbox liegt.
-
-        Returns True wenn OK, False wenn Verletzung.
-        Bei Verletzung: FAULT + Klipper-Stop + Telemetrie-Event.
-
-        WICHTIG: Wird VOR jedem send_target() aufgerufen.
-        Verhindert dass der Roboter in eine Kollision fährt
-        wenn Segmente oder Interpolation fehlerhafte Positionen
-        erzeugen.
-        """
-        ws = self.cfg.workspace
-        if not ws.enabled:
-            return True
-
-        if ws.contains(x, y, z):
-            return True
-
-        # ── VERLETZUNG! ──────────────────────────────────────
-        self._envelope_violations += 1
-        reason = ws.violation_reason(x, y, z)
-
-        logger.critical(
-            "BRIDGE: WORKSPACE-VERLETZUNG! Position (%.2f, %.2f, %.2f) "
-            "außerhalb der erlaubten Box! %s",
-            x, y, z, reason)
-
-        self.telemetry.log_event(
-            "WORKSPACE_VIOLATION", "CRITICAL",
-            f"Position ({x:.2f}, {y:.2f}, {z:.2f}) außerhalb "
-            f"Workspace-Envelope: {reason}",
-            {
-                "x": x, "y": y, "z": z,
-                "envelope": {
-                    "min": [ws.min_x, ws.min_y, ws.min_z],
-                    "max": [ws.max_x, ws.max_y, ws.max_z],
-                },
-                "violation_count": self._envelope_violations,
-            })
-
-        self.sm.to_fault(
-            f"Workspace-Verletzung: ({x:.2f}, {y:.2f}, {z:.2f}) "
-            f"— {reason}")
-
-        return False
-
-    # ── Lifecycle ────────────────────────────────────────────
-
     def start(self) -> bool:
         """
         Initialisiert Verbindungen.
@@ -234,55 +102,29 @@ class EgmBridge:
         """
         logger.info("BRIDGE: Starte...")
 
-        # Windows: Timer-Auflösung auf 1ms setzen
-        if sys.platform == "win32":
-            _enable_win_hires_timer()
-
         # Config validieren
         errors = validate_config(self.cfg)
         if errors:
             for e in errors:
                 logger.error("BRIDGE: Config-Fehler: %s", e)
-            self.sm.to_fault("Config-Validierung fehlgeschlagen",
-                             {"errors": errors})
+            self.state_cont.to_fault("Config-Validierung fehlgeschlagen",
+                                     {"errors": errors})
             return False
 
         # EGM-Verbindung
         if not self.egm.connect():
-            self.sm.to_fault("EGM-Verbindung fehlgeschlagen")
+            self.state_cont.to_fault("EGM-Verbindung fehlgeschlagen")
             return False
 
-        # Segment-Empfänger starten
-        self.receiver = TcpSegmentReceiver(
-            host=self.cfg.klipper.tcp_host,
-            port=self.cfg.klipper.tcp_port,
-            on_segment=self._on_segment_received,
-            reconnect_interval=self.cfg.klipper.reconnect_interval_s,
-            receive_timeout=self.cfg.klipper.receive_timeout_s,
-        )
-        self.receiver.start()
-
-        # Moonraker-Client starten
-        if self.moonraker:
-            self.moonraker.start()
-            logger.info("BRIDGE: Moonraker E-Wert-Client aktiv "
-                         "→ ws://%s:%d (poll: %.0fms)",
-                         self.cfg.moonraker.host, self.cfg.moonraker.port,
-                         self.cfg.moonraker.poll_interval_ms)
-
-        # Klipper-Watchdog-Client starten
-        if self.klipper_cmd:
-            self.klipper_cmd.start()
-            logger.info("BRIDGE: Klipper-Watchdog-Client aktiv "
-                         "→ %s:%d",
-                         self.cfg.watchdog.tcp_host,
-                         self.cfg.watchdog.tcp_port)
+        # Klipper client starten
+        self.klipper_client = KlipperClient(config=self.cfg.klipper, on_segment=self._on_segment_received)
+        self.klipper_client.start()
 
         # Telemetrie starten
         self.telemetry.start()
         self.telemetry.save_config_snapshot(self.cfg.snapshot())
 
-        self.sm.to_ready("Alle Verbindungen hergestellt")
+        self.state_cont.to_ready("Alle Verbindungen hergestellt")
 
         ws = self.cfg.workspace
         ws_status = (f"aktiv [{ws.min_x},{ws.max_x}]x"
@@ -291,16 +133,10 @@ class EgmBridge:
                      if ws.enabled else "AUS")
 
         logger.info("BRIDGE: Bereit (Zyklus: %.1fms, Profil: %s, "
-                     "time_offset: %.1fms, Watchdog: %s, "
-                     "Moonraker: %s, Workspace: %s, "
-                     "Estimator: %s init=%.0fms)",
+                     "time_offset_backend: %.1fms, Workspace Status: )",
                      self.cfg.connection.cycle_ms, self.cfg.profile_name,
-                     self.cfg.sync.time_offset_ms,
-                     "aktiv" if self.klipper_cmd else "aus",
-                     "aktiv" if self.moonraker else "aus",
-                     ws_status,
-                     "aktiv" if self.cfg.estimator.enabled else "aus",
-                     self.cfg.estimator.t_delay_init_ms)
+                     self.cfg.sync.delay_backend_ms,
+                     ws_status)
         return True
 
     def run_job(self, job_id: Optional[str] = None):
@@ -308,32 +144,17 @@ class EgmBridge:
         Startet den EGM-Zyklusloop.
         READY → RUN
         """
-        if self.sm.state != State.READY:
+        if self.state_cont.state != State.READY:
             logger.error("BRIDGE: Kann Job nur aus READY starten "
-                         "(aktuell: %s)", self.sm.state.value)
+                         "(aktuell: %s)", self.state_cont.state.value)
             return False
 
         if job_id:
-            self.telemetry.log_event("JOB_START", "INFO",
-                                     f"Job {job_id} gestartet")
-
-        # Moonraker-Status loggen
-        if self.moonraker:
-            snap = self.moonraker.snapshot()
-            self.telemetry.log_event(
-                "MOONRAKER_STATUS", "INFO",
-                f"Moonraker: connected={snap['connected']}, "
-                f"updates={snap['update_count']}, "
-                f"polls={snap['poll_count']}",
-                snap)
-            if not snap['connected']:
-                logger.warning("BRIDGE: Moonraker NICHT verbunden! "
-                               "E-Werte werden nicht geloggt. "
-                               "Fehler: %s", snap.get('last_error'))
+            self.telemetry.log_event("JOB_START", "INFO",f"Job {job_id} gestartet")
 
         self.sync.reset()
         self._last_segment_time = bridge_now()
-        self.sm.to_run(f"Job gestartet: {job_id or 'default'}")
+        self.state_cont.to_run(f"Job gestartet: {job_id or 'default'}")
 
         self._running = True
         self._loop_thread = threading.Thread(
@@ -352,14 +173,10 @@ class EgmBridge:
         if self._loop_thread:
             self._loop_thread.join(timeout=5.0)
 
-        self.sm.to_stop(reason)
+        self.state_cont.to_stop(reason)
 
-        if self.receiver:
-            self.receiver.stop()
-        if self.moonraker:
-            self.moonraker.stop()
-        if self.klipper_cmd:
-            self.klipper_cmd.stop()
+        if self.klipper_client:
+            self.klipper_client.stop()
         self.egm.disconnect()
         self.telemetry.stop()
         self.planner.clear()
@@ -368,22 +185,17 @@ class EgmBridge:
                      "Envelope-Verletzungen: %d)",
                      self._loop_count, self._loop_overruns,
                      self._envelope_violations)
-        _disable_win_hires_timer()
 
     def shutdown(self):
         """Komplettes Herunterfahren inkl. Cleanup — aus JEDEM Zustand."""
-        logger.info("BRIDGE: Shutdown aus Zustand %s", self.sm.state.value)
+        logger.info("BRIDGE: Shutdown aus Zustand %s", self.state_cont.state.value)
         self._running = False
 
         if self._loop_thread:
             self._loop_thread.join(timeout=5.0)
 
-        if self.receiver:
-            self.receiver.stop()
-        if self.moonraker:
-            self.moonraker.stop()
-        if self.klipper_cmd:
-            self.klipper_cmd.stop()
+        if self.klipper_client:
+            self.klipper_client.stop()
         self.egm.disconnect()
         self.telemetry.stop()
         self.planner.clear()
@@ -392,14 +204,12 @@ class EgmBridge:
                      "Overruns: %d, Envelope-Verletzungen: %d)",
                      self._loop_count, self._loop_overruns,
                      self._envelope_violations)
-        _disable_win_hires_timer()
 
     # ── EGM Cycle Loop ───────────────────────────────────────
 
     def _egm_loop(self):
         """Hauptloop: Läuft im festen EGM-Zyklustakt."""
-        logger.info("BRIDGE: EGM-Loop gestartet (Zyklus: %.1fms)",
-                     self._cycle_s * 1000)
+        logger.info("BRIDGE: EGM-Loop gestartet (Zyklus: %.1fms)",self._cycle_s * 1000)
 
         cycle_s = self._cycle_s
         metric_interval = self.cfg.telemetry.metric_interval_s
@@ -410,7 +220,7 @@ class EgmBridge:
         if use_spin_only:
             logger.info("BRIDGE: Spin-Wait aktiv (cycle < 15ms)")
 
-        while self._running and self.sm.is_running:
+        while self._running and self.state_cont.is_running and self.klipper_client.klipper_is_printing:
             loop_start = bridge_now()
             bt = loop_start  # bridge_time
             self._loop_count += 1
@@ -420,19 +230,13 @@ class EgmBridge:
                 if self.sync.enabled:
                     lookahead = self.sync.get_lookahead()
                 else:
-                    lookahead = self.planner.offset_s
+                    lookahead = self.cfg.sync.delay_frontend_init_ms
                 sample = self.planner.next_sample(bt, lookahead)
 
                 if sample and sample.velocity > 0:
                     # ── Normaler Betrieb ─────────────────────────
                     starvation_logged = False
                     self._last_sample = sample
-
-                    # SAFETY: Workspace-Envelope prüfen VOR Senden
-                    if not self._check_workspace_envelope(
-                            sample.x, sample.y, sample.z):
-                        # FAULT wurde gesetzt, Loop wird beendet
-                        break
 
                     # 2. An Roboter senden
                     target = EgmTarget(
@@ -478,11 +282,6 @@ class EgmBridge:
                     # ── Position-Hold ────────────────────────────
                     self._last_sample = sample
 
-                    # SAFETY: Auch Hold-Positionen prüfen
-                    if not self._check_workspace_envelope(
-                            sample.x, sample.y, sample.z):
-                        break
-
                     target = EgmTarget(
                         sequence_id=sample.sequence_id,
                         timestamp=sample.timestamp,
@@ -512,14 +311,10 @@ class EgmBridge:
                     )
                     if (time_since_seg > self._starvation_timeout_s
                             and self._first_segment_received):
-                        logger.info(
-                            "BRIDGE: Print abgeschlossen "
-                            "(keine neuen Segmente seit %.1fs)",
-                            time_since_seg)
+                        logger.error("BRIDGE: Samples fehlen")
                         self.telemetry.log_event(
-                            "JOB_COMPLETE", "INFO",
-                            f"Abgeschlossen: {self._loop_count} "
-                            f"Zyklen, {self.egm.stats.tx_count} TX")
+                            "SAMPLES FEHLEN", "ERROR",
+                            f"Keine Samples seit {time_since_seg}s, Bridge wird gestopt")
                         self._running = False
                         break
 
@@ -543,7 +338,7 @@ class EgmBridge:
             except Exception as e:
                 logger.error("BRIDGE: Loop-Fehler: %s", e, exc_info=True)
                 self.telemetry.log_event("LOOP_ERROR", "ERROR", str(e))
-                self.sm.to_fault(f"Loop-Fehler: {e}")
+                self.state_cont.to_fault(f"Loop-Fehler: {e}")
                 break
 
             # Zykluszeit einhalten
@@ -569,8 +364,8 @@ class EgmBridge:
 
         logger.info("BRIDGE: EGM-Loop beendet")
 
-        if self.sm.state in (State.RUN, State.DEGRADED):
-            self.sm.to_stop("Job abgeschlossen")
+        if self.state_cont.state in (State.RUN, State.DEGRADED):
+            self.state_cont.to_stop("Job abgeschlossen")
 
     # ── Callbacks ────────────────────────────────────────────
 
@@ -589,7 +384,6 @@ class EgmBridge:
                 "TIME_SYNC", "INFO",
                 f"Zeitkopplung: bridge={now:.3f} ↔ "
                 f"klipper={seg.print_time:.3f} "
-                f"offset={self.planner.offset_s:.3f}s"
             )
 
         self.planner.add_segment(seg)
@@ -612,7 +406,7 @@ class EgmBridge:
         """Callback: EGM-Watchdog ausgelöst."""
         self.telemetry.log_event("EGM_TIMEOUT", "CRITICAL",
                                  "Watchdog — keine Antwort vom Roboter")
-        self.sm.to_fault("EGM-Watchdog-Timeout")
+        self.state_cont.to_fault("EGM-Watchdog-Timeout")
 
     def _on_sync_level_change(self, level: SyncLevel, reason: str):
         """Callback: Sync-Level hat sich geändert."""
@@ -628,8 +422,8 @@ class EgmBridge:
 
     def _on_state_change(self, event: StateChangeEvent):
         """Callback: State-Machine-Übergang."""
-        if self.klipper_cmd:
-            self.klipper_cmd.set_bridge_state(event.to_state.value)
+        if self.klipper_client:
+            self.klipper_client.set_bridge_state(event.to_state.value)
 
         if event.to_state == State.FAULT:
             self._notify_klipper_stop(
@@ -647,15 +441,15 @@ class EgmBridge:
             return
 
         sent = False
-        if self.klipper_cmd:
-            sent = self.klipper_cmd.send_stop(reason)
+        if self.klipper_client:
+            sent = self.klipper_client.send_stop(reason)
             if sent:
                 logger.info("BRIDGE: Stop an Klipper gesendet (TCP)")
 
         if not sent and self.cfg.watchdog.moonraker_fallback:
             logger.warning("BRIDGE: TCP-Stop fehlgeschlagen, "
                             "versuche Moonraker-Fallback...")
-            sent = MoonrakerEmergencyStop.send_pause_via_http(
+            sent = MoonrakerEmergencyStop.send_stop(
                 self.cfg.moonraker.host, self.cfg.moonraker.port)
 
         self.telemetry.log_event(
@@ -665,10 +459,10 @@ class EgmBridge:
     def _notify_klipper_pause(self, reason: str):
         """Sendet Pause-Befehl an Klipper."""
         sent = False
-        if self.klipper_cmd:
-            sent = self.klipper_cmd.send_pause(reason)
+        if self.klipper_client:
+            sent = self.klipper_client.send_pause(reason)
         if not sent and self.cfg.watchdog.moonraker_fallback:
-            sent = MoonrakerEmergencyStop.send_pause_via_http(
+            sent = MoonrakerEmergencyStop.send_pause(
                 self.cfg.moonraker.host, self.cfg.moonraker.port)
         self.telemetry.log_event(
             "KLIPPER_PAUSE_SENT", "WARNING",
@@ -680,62 +474,33 @@ class EgmBridge:
         """Reagiert auf Sync-Level-Änderungen."""
         level = self.sync.sync_level
 
-        if level == SyncLevel.STOP and self.sm.state != State.FAULT:
-            self.sm.to_fault(
+        if level == SyncLevel.STOP and self.state_cont.state != State.FAULT:
+            self.state_cont.to_fault(
                 f"Sync-Stop: {self.sync.metrics.sync_reason}")
-        elif level == SyncLevel.DEGRADE and self.sm.state == State.RUN:
-            self.sm.to_degraded(
+        elif level == SyncLevel.DEGRADE and self.state_cont.state == State.RUN:
+            self.state_cont.to_degraded(
                 f"Sync-Degrade: {self.sync.metrics.sync_reason}")
-        elif level == SyncLevel.OK and self.sm.state == State.DEGRADED:
-            self.sm.to_run("Sync wieder OK — Recovery")
+        elif level == SyncLevel.OK and self.state_cont.state == State.DEGRADED:
+            self.state_cont.to_run("Sync wieder OK — Recovery")
 
     # ── Status / API ─────────────────────────────────────────
 
-    def snapshot(self) -> dict:
-        """Vollständiger Status-Snapshot."""
-        return {
-            "state": self.sm.snapshot(),
-            "planner": self.planner.snapshot(),
-            "egm": self.egm.snapshot(),
-            "sync": self.sync.snapshot(),
-            "telemetry": self.telemetry.snapshot(),
-            "receiver": (self.receiver.snapshot()
-                         if self.receiver else None),
-            "moonraker": (self.moonraker.snapshot()
-                          if self.moonraker else None),
-            "watchdog": (self.klipper_cmd.snapshot()
-                         if self.klipper_cmd else None),
-            "loop_count": self._loop_count,
-            "loop_overruns": self._loop_overruns,
-            "envelope_violations": self._envelope_violations,
-            "config_profile": self.cfg.profile_name,
-        }
-
-    def set_param(self, section: str, key: str, value) -> bool:
-        """Setzt einen Parameter zur Laufzeit."""
-        section_obj = getattr(self.cfg, section, None)
-        if section_obj is None:
-            logger.error("BRIDGE: Unbekannte Config-Section: %s",
-                         section)
-            return False
-
-        if not hasattr(section_obj, key):
-            logger.error("BRIDGE: Unbekannter Parameter: %s.%s",
-                         section, key)
-            return False
-
-        old_value = getattr(section_obj, key)
-        setattr(section_obj, key, value)
-
-        if section == "sync" and key == "time_offset_ms":
-            self.planner.offset_s = value / 1000.0
-            logger.info("BRIDGE: Planner offset_s aktualisiert: "
-                         "%.3fs", self.planner.offset_s)
-
-        self.telemetry.log_event(
-            "PARAM_CHANGE", "INFO",
-            f"{section}.{key}: {old_value} → {value}"
-        )
-        logger.info("BRIDGE: Parameter geändert: %s.%s = %s → %s",
-                     section, key, old_value, value)
-        return True
+    # def snapshot(self) -> dict:
+    #     """Vollständiger Status-Snapshot."""
+    #     return {
+    #         "state": self.state_cont.snapshot(),
+    #         "planner": self.planner.snapshot(),
+    #         "egm": self.egm.snapshot(),
+    #         "sync": self.sync.snapshot(),
+    #         "telemetry": self.telemetry.snapshot(),
+    #         "receiver": (self.receiver.snapshot()
+    #                      if self.receiver else None),
+    #         "moonraker": (self.moonraker.snapshot()
+    #                       if self.moonraker else None),
+    #         "watchdog": (self.klipper_cmd.snapshot()
+    #                      if self.klipper_cmd else None),
+    #         "loop_count": self._loop_count,
+    #         "loop_overruns": self._loop_overruns,
+    #         "envelope_violations": self._envelope_violations,
+    #         "config_profile": self.cfg.profile_name,
+    #     }
